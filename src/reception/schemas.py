@@ -13,8 +13,8 @@ class Id_val(BaseModel):
 class Vk_val(BaseModel):
     item_id: int
     metric_id: str
-    # data: list[Id_val]
-    data: list[dict[Any, Any]]
+    data: list[Id_val]
+    # data: list[dict[Any, Any]]
 
 class SchemeJson(BaseModel):
     scheme_revision: int

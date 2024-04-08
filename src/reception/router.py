@@ -3,6 +3,7 @@ from fastapi.responses import RedirectResponse
 
 from .schemas import SchemeJson
 
+from config import PC_AF_PROTOCOL, PC_AF_IP, PC_AF_PORT, PC_AF_PATH
 
 router = APIRouter(
     prefix="/reception",
@@ -14,7 +15,8 @@ router = APIRouter(
 async def reception_data(data: SchemeJson):
     print(type(data.model_dump()))
     # return {"message": "OK"}
-    return RedirectResponse(url="http://127.0.0.1:8000/reception/2/")
+    url_PC_AF = f"{PC_AF_PROTOCOL}://{PC_AF_IP}:{PC_AF_PORT}/{PC_AF_PATH}"
+    return RedirectResponse(url=url_PC_AF)
 
 
 @router.post("/2/")
