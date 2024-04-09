@@ -6,20 +6,19 @@ from .schemas import SchemeJson
 from config import PC_AF_PROTOCOL, PC_AF_IP, PC_AF_PORT, PC_AF_PATH
 
 router = APIRouter(
-    prefix="/reception",
-    tags=["Recrption"]
+    prefix="/params",
+    tags=["Params"]
 )
 
 
 @router.post("/")
-async def reception_data(data: SchemeJson):
+async def params_data(data: SchemeJson, vvk_id: int):
     print(type(data.model_dump()))
     # return {"message": "OK"}
-    url_PC_AF = f"{PC_AF_PROTOCOL}://{PC_AF_IP}:{PC_AF_PORT}/{PC_AF_PATH}"
+    url_PC_AF = f"{PC_AF_PROTOCOL}://{PC_AF_IP}:{PC_AF_PORT}/{PC_AF_PATH}?vvk_id={vvk_id}"
     return RedirectResponse(url=url_PC_AF)
 
 
-@router.post("/2/")
-async def reception_data2(data: SchemeJson):
-    print("++" * 10)
-    return {"message": "OK"}
+@router.get("/")
+def hi():
+    return ({"message": "ok"})

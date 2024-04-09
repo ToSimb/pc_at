@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 
-from reception.router import router as router_reception
+from params.router import router as router_reception
 
 app = FastAPI(
     title="PC AT"
