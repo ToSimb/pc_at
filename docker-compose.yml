@@ -1,0 +1,13 @@
+version: "3.7"
+
+services:
+  app:
+    build:
+      dockerfile: ./Dockerfile
+    container_name: pc_at
+    command: ["/fastapi/docker/app.sh"]
+    ports:
+      - "25002:25002"
+    restart: always
+    env_file:
+      - .env
