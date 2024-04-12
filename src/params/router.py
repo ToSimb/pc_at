@@ -1,3 +1,4 @@
+import os
 from fastapi import APIRouter
 from fastapi.responses import RedirectResponse
 
@@ -21,4 +22,7 @@ async def params_data(data: SchemeJson, vvk_id: int):
 
 @router.get("/")
 def hi():
+    with open('/fastapi/is/myfile.txt', 'a') as f:
+    # Дописываем строку в файл
+        f.write('Новая строка\n')
     return ({"message": "ok"})
