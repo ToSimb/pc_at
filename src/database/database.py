@@ -13,33 +13,8 @@ DB_USER = os.environ.get("DB_USER")
 DB_PASS = os.environ.get("DB_PASS")
 
 class Database:
-    def __init__(self):
-        self.dbname = DB_NAME
-        self.user = DB_USER
-        self.password = DB_PASS
-        self.host = DB_HOST
-        self.port = DB_PORT
-        self.conn = None
-
-
-    def connect(self):
-        try:
-            self.conn = psycopg2.connect(
-                dbname=self.dbname,
-                user=self.user,
-                password=self.password,
-                host=self.host,
-                port=self.port
-            )
-            print("Успешное подключение к БД")
-        except Exception as e:
-            print("Ошибка при подключении к БД:", e)
-
-
-    def disconnect(self):
-        if self.conn is not None:
-            self.conn.close()
-            print("Соединение с БД закрыто") 
+    def __init__(self, conn):
+        self.conn = conn
     
 
     def create_table(self):
@@ -77,22 +52,53 @@ class Database:
                        etmin: bool,
                        comment: str):
         try:
-            cur = self.conn.cursor()
-            sql_insert_data = " INSERT INTO test (scheme_revision, user_query_interval_revision, item_id, metric_id, t, v, etmax, etmin, comment) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s);"
-            cur.execute(sql_insert_data, (scheme_revision, user_query_interval_revision, item_id, metric_id, t, v, etmax, etmin, comment))
-            self.conn.commit()
+            with self.conn.cursor() as curs:
+                sql_insert_data = " INSERT INTO test (scheme_revision, user_query_interval_revision, item_id, metric_id, t, v, etmax, etmin, comment) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s);"
+                curs.execute(sql_insert_data, (scheme_revision, user_query_interval_revision, item_id, metric_id, t, v, etmax, etmin, comment))
+
         except Exception as e:
             print("Ошибка БД - не удалось сделать execute_params:", e)
             return None
 
 
-    def select_data(self):
+    def delete_params(self, one_day_ago_timestamp: int):
         try:
             cur = self.conn.cursor()
-            sql_select_data = "SELECT * FROM test;"
-            cur.execute(sql_select_data)
+            sql_delete_params = f"DELETE FROM test WHERE t < {one_day_ago_timestamp};"
+            cur.execute(sql_delete_params)
+            self.conn.commit()
+        except Exception as e:
+            print("Ошибка БД - не удалось удалить лишние строки:", e)
+            return None
+
+
+    def select_params(self):
+        try:
+            cur = self.conn.cursor()
+            sql_select_params = "SELECT * FROM test;"
+            cur.execute(sql_select_params)
             data = cur.fetchall()
             return data
+        except Exception as e:
+            print("Ошибка при чтении данных из таблицы:", e)
+            return None
+
+
+    def select_params_json(self):
+        try:
+            cur = self.conn.cursor()
+            sql_select_params = "SELECT * FROM test;"
+            cur.execute(sql_select_params)
+            data = cur.fetchall()
+
+            columns = [desc[0] for desc in cur.description]
+            result = []
+            for row in data:
+                result.append(dict(zip(columns, row)))
+
+            #json_data = json.dumps(result)
+            return result
+
         except Exception as e:
             print("Ошибка при чтении данных из таблицы:", e)
             return None

@@ -1,0 +1,87 @@
+{
+	"scheme_revision": 555,
+    "vvk_id": 55,
+    "item_info_list": [
+		{
+			"full_path": "vvk-test-1",
+            "comment": "ТЕСТ Комплекс",
+			"description": "",
+			"item_id": 2,
+			"location": "ТЕСТ Комплекс",
+			"sn": "12341234"
+		}
+	],
+	"item_id_list": [
+		{
+			"full_path": "vvk-test-1",
+			"item_id": 0
+		},
+        {
+			"full_path": "vvk-test-1/cpu[0]",
+			"item_id": 1
+		}
+	],
+	"templates": [
+        {
+			"template_id": "vvk-test-1",
+			"includes": [
+				{
+					"count": 1,
+					"template_id": "cpu"
+				}
+			],
+			"name": "ТЕСТ сервер",
+			"description": "Windows Server 2016"
+		},
+		{
+			"template_id": "cpu",
+			"metrics": [
+				"cpu.freq",
+				"cpu.temp",
+				"cpu.power"
+			],
+			"name": "Процессор ТЕСТ",
+            "description": "Intel(R) Xeon(R) CPU E5620 @2.40GHz"
+		}
+	],
+	"metric_info_list": [
+		{
+			"item_id": 1,
+			"metric_id": "cpu.freq",
+			"user_query_interval": 2
+		},
+        {
+			"item_id": 1,
+			"metric_id": "cpu.temp",
+			"user_query_interval": 2
+		},		
+        {
+			"item_id": 1,
+			"metric_id": "cpu.power",
+			"user_query_interval": 2
+		}
+	],
+	"metrics": [
+		{
+			"dimension": "Hz",
+			"metric_id": "cpu.freq",
+			"name": "Частота ядра",
+			"query_interval": 1,
+			"type": "double"
+		},
+		{
+			"dimension": "C",
+			"metric_id": "cpu.temp",
+			"name": "Температура",
+			"query_interval": 1,
+			"type": "double"
+		},
+		{
+			"dimension": "W",
+			"metric_id": "cpu.power",
+			"name": "Мощность процессора",
+			"query_interval": 1,
+			"type": "integer"
+		}
+	]
+}

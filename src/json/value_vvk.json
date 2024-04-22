@@ -1,0 +1,36 @@
+{
+    "scheme_revision": 555,
+    "user_query_interval_revision": 0,
+    "value": [
+        {
+            "data": [
+                {
+                    "t": 1713356245,
+                    "v": "3096"
+                }
+            ],
+            "item_id": 1,
+            "metric_id": "cpu.freq"
+        },
+        {
+            "data": [
+                {
+                    "t": 1713356245,
+                    "v": "1"
+                }
+            ],
+            "item_id": 1,
+            "metric_id": "cpu.temp"
+        },
+        {
+            "data": [
+                {
+                    "t": 1713356245,
+                    "v": "1"
+                }
+            ],
+            "item_id": 1,
+            "metric_id": "cpu.power"
+        }
+    ]
+}

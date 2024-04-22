@@ -1,9 +1,0 @@
-version: "3.7"
-
-services:
-  app:
-    image: pc_at:latest
-    ports:
-      - "25002:8000"
-    volumes:
-      - ./is:/fastapi/is
