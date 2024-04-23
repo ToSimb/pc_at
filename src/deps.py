@@ -1,4 +1,3 @@
-
 from database.database import Database
 from fastapi import Depends, Request
 

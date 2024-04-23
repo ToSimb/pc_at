@@ -1,22 +1,22 @@
-from typing import Any
-
 from pydantic import BaseModel
 
+from typing import Union
 
-class Id_val(BaseModel):
+class Data(BaseModel):
     t: int
-    v: int
+    v: Union[int, str]
     comment: str = None
     etmax: bool = None
     etmin: bool = None
 
-class Vk_val(BaseModel):
+
+class Value(BaseModel):
     item_id: int
     metric_id: str
-    data: list[Id_val]
-    # data: list[dict[Any, Any]]
+    data: list[Data]
+
 
 class SchemeJson(BaseModel):
     scheme_revision: int
     user_query_interval_revision: int
-    value: list[Vk_val]
+    value: list[Value]
