@@ -1,7 +1,7 @@
 import psycopg2
 
 from config import DB_HOST, DB_PORT, DB_NAME, DB_USER, DB_PASS
-
+from logger.logger import logger
 
 def connect():
     try:
@@ -12,13 +12,13 @@ def connect():
             host=DB_HOST,
             port=DB_PORT
         )
-        print("Успешное подключение к БД")
+        logger.info("Успешное подключение к БД")
         return conn
     except Exception as e:
-        print("Ошибка при подключении к БД:", e)
+        logger.info("Ошибка при подключении к БД:", e)
 
 
 def disconnect(conn):
     if conn is not None:
         conn.close()
-        print("Соединение с БД закрыто") 
+        logger.info("Соединение с БД закрыто")
