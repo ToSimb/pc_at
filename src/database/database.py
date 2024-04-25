@@ -29,7 +29,7 @@ class Database:
             self.conn.commit()
             logger.info("Таблица 'PF' создана")
         except Exception as e:
-            logger.info("Ошибка при создании таблицы 'pf'", e)
+            logger.error("Ошибка при создании таблицы 'pf': %s", e)
 
     def drop_table(self):
         try:
@@ -39,7 +39,7 @@ class Database:
             self.conn.commit()
             logger.info("Таблица 'PF' удалена")
         except Exception as e:
-            logger.info("Ошибка при удалении таблицы 'PF':", e)
+            logger.error("Ошибка при удалении таблицы 'PF': %s", e)
 
     def execute_params(self,
                        vvk_id: int,
@@ -59,7 +59,7 @@ class Database:
                 vvk_id, scheme_revision, user_query_interval_revision, item_id, metric_id, t, v, etmax, etmin, comment))
             self.conn.commit()
         except Exception as e:
-            logger.info("Ошибка БД - не удалось сделать execute_params:", e)
+            logger.error("Ошибка БД - не удалось сделать execute_params: %s", e)
             return None
 
     def delete_params(self, one_day_ago_timestamp: int):
@@ -69,7 +69,7 @@ class Database:
             cur.execute(sql_delete_params)
             self.conn.commit()
         except Exception as e:
-            logger.info("Ошибка БД - не удалось удалить лишние строки:", e)
+            logger.error("Ошибка БД - не удалось удалить лишние строки: %s", e)
             return None
 
     def select_params(self):
@@ -80,7 +80,7 @@ class Database:
             data = cur.fetchall()
             return data
         except Exception as e:
-            logger.info("Ошибка при чтении данных из таблицы:", e)
+            logger.error("Ошибка при чтении данных из таблицы: %s", e)
             return None
 
     def select_params_all_json(self):
@@ -95,7 +95,7 @@ class Database:
                 result.append(dict(zip(columns, row)))
             return result
         except Exception as e:
-            logger.info("Ошибка при чтении данных из таблицы:", e)
+            logger.error("Ошибка при чтении данных из таблицы: %s", e)
             return None
 
     def select_params_json(self, int_limit: int = 30000):
@@ -110,7 +110,7 @@ class Database:
                 result.append(dict(zip(columns, row)))
             return result
         except Exception as e:
-            logger.info("Ошибка при чтении данных из таблицы:", e)
+            logger.error("Ошибка при чтении данных из таблицы: %s", e)
             return None
 
     def update_sent_status(self, id_list):
@@ -122,7 +122,7 @@ class Database:
             cur.execute(sql_update_params, (id_tuple,))
             self.conn.commit()
         except Exception as e:
-            logger.info("Ошибка БД - не удалось обноовить строки:", e)
+            logger.error("Ошибка БД - не удалось обноовить строки: %s", e)
             return None
 
     def count_cent_false(self):
@@ -133,7 +133,7 @@ class Database:
             remaining_rows = cur.fetchone()[0]
             return remaining_rows
         except Exception as e:
-            logger.info("Ошибка при подсчете оставшихся строк в таблице:", e)
+            logger.error("Ошибка при подсчете оставшихся строк в таблице: %s", e)
             return None
 
     def count_all(self):
@@ -144,5 +144,5 @@ class Database:
             remaining_rows = cur.fetchone()[0]
             return remaining_rows
         except Exception as e:
-            logger.info("Ошибка при подсчете строк в таблице:", e)
+            logger.error("Ошибка при подсчете строк в таблице: %s", e)
             return None

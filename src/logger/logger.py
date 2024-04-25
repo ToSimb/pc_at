@@ -2,7 +2,7 @@ import logging
 from logging.handlers import RotatingFileHandler
 
 def setup_logger():
-    logger = logging.getLogger('TransferJsonLogger')
+    logger = logging.getLogger('PC_AT')
     logger.setLevel(logging.DEBUG)
     formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
     file_handler = RotatingFileHandler('logger/transfer_json.log', maxBytes=30000, backupCount=2)
