@@ -1,8 +1,9 @@
 from fastapi import FastAPI
+from contextlib import asynccontextmanager
 from postgres import connect, disconnect
 
-from contextlib import asynccontextmanager
-from params.router import router as router_reception
+from params.router import router as router_params
+from registration.router import router as router_registration
 
 from logger.log_meddlewary import LogMiddleware
 
@@ -24,4 +25,5 @@ def get_application() -> FastAPI:
 app = get_application() 
 app.add_middleware(LogMiddleware)
 
-app.include_router(router_reception)
+app.include_router(router_params)
+app.include_router(router_registration)
