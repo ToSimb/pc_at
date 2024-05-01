@@ -4,6 +4,7 @@ from postgres import connect, disconnect
 from contextlib import asynccontextmanager
 from params.router import router as router_reception
 
+from logger.log_meddlewary import LogMiddleware
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -21,6 +22,6 @@ def get_application() -> FastAPI:
 
 
 app = get_application() 
-
+app.add_middleware(LogMiddleware)
 
 app.include_router(router_reception)
