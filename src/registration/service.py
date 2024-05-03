@@ -37,7 +37,6 @@ def create_json_vvk(json_join_scheme: dict):
     # Записываем JoinScheme в фал
     with open("registration/json/join_scheme.json", 'w', encoding='utf-8') as file:
         fcntl.flock(file.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
-        time.sleep(10)
         # Формируем структуру VvkScheme
         json_vvk_return = {
             "scheme_revision": json_join_scheme["scheme_revision"],
@@ -228,7 +227,7 @@ def add_json_vvk(json_agent_scheme: dict, agent_reg_id: str):
             "item_id_list": json_agent_list
         }
 
-        name_json = "registration/json/agent_" + index + ".json"
+        name_json = "registration/json/agent_" + str(index) + ".json"
         with open(name_json, 'w', encoding='utf-8') as file1:
             json.dump(json_agent_return, file1, ensure_ascii=False)
 

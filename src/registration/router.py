@@ -36,7 +36,7 @@ def join_scheme(json_join_scheme: dict):
         logger.error(f"Файл занят другим процессом. Повторите попытку позже. {e}")
         raise HTTPException(status_code=527, detail=f"error: Файл занят другим процессом. Повторите попытку позже. {e}")
 
-@router.post("/")
+@router.post("")
 def join_scheme(json_agent_scheme: dict, agent_reg_id: str = None, agent_id: int = None):
     """
     Метод для регистрации агентов
@@ -89,7 +89,7 @@ async def return_scheme():
     try:
         with open("registration/json/vvk_scheme.json", "r") as json_file:
             data = json.load(json_file)
-
+            # url = f'http://192.168.123.54:25002/vvk-scheme'
             url = f'http://127.0.0.1:8000/agent-scheme/save'
             temp = save_json_vvk(url, data)
             return temp

@@ -1,10 +1,8 @@
 from pydantic import BaseModel
 
-from typing import Union
-
 class Data(BaseModel):
     t: int
-    v: Union[int, str]
+    v: str
     comment: str = None
     etmax: bool = None
     etmin: bool = None
