@@ -1,13 +1,12 @@
 import json
 import os
 
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status
+from deps import get_db_repo
 
 from logger.logger import logger
 from registration.service import create_json_vvk, add_json_vvk, save_json_vvk
-
-from config import PC_AF_PROTOCOL, PC_AF_IP, PC_AF_PORT, PC_AF_PATH
-from .schemas import JoinScheme
+from registration.schemas import JoinScheme
 
 router = APIRouter(
     prefix="/agent-scheme",
@@ -16,19 +15,20 @@ router = APIRouter(
 
 
 @router.post("/join-scheme")
-def join_scheme(json_join_scheme: dict):
+def join_scheme(join_scheme: dict, db=Depends(get_db_repo)):
     """
     Метод для звгрузки JionScheme
     """
     try:
-        create_json_vvk(json_join_scheme)
+
+
+
+
+        create_json_vvk(join_scheme, db)
         return ("Схема сохранена")
     except KeyError as e:
         logger.error(f"Ошибка KeyError: {e}. Не удалось найти ключ в словаре.")
         raise HTTPException(status_code=status.HTTP_426_UPGRADE_REQUIRED, detail=f"error: Ошибка KeyError: {e}. Не удалось найти ключ в словаре.")
-    except FileNotFoundError as e:
-        logger.error(f"Ошибка FileNotFoundError: {e}. Не удалось найти или открыть файл.")
-        raise HTTPException(status_code=527, detail=f"error: Ошибка FileNotFoundError: {e}. Не удалось найти или открыть файл.")
     except BlockingIOError as e:
         logger.error(f"Файл занят другим процессом. Повторите попытку позже. {e}")
         raise HTTPException(status_code=527, detail=f"error: Файл занят другим процессом. Повторите попытку позже. {e}")
@@ -36,8 +36,23 @@ def join_scheme(json_join_scheme: dict):
         logger.error(f"Файл занят другим процессом. Повторите попытку позже. {e}")
         raise HTTPException(status_code=527, detail=f"error: Файл занят другим процессом. Повторите попытку позже. {e}")
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 @router.post("")
-def join_scheme(json_agent_scheme: dict, agent_reg_id: str = None, agent_id: int = None):
+def join_scheme(json_agent_scheme: JoinScheme, agent_reg_id: str = None, agent_id: int = None, db=Depends(get_db_repo)):
     """
     Метод для регистрации агентов
     """
@@ -66,6 +81,7 @@ def join_scheme(json_agent_scheme: dict, agent_reg_id: str = None, agent_id: int
         logger.error(f"Файл занят другим процессом. Повторите попытку позже. {e}")
         raise HTTPException(status_code=527, detail=f"error: Файл занят другим процессом. Повторите попытку позже. {e}")
 
+
 @router.get("/return-scheme")
 async def return_scheme():
     """
@@ -78,7 +94,6 @@ async def return_scheme():
     except FileNotFoundError:
         logger.error("VvkScheme нет")
         return ("VvkScheme нет")
-
 
 
 @router.get("/reg-scheme")
@@ -101,6 +116,7 @@ async def return_scheme():
         logger.error("VvkScheme нет")
         return ("VvkScheme нет")
 
+
 @router.post("/save")
 async def return_scheme(vvk_scheme: dict):
     """
@@ -114,6 +130,7 @@ async def return_scheme(vvk_scheme: dict):
         "user_query_interval_revision": 0
     }
     return return_scheme
+
 
 @router.get("/delete")
 async def return_scheme():

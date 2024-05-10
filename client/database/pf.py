@@ -44,9 +44,9 @@ class Pf:
 
     def pf_executemany_params(self, data) -> bool:
         try:
-            with self.conn.cursor() as curs:
-                sql_insert_data = " INSERT INTO pf (item_id, metric_id, t, v, etmax, etmin, comment) VALUES (%s,%s,%s,%s,%s,%s,%s);"
-                curs.executemany(sql_insert_data, data)
+            with self.conn.cursor() as cur:
+                sql_insert_data = "INSERT INTO pf (item_id, metric_id, t, v, etmax, etmin, comment) VALUES (%s,%s,%s,%s,%s,%s,%s);"
+                cur.executemany(sql_insert_data, data)
             self.conn.commit()
             return True
         except Exception as e:
@@ -63,7 +63,7 @@ class Pf:
             return deleted_rows
         except Exception as e:
             logger.error("DB(pf): ошибка удаления строк: %s", e)
-            return False
+            raise e
 
     def pf_select_params_json(self,  int_limit: int = 20000):
         try:

@@ -33,7 +33,7 @@ def agents(agent_reg_id: str):
             json.dump(agents, file1, ensure_ascii=False)
         return 1
 
-def create_json_vvk(json_join_scheme: dict):
+def create_json_vvk1(json_join_scheme: dict):
     # Записываем JoinScheme в фал
     with open("registration/json/join_scheme.json", 'w', encoding='utf-8') as file:
         fcntl.flock(file.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
@@ -253,6 +253,40 @@ def save_json_vvk(url: str, json_vvk_return: dict):
     except requests.RequestException as e:
         logger.error(f"Произошла ошибка при регистрации: {e}")
         raise ValueError(e)
+
+# ___________ работа только с БД _________
+
+def create_json_vvk(join_scheme, db):
+    # Формируем структуру VvkScheme
+    json_vvk_return = {
+        "scheme_revision": join_scheme["scheme_revision"],
+        "scheme": {
+            "metrics": [],
+            "templates": join_scheme["scheme"]["templates"],
+            "item_id_list": [],
+            "item_info_list": join_scheme["scheme"]["item_info_list"]
+        }
+    }
+    # Создаем пустой список и индекс для формирования item_id_list
+    item_id_list = []
+    index = 0
+    # формирования списка с item_id_list
+    for a in join_scheme["scheme"]["item_id_list"]:
+        item_id_list.append({"full_path": a["full_path"], "item_id": index})
+        index += 1
+    # Добавление item_id_list в json
+    json_vvk_return["scheme"]["item_id_list"] = item_id_list
+
+    # GUI
+    vvk_puth = join_scheme["scheme"]["item_id_list"][0]["full_path"].split("/")[0]
+    vvk_name = [item for item in join_scheme["scheme"]["templates"] if item.get('template_id') == vvk_puth][0]["name"]
+    agent_reg_id = [item["agent_reg_id"] for item in join_scheme["scheme"]["join_list"]]
+
+    db.gui_delete()
+    db.gui_execute_join_scheme(vvk_name, agent_reg_id)
+
+    # REG_SCH
+    db.reg_sch_execute_join_scheme(join_scheme["scheme_revision"], join_scheme["scheme"])
 
 
 

@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from typing import Any, List
+from typing import Any, List, Optional
 
 
 class JoinValue(BaseModel):
@@ -12,3 +12,4 @@ class JoinValue(BaseModel):
 class JoinScheme(BaseModel):
     scheme_revision: int
     scheme: list[JoinValue]
+    metric_info_list: Optional[List[Any]] = None
