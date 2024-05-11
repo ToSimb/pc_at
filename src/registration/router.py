@@ -6,7 +6,7 @@ from deps import get_db_repo
 
 from logger.logger import logger
 from registration.service import create_json_vvk, add_json_vvk, save_json_vvk
-from registration.schemas import JoinScheme
+from registration.schemas import AgentScheme
 
 router = APIRouter(
     prefix="/agent-scheme",
@@ -17,69 +17,94 @@ router = APIRouter(
 @router.post("/join-scheme")
 def join_scheme(join_scheme: dict, db=Depends(get_db_repo)):
     """
-    Метод для звгрузки JionScheme
+    Метод для загрузки JionScheme
     """
     try:
-
-
-
-
         create_json_vvk(join_scheme, db)
         return ("Схема сохранена")
     except KeyError as e:
         logger.error(f"Ошибка KeyError: {e}. Не удалось найти ключ в словаре.")
         raise HTTPException(status_code=status.HTTP_426_UPGRADE_REQUIRED, detail=f"error: Ошибка KeyError: {e}. Не удалось найти ключ в словаре.")
-    except BlockingIOError as e:
-        logger.error(f"Файл занят другим процессом. Повторите попытку позже. {e}")
-        raise HTTPException(status_code=527, detail=f"error: Файл занят другим процессом. Повторите попытку позже. {e}")
-    except IOError as e:
-        logger.error(f"Файл занят другим процессом. Повторите попытку позже. {e}")
-        raise HTTPException(status_code=527, detail=f"error: Файл занят другим процессом. Повторите попытку позже. {e}")
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    except BlockingIOError:
+        logger.error(f"VvkScheme занят другим процессом. Повторите попытку позже")
+        raise HTTPException(status_code=527, detail=f"VvkScheme занят другим процессом. Повторите попытку позже")
+    except Exception as e:
+        raise HTTPException(status_code=527, detail=f"Exception: {e}.")
 
 
 @router.post("")
-def join_scheme(json_agent_scheme: JoinScheme, agent_reg_id: str = None, agent_id: int = None, db=Depends(get_db_repo)):
+def join_scheme(agent_scheme: AgentScheme, agent_id: int = None, agent_reg_id: str = None, db=Depends(get_db_repo)):
     """
     Метод для регистрации агентов
     """
+    original_agent_scheme = {
+        "scheme_revision": agent_scheme.scheme_revision,
+        "scheme": {
+            "metrics": agent_scheme.scheme.metrics,
+            "templates": agent_scheme.scheme.templates,
+            "item_id_list": agent_scheme.scheme.item_id_list,
+            "join_id_list": agent_scheme.scheme.join_id_list,
+            "item_info_list": agent_scheme.scheme.item_info_list
+        }
+    }
     try:
-        if agent_reg_id:
-            agent_scheme_return = add_json_vvk(json_agent_scheme, agent_reg_id)
-            return agent_scheme_return
-        elif agent_id:
-            print("Переригистрация")
+        agent_ids, agents_reg_ids = db.gui_select_agents_reg()
+        if len(agents_reg_ids) == 0:
+            raise HTTPException(status_code=527, detail=f"error: Не загрежена JoinScheme.")
+        if agent_id:
+            if agent_id in agents_reg_ids:
+                return ("метод перерегистрации еще не сделан!!")
+            else:
+                error_str = f"Не такого '{agent_id}' agent_id в JoinScheme."
+                logger.error(error_str)
+                raise HTTPException(status_code=427, detail=error_str)
+        elif agent_reg_id:
+            if agent_reg_id in agents_reg_ids:
+                agent_scheme_return = add_json_vvk(original_agent_scheme, agent_reg_id, db)
+                return agent_scheme_return
+            else:
+                error_str = f"Не такого '{agent_reg_id}' agent_reg_id в JoinScheme."
+                logger.error(error_str)
+                raise HTTPException(status_code=427, detail=error_str)
         else:
-            logger.error("Не указаны нужные параметры для регистрации схемы агента.")
-            raise HTTPException(status_code=427, detail=f"error: Не указаны нужные параметры.")
+            error_str = "Не указаны нужные параметры для регистрации схемы агента."
+            logger.error(error_str)
+            raise HTTPException(status_code=427, detail=error_str)
     except KeyError as e:
-        logger.error(f"Ошибка KeyError: {e}. Не удалось найти ключ в словаре.")
-        raise HTTPException(status_code=status.HTTP_426_UPGRADE_REQUIRED, detail=f"error: Ошибка KeyError: {e}. Не удалось найти ключ в словаре.")
+        error_str = f"Ошибка KeyError: {e}. Не удалось найти ключ в словаре."
+        logger.error(error_str)
+        db.gut_registration_agent(None, agent_reg_id, False, error_str)
+        db.reg_sch_block_false()
+        raise HTTPException(status_code=status.HTTP_426_UPGRADE_REQUIRED, detail=error_str)
     except ValueError as e:
-        logger.error(f"Ошибка ValueError: {e}.")
-        raise HTTPException(status_code=status.HTTP_426_UPGRADE_REQUIRED, detail=f"error: Ошибка ValueError: {e}.")
-    except FileNotFoundError as e:
-        logger.error(f"Ошибка FileNotFoundError: {e}. Не удалось найти или открыть файл.")
-        raise HTTPException(status_code=527, detail=f"error: Ошибка FileNotFoundError: {e}. Не удалось найти или открыть файл.")
-    except BlockingIOError as e:
-        logger.error(f"Файл занят другим процессом. Повторите попытку позже. {e}")
-        raise HTTPException(status_code=527, detail=f"error: Файл занят другим процессом. Повторите попытку позже. {e}")
-    except IOError as e:
-        logger.error(f"Файл занят другим процессом. Повторите попытку позже. {e}")
-        raise HTTPException(status_code=527, detail=f"error: Файл занят другим процессом. Повторите попытку позже. {e}")
+        error_str = f"Ошибка ValueError: {e}."
+        logger.error(error_str)
+        db.gut_registration_agent(None, agent_reg_id, False, error_str)
+        db.reg_sch_block_false()
+        raise HTTPException(status_code=status.HTTP_426_UPGRADE_REQUIRED, detail=error_str)
+    except BlockingIOError:
+        error_str = f"VvkScheme занят другим процессом. Повторите попытку позже"
+        logger.error(error_str)
+        db.gut_registration_agent(None, agent_reg_id, False, error_str)
+        raise HTTPException(status_code=527, detail=error_str)
+    except Exception as e:
+        error_str = f"Exception: {e}."
+        logger.error(error_str)
+        db.gut_registration_agent(None, agent_reg_id, False, error_str)
+        db.reg_sch_block_false()
+        raise HTTPException(status_code=527, detail=error_str)
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 @router.get("/return-scheme")

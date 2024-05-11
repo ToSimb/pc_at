@@ -1,3 +1,5 @@
+import datetime
+
 from logger.logger import logger
 
 class Gui:
@@ -17,7 +19,7 @@ class Gui:
                     agent_reg_id VARCHAR(20),
                     status_reg BOOLEAN,
                     time_reg TIMESTAMP,
-                    error_reg VARCHAR(100),
+                    error_reg VARCHAR(200),
                     time_conn TIMESTAMP,
                     time_value TIMESTAMP
                 );
@@ -36,19 +38,19 @@ class Gui:
             sql_delete_params = f"DELETE FROM gui;"
             cur.execute(sql_delete_params)
             self.conn.commit()
-            logger.info("DB(gui): таблица очищена>")
+            logger.info("DB(gui): таблица очищена")
             return True
         except Exception as e:
             logger.error("DB(gui): ошибка удаления строк: %s", e)
             raise e
 
-    def gui_execute_join_scheme(self, vvk_name: str, agent_reg_id: list):
+    def gui_registration_join_scheme(self, vvk_name: str, agent_reg_id: list):
         try:
             cur = self.conn.cursor()
-            sql_create_vkk_id = "INSERT INTO gui (vvk_name, type_id) VALUES (%s,%s);"
-            cur.execute(sql_create_vkk_id, (vvk_name, False))
-            sql_create_vkk_id = "INSERT INTO gui (agent_reg_id) VALUES (%s);"
-            cur.executemany(sql_create_vkk_id, [(agent_id,) for agent_id in agent_reg_id])
+            sql_create = "INSERT INTO gui (vvk_name, type_id) VALUES (%s,%s);"
+            cur.execute(sql_create, (vvk_name, False))
+            sql_create = "INSERT INTO gui (agent_reg_id) VALUES (%s);"
+            cur.executemany(sql_create, [(agent_id,) for agent_id in agent_reg_id])
             self.conn.commit()
             logger.info("DB(gui): JoinScheme загружена")
             return True
@@ -56,7 +58,34 @@ class Gui:
             logger.error("DB(gui): ошибка загрузки JoinScheme: %s", e)
             raise e
 
-    def gui_drop_table(self):
+    def gui_select_agents_reg(self) -> tuple:
+        try:
+            cur = self.conn.cursor()
+            sql_select_agent_reg_id = "SELECT number_id, agent_reg_id FROM gui WHERE type_id = TRUE;"
+            cur.execute(sql_select_agent_reg_id)
+            rows = cur.fetchall()
+            number_id = [row[0] for row in rows if row[0] is not None]
+            agent_reg_id = [row[1] for row in rows]
+            self.conn.commit()
+            return number_id, agent_reg_id
+        except Exception as e:
+            logger.error("DB(gui): ошибка получения agent_reg_id: %s", e)
+            raise e
+
+    def gut_registration_agent(self, agent_id: int, agent_reg_id: str, status_reg: bool, error_reg: str) -> bool:
+        try:
+            time_reg = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            cur = self.conn.cursor()
+            sql_update_gui = "UPDATE gui SET number_id = %s, status_reg = %s, time_reg = %s, error_reg = %s WHERE agent_reg_id = %s;"
+            cur.execute(sql_update_gui, (agent_id, status_reg, time_reg, error_reg, agent_reg_id))
+            self.conn.commit()
+            logger.info(f"DB(gui): agent_reg_id '{agent_reg_id}' статус изменен: {status_reg}")
+            return True
+        except Exception as e:
+            logger.error("DB(gui): ошибка регистации agent_reg_id %s : %s", agent_reg_id, e)
+            raise e
+
+    def gui_drop_table(self) -> bool:
         try:
             cur = self.conn.cursor()
             sql_drop_table = "DROP TABLE IF EXISTS gui;"

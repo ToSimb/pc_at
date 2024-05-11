@@ -2,14 +2,15 @@ from pydantic import BaseModel
 from typing import Any, List, Optional
 
 
-class JoinValue(BaseModel):
+class AgentSchemeValue(BaseModel):
+    metrics: List[Any]
     templates: List[Any]
     item_id_list: List[Any]
+    join_id_list: List[Any]
     item_info_list: List[Any]
-    join_list: List[Any]
 
 
-class JoinScheme(BaseModel):
+class AgentScheme(BaseModel):
     scheme_revision: int
-    scheme: list[JoinValue]
+    scheme: AgentSchemeValue
     metric_info_list: Optional[List[Any]] = None

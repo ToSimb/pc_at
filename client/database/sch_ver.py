@@ -15,6 +15,7 @@ class Sch_ver:
                     scheme_revision INT,
                     user_query_interval_revision INT,
                     date_create INT,
+                    t3 INT,
                     status_reg BOOLEAN
                 );
             """
