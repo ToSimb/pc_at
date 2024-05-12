@@ -115,16 +115,18 @@ class Gui:
             logger.error("DB(gui): ошибка регистации vvk_id %s : %s", vvk_id, e)
             raise e
 
-    def gui_params_reg_value(self, agent_id: int, error_value: str) -> bool:
+    def gui_params_reg_value(self, agent_id: int, error_value: str, type_id: bool) -> bool:
         try:
+            print("asASD", type_id)
             time_reg = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             cur = self.conn.cursor()
-            sql_update_gui = "UPDATE gui SET time_value = %s, error_value = %s WHERE number_id = %s;"
-            cur.execute(sql_update_gui, (time_reg, error_value, agent_id))
+            sql_update_gui = "UPDATE gui SET time_value = %s, error_value = %s WHERE number_id = %s AND type_id = %s;"
+            cur.execute(sql_update_gui, (time_reg, error_value, agent_id, type_id))
             self.conn.commit()
             if error_value:
                 logger.error(f"DB(gui): ошибка приема ПФ agent_id '{agent_id}': {error_value}")
             return True
         except Exception as e:
+            self.conn.rollback()
             logger.error("DB(gui): ошибка работы БД при вызове gui_params_reg_value: %s", e)
             raise e

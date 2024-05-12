@@ -16,6 +16,7 @@ def add_params(params, agent_id: int, metric: list, db) -> bool:
     db.pf_executemany_params(pf)
     end_time = time.time()
     execution_time = end_time - start_time
-    db.gui_params_reg_value(agent_id, None)
+    print ("asdasds11111")
+    db.gui_params_reg_value(agent_id, None, True)
     logger.info(f"Сохранение в бд ({agent_id}:{params.scheme_revision}:{params.user_query_interval_revision}) "
                 f"count: {len(pf)} time: {execution_time} ")

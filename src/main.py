@@ -4,6 +4,7 @@ from postgres import connect, disconnect
 
 from params.router import router as router_params
 from registration.router import router as router_registration
+from gui.router import router as router_gui
 
 from logger.log_meddlewary import LogMiddleware
 
@@ -27,3 +28,4 @@ app.add_middleware(LogMiddleware)
 
 app.include_router(router_params)
 app.include_router(router_registration)
+app.include_router(router_gui)

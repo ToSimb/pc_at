@@ -98,17 +98,6 @@ def join_scheme(agent_scheme: AgentScheme, agent_id: int = None, agent_reg_id: s
         raise HTTPException(status_code=527, detail=error_str)
 
 
-@router.get("/return-scheme")
-async def return_scheme(db=Depends(get_db_repo)):
-    """
-    Метод для просмотра всего VvkScheme
-    """
-    return db.reg_sch_select_full_vvk()
-
-
-
-
-
 @router.get("/reg-scheme")
 async def return_scheme(db=Depends(get_db_repo)):
     """

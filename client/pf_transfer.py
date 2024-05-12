@@ -6,6 +6,7 @@ import sys
 
 from database.pf import Pf
 from database.sch_ver import Sch_ver
+from database.gui import Gui
 from database.postgres import connect, disconnect
 from logger.logger import logger
 from config import PC_AF_PROTOCOL, PC_AF_IP, PC_AF_PORT
@@ -77,8 +78,11 @@ signal.signal(signal.SIGTERM, signal_handler)
 signal.signal(signal.SIGINT, signal_handler)
 
 conn = connect()
+db_gui = Gui(conn)
 db_pf = Pf(conn)
 db_sch = Sch_ver(conn)
+
+vvk_id = None
 
 try:
     while True:
@@ -87,7 +91,6 @@ try:
         result_id, value = parse_value(params)
 
         vvk_id, scheme_revision, user_query_interval_revision, t3 = db_sch.sch_ver_select_vvk_scheme()
-
         t3 = t3 if t3 is not None else 20
 
         if vvk_id:
@@ -100,8 +103,9 @@ try:
             point1_time = time.time()
             if requestjson(result, vvk_id):
                 updated_rows = db_pf.pf_update_sent_status(result_id)
+                db_gui.gui_params_reg_value(vvk_id, None, False)
                 logger.info("DB(pf): изменено строк (true): %d | ОСТАЛОСЬ в БД: %d", updated_rows, db_pf.pf_count_cent_false())
-
+            end_time = time.time()
             logger.info("Время формирование ПФ: %.4f | время отправки: %.4f", point1_time-start_time, end_time-point1_time )
         else:
             logger.info("Нет зарегестрированного ВВК")
@@ -112,6 +116,9 @@ try:
 
 
 except Exception as e:
-    logger.error("Произошла ошибка: %s", e)
+    error_str = str(e)
+    if vvk_id:
+        db_gui.gui_params_reg_value(vvk_id, error_str, False)
+    logger.error("Произошла ошибка: %s", error_str)
     disconnect(conn)
     sys.exit(1)

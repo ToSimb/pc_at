@@ -47,14 +47,14 @@ async def params_data(params: SchemeJson, agent_id: int, db=Depends(get_db_repo)
 
     except KeyError as e:
         error_str = f"Ошибка KeyError: {e}. Не удалось найти ключ в словаре."
-        db.gui_params_reg_value(agent_id, error_str)
+        db.gui_params_reg_value(agent_id, error_str, True)
         raise HTTPException(status_code=527, detail=error_str)
     except ValueError as e:
         error_str = f"Ошибка ValueError: {e}."
-        db.gui_params_reg_value(agent_id, error_str)
+        db.gui_params_reg_value(agent_id, error_str, True)
         raise HTTPException(status_code=527, detail=error_str)
     except Exception as e:
         error_str = f"Exception: {e}"
-        db.gui_params_reg_value(agent_id, error_str)
+        db.gui_params_reg_value(agent_id, error_str, True)
         raise HTTPException(status_code=527, detail=error_str)
 
