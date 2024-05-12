@@ -1,0 +1,21 @@
+<html>
+<head>
+    <title>GUI</title>
+    <link href="{{ url_for('static', path='/styles.css') }}" rel="stylesheet">
+</head>
+<body>
+    <header class="header">
+        <div class="container">
+            {% if vvk %}
+                <div>{{vvk}}</div>
+                {% for item in agents %}
+                    <div>{{item}}</div>
+
+                {% endfor %}
+            {% else %}
+                <h1> Нет зарегистрированной JoinScheme</h1>
+            {% endif %}
+        </div>
+    </header>
+</body>
+</html>

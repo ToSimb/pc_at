@@ -1,0 +1,15 @@
+:root {
+  --default-fs: 16px;
+  --default-lh: 20px;
+
+  --container-width: 1200px;
+  --container-padding: 50px;
+
+
+  --color-green: #97EE3F;
+  --color-white: #FFF;
+  --color-black: #000;
+  --color-gray: #666;
+  --color-gray-light: #CACACA;
+  --color-dark-light: #414141;
+}
