@@ -5,6 +5,7 @@ import signal
 import sys
 
 from database.pf import Pf
+from database.sch_ver import Sch_ver
 from database.postgres import connect, disconnect
 from logger.logger import logger
 from config import PC_AF_PROTOCOL, PC_AF_IP, PC_AF_PORT
@@ -29,7 +30,8 @@ def requestjson(final_result, vvk_id):
         else:
             logger.error(f"Произошла ошибка: {response.status_code}")
             logger.error(f"Произошла ошибка: {response.text}")
-            return False
+            error_str = str(response.status_code) + " : " + str(response.text)
+            raise Exception(error_str)
     except requests.RequestException as e:
         logger.error(f"Произошла ошибка при отправке запроса: {e}")
         return False
@@ -76,6 +78,7 @@ signal.signal(signal.SIGINT, signal_handler)
 
 conn = connect()
 db_pf = Pf(conn)
+db_sch = Sch_ver(conn)
 
 try:
     while True:
@@ -83,20 +86,29 @@ try:
         params = db_pf.pf_select_params_json(20000)
         result_id, value = parse_value(params)
 
-        result = {
-            "vvk_id": 0,
-            "scheme_revision": 0,
-            "user_query_interval_revision": 0,
-            "value": value
-        }
-        point1_time = time.time()
-        if requestjson(result, 0):
-            updated_rows = db_pf.pf_update_sent_status(result_id)
-            logger.info("DB(pf): изменено строк (true): %d | ОСТАЛОСЬ в БД: %d", updated_rows, db_pf.pf_count_cent_false())
+        vvk_id, scheme_revision, user_query_interval_revision, t3 = db_sch.sch_ver_select_vvk_scheme()
+
+        t3 = t3 if t3 is not None else 20
+
+        if vvk_id:
+            result = {
+                "vvk_id": vvk_id,
+                "scheme_revision": scheme_revision,
+                "user_query_interval_revision": user_query_interval_revision,
+                "value": value
+            }
+            point1_time = time.time()
+            if requestjson(result, vvk_id):
+                updated_rows = db_pf.pf_update_sent_status(result_id)
+                logger.info("DB(pf): изменено строк (true): %d | ОСТАЛОСЬ в БД: %d", updated_rows, db_pf.pf_count_cent_false())
+
+            logger.info("Время формирование ПФ: %.4f | время отправки: %.4f", point1_time-start_time, end_time-point1_time )
+        else:
+            logger.info("Нет зарегестрированного ВВК")
         end_time = time.time()
-        logger.info("Время формирование ПФ: %.4f | время отправки: %.4f", point1_time-start_time, end_time-point1_time )
         print(end_time-start_time)
-        time.sleep(10 - (end_time-start_time))
+
+        time.sleep(t3 - (end_time-start_time))
 
 
 except Exception as e:

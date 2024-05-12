@@ -1,12 +1,14 @@
-import json
-import os
-
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException
 from deps import get_db_repo
 
 from logger.logger import logger
-from registration.service import create_json_vvk, add_json_vvk, save_json_vvk
+from registration.service import create_json_vvk, add_json_vvk, reg_vvk_scheme
 from registration.schemas import AgentScheme
+
+class MyException427(Exception):
+    def __init__(self, message="427:"):
+        self.message = message
+        super().__init__(self.message)
 
 router = APIRouter(
     prefix="/agent-scheme",
@@ -23,11 +25,13 @@ def join_scheme(join_scheme: dict, db=Depends(get_db_repo)):
         create_json_vvk(join_scheme, db)
         return ("Схема сохранена")
     except KeyError as e:
-        logger.error(f"Ошибка KeyError: {e}. Не удалось найти ключ в словаре.")
-        raise HTTPException(status_code=status.HTTP_426_UPGRADE_REQUIRED, detail=f"error: Ошибка KeyError: {e}. Не удалось найти ключ в словаре.")
+        error_str = f"Ошибка KeyError: {e}. Не удалось найти ключ в словаре."
+        logger.error(error_str)
+        raise HTTPException(status_code=527, detail=error_str)
     except BlockingIOError:
-        logger.error(f"VvkScheme занят другим процессом. Повторите попытку позже")
-        raise HTTPException(status_code=527, detail=f"VvkScheme занят другим процессом. Повторите попытку позже")
+        error_str = f"VvkScheme занят другим процессом. Повторите попытку позже"
+        logger.error(error_str)
+        raise HTTPException(status_code=527, detail=error_str)
     except Exception as e:
         raise HTTPException(status_code=527, detail=f"Exception: {e}.")
 
@@ -55,91 +59,75 @@ def join_scheme(agent_scheme: AgentScheme, agent_id: int = None, agent_reg_id: s
             if agent_id in agents_reg_ids:
                 return ("метод перерегистрации еще не сделан!!")
             else:
-                error_str = f"Не такого '{agent_id}' agent_id в JoinScheme."
-                logger.error(error_str)
-                raise HTTPException(status_code=427, detail=error_str)
+                raise MyException427(f"Не такого '{agent_id}' agent_id в JoinScheme.")
         elif agent_reg_id:
             if agent_reg_id in agents_reg_ids:
                 agent_scheme_return = add_json_vvk(original_agent_scheme, agent_reg_id, db)
                 return agent_scheme_return
             else:
-                error_str = f"Не такого '{agent_reg_id}' agent_reg_id в JoinScheme."
-                logger.error(error_str)
-                raise HTTPException(status_code=427, detail=error_str)
+                raise MyException427(f"Не такого '{agent_reg_id}' agent_reg_id в JoinScheme.")
         else:
-            error_str = "Не указаны нужные параметры для регистрации схемы агента."
-            logger.error(error_str)
-            raise HTTPException(status_code=427, detail=error_str)
+            raise MyException427("Не указаны нужные параметры для регистрации схемы агента.")
+    except MyException427 as e:
+        error_str = str(e)
+        logger.error(error_str)
+        raise HTTPException(status_code=427, detail=error_str)
+
     except KeyError as e:
         error_str = f"Ошибка KeyError: {e}. Не удалось найти ключ в словаре."
         logger.error(error_str)
-        db.gut_registration_agent(None, agent_reg_id, False, error_str)
+        db.gui_registration_agent(None, agent_reg_id, False, error_str)
         db.reg_sch_block_false()
-        raise HTTPException(status_code=status.HTTP_426_UPGRADE_REQUIRED, detail=error_str)
+        raise HTTPException(status_code=527, detail=error_str)
     except ValueError as e:
         error_str = f"Ошибка ValueError: {e}."
         logger.error(error_str)
-        db.gut_registration_agent(None, agent_reg_id, False, error_str)
+        db.gui_registration_agent(None, agent_reg_id, False, error_str)
         db.reg_sch_block_false()
-        raise HTTPException(status_code=status.HTTP_426_UPGRADE_REQUIRED, detail=error_str)
+        raise HTTPException(status_code=527, detail=error_str)
     except BlockingIOError:
         error_str = f"VvkScheme занят другим процессом. Повторите попытку позже"
         logger.error(error_str)
-        db.gut_registration_agent(None, agent_reg_id, False, error_str)
+        db.gui_registration_agent(None, agent_reg_id, False, error_str)
         raise HTTPException(status_code=527, detail=error_str)
     except Exception as e:
         error_str = f"Exception: {e}."
         logger.error(error_str)
-        db.gut_registration_agent(None, agent_reg_id, False, error_str)
+        db.gui_registration_agent(None, agent_reg_id, False, error_str)
         db.reg_sch_block_false()
         raise HTTPException(status_code=527, detail=error_str)
 
 
-
-
-
-
-
-
-
-
-
-
-
-
 @router.get("/return-scheme")
-async def return_scheme():
+async def return_scheme(db=Depends(get_db_repo)):
     """
-    Метод для просмотра VvkScheme
+    Метод для просмотра всего VvkScheme
     """
-    try:
-        with open("registration/json/vvk_scheme.json", "r") as json_file:
-            data = json.load(json_file)
-            return data
-    except FileNotFoundError:
-        logger.error("VvkScheme нет")
-        return ("VvkScheme нет")
+    return db.reg_sch_select_full_vvk()
+
+
+
 
 
 @router.get("/reg-scheme")
-async def return_scheme():
+async def return_scheme(db=Depends(get_db_repo)):
     """
     Метод для регистрации VvkSheme (пока что перенаправлен на себя)
     """
     try:
-        with open("registration/json/vvk_scheme.json", "r") as json_file:
-            data = json.load(json_file)
-            # url = f'http://192.168.123.54:25002/vvk-scheme'
-            url = f'http://127.0.0.1:8000/agent-scheme/save'
-            temp = save_json_vvk(url, data)
-            return temp
-
+        return reg_vvk_scheme(db)
+    except BlockingIOError:
+        error_str = f"VvkScheme занят другим процессом. Повторите попытку позже"
+        logger.error(error_str)
+        raise HTTPException(status_code=527, detail=error_str)
     except ValueError as e:
-        return HTTPException(status_code=503, detail=str(e))
-
-    except FileNotFoundError:
-        logger.error("VvkScheme нет")
-        return ("VvkScheme нет")
+        error_str = f"ValueError: {e}."
+        logger.error(error_str)
+        return HTTPException(status_code=503, detail=error_str)
+    except Exception as e:
+        error_str = f"Exception: {e}."
+        logger.error(error_str)
+        raise HTTPException(status_code=527, detail=error_str)
 
 
 @router.post("/save")
@@ -147,23 +135,9 @@ async def return_scheme(vvk_scheme: dict):
     """
     Метод для тестовой регистрации VvkScheme
     """
-    with open("registration/json/save_vvk.json", 'w', encoding='utf-8') as file:
-        json.dump(vvk_scheme, file, ensure_ascii=False)
     return_scheme = {
-        "vvk_id": 1,
+        "vvk_id": 51,
         "scheme_revision": vvk_scheme["scheme_revision"],
         "user_query_interval_revision": 0
     }
     return return_scheme
-
-
-@router.get("/delete")
-async def return_scheme():
-    """
-    Метод для удаления всех схем
-    """
-    for filename in os.listdir("registration/json"):
-        filepath = os.path.join("registration/json", filename)
-        if os.path.isfile(filepath):
-            os.remove(filepath)
-    return ("Все файлы удалены")

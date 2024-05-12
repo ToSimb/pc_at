@@ -7,15 +7,6 @@ import copy
 
 from logger.logger import logger
 
-def open_json(name_file: str):
-    # Открытие JoinAgents
-    with open(name_file, 'r', encoding='utf-8') as file:
-        fcntl.flock(file.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
-        data = file.read()
-        fcntl.flock(file.fileno(), fcntl.LOCK_UN)
-    # Преобразование JSON в словарь
-    json_data = json.loads(data)
-    return json_data
 
 def add_metrics(json_vvk_return_metrics, json_agent_scheme_metrics):
     metrics_list = []
@@ -50,158 +41,19 @@ def add_templates(json_vvk_return_templates, json_agent_scheme_templates):
             templates_list.append(item)
     return templates_list
 
-def add_json_vvk1(json_agent_scheme: dict, agent_reg_id: str):
-    json_join_scheme = open_json("registration/json/join_scheme.json")
-    with open("registration/json/vvk_scheme.json", 'r+', encoding='utf-8') as file:
-        fcntl.flock(file.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
-        json_vvk_return = json.load(file)
-
-
-        json_agent_list = []
-        agent_found = False
-        for join_list in json_join_scheme["scheme"]["join_list"]:
-            if agent_reg_id == join_list["agent_reg_id"]:
-                agent_found = True
-                # если тип подключения jtInclude
-                if join_list["join_type"] == "jtInclude":
-                    try:
-                        # проверка и добавление metrics
-                        json_vvk_return['scheme']['metrics'] = add_metrics(json_vvk_return['scheme']['metrics'],
-                                                                       json_agent_scheme['scheme']['metrics'])
-                        # проверка и добавление templates
-                        json_vvk_return['scheme']['templates'] = add_templates(json_vvk_return['scheme']['templates'],
-                                                                           json_agent_scheme['scheme']['templates'])
-                    except ValueError as e:
-                        print(e)
-                        raise ValueError(e)
-
-                    # поиск самого большого item_id
-                    if json_vvk_return["scheme"]["item_id_list"]:
-                        index = max(
-                            item['item_id'] for item in json_vvk_return["scheme"]["item_id_list"] if 'item_id' in item)
-                    else:
-                        index = 0
-                    # Формирование нового item_id_list
-                    for a in json_agent_scheme["scheme"]["item_id_list"]:
-                        index += 1
-                        a["full_path"] = join_list["join_item_full_path"] + '/' + a["full_path"]
-                        a["item_id"] = index
-                        for existing_item in json_vvk_return["scheme"]["item_id_list"]:
-                            if existing_item["full_path"] == a["full_path"]:
-                                existing_item["item_id"] = a["item_id"]
-                                break
-                        else:
-                            json_vvk_return["scheme"]["item_id_list"].append(a)
-                        json_agent_list.append(a)
-                    # Формирование нового item_info_list
-                    for a in json_agent_scheme["scheme"]["item_info_list"]:
-                        a["full_path"] = join_list["join_item_full_path"] + '/' + a["full_path"]
-                        b = next(
-                            (b for b in json_vvk_return["scheme"]["item_info_list"] if
-                             b["full_path"] == a["full_path"]),
-                            None)
-                        if b:
-                            b.update(a)
-                        else:
-                            json_vvk_return["scheme"]["item_info_list"].append(a)
-
-                # если тип подключения jtExclude
-                if join_list["join_type"] == "jtAssign":
-                    # проверка и добавление metrics
-                    json_vvk_return['scheme']['metrics'] = add_metrics(json_vvk_return['scheme']['metrics'],
-                                                                       json_agent_scheme['scheme']['metrics'])
-                    # проверка и добавление templates
-                    json_vvk_return['scheme']['templates'] = add_templates(json_vvk_return['scheme']['templates'],
-                                                                           json_agent_scheme['scheme']['templates'])
-
-                    if len(join_list["joins"]) != len(json_agent_scheme["scheme"]["join_id_list"]):
-                        raise ValueError("Ошибка: разное количество join_id_list с JoinSheme")
-
-                    # проходимся по join_id_list в json_agent_scheme
-                    for join_id_list_scheme in join_list["joins"]:
-                        join_id_list_agent = next(
-                            (join_id_list_agent for join_id_list_agent in json_agent_scheme["scheme"]["join_id_list"]
-                             if join_id_list_scheme["agent_item_join_id"] == join_id_list_agent["join_id"]), None)
-                        if join_id_list_agent:
-
-                            # поиск самого большого item_id
-                            if json_vvk_return["scheme"]["item_id_list"]:
-                                index = max(
-                                    item['item_id'] for item in json_vvk_return["scheme"]["item_id_list"] if
-                                    'item_id' in item)
-                            else:
-                                index = 0
-
-                            # формирование списка item_id_list
-                            for a in json_agent_scheme["scheme"]["item_id_list"]:
-                                if a["full_path"].split('/')[0] == join_id_list_agent["full_path"]:
-                                    a["full_path"] = join_id_list_scheme["join_item_full_path"] + a[
-                                        "full_path"].replace(
-                                        a["full_path"].split('/')[0], "")
-                                    index += 1
-                                    a["item_id"] = index
-                                    for existing_item in json_vvk_return["scheme"]["item_id_list"]:
-                                        if existing_item["full_path"] == a["full_path"]:
-                                            existing_item["item_id"] = a["item_id"]
-                                            break
-                                    else:
-                                        json_vvk_return["scheme"]["item_id_list"].append(a)
-                                    json_agent_list.append(a)
-
-                            # формирование списка item_info_list
-                            for a in json_agent_scheme["scheme"]["item_info_list"]:
-                                if a["full_path"] == join_id_list_agent["full_path"]:
-                                    a["full_path"] = join_id_list_scheme["join_item_full_path"] + a[
-                                        "full_path"].replace(
-                                        a["full_path"].split('/')[0], "")
-                                    b = next(
-                                        (b for b in json_vvk_return["scheme"]["item_info_list"] if
-                                         b["full_path"] == a["full_path"]),
-                                        None)
-                                    if b:
-                                        b.update(a)
-                                    else:
-                                        json_vvk_return["scheme"]["item_info_list"].append(a)
-
-                        else:
-                            raise ValueError("Ошибка: нет join_id:{} в join_id_list".format(
-                                join_id_list_scheme["agent_item_join_id"]))
-
-        if not agent_found:
-            raise ValueError(
-                "Ошибка: такого агента с ID {} не найдено".format(agent_reg_id))
-
-        # котроль ahent_id
-        index = 1
-
-        json_agent_return = {
-            "agent_id": index,
-            "item_id_list": json_agent_list
-        }
-
-        name_json = "registration/json/agent_" + str(index) + ".json"
-        with open(name_json, 'w', encoding='utf-8') as file1:
-            json.dump(json_agent_return, file1, ensure_ascii=False)
-
-        file.seek(0)
-        json.dump(json_vvk_return, file, ensure_ascii=False)
-        file.truncate()
-        fcntl.flock(file.fileno(), fcntl.LOCK_UN)
-
-        return json_agent_return
-
 def save_json_vvk(url: str, json_vvk_return: dict):
     headers = {'Content-Type': 'application/json'}
     try:
         logger.info(f"Отправка: {url}")
         response = requests.post(url, json=json_vvk_return, headers=headers)
         if response.status_code == 200:
-            logger.info("Успушная регистрация")
+            logger.info("Успушная регистрация VvkScheme на стороне АФ")
             return response.json()
         else:
             logger.error(f"Произошла ошибка: {response.status_code}")
             logger.error(f"Произошла ошибка: {response.text}")
-            return response.json()
+            error_str = str(response.status_code) + " : " + str(response.text)
+            raise ValueError(error_str)
     except requests.RequestException as e:
         logger.error(f"Произошла ошибка при регистрации: {e}")
         raise ValueError(e)
@@ -238,7 +90,6 @@ def create_json_vvk(join_scheme: dict, db):
     # REG_SCH
     db.reg_sch_registration_vvk_scheme(join_scheme["scheme_revision"], join_scheme["scheme"], vvk_scheme, None)
 
-
 def add_json_vvk(original_agent_scheme: dict, agent_reg_id: str, db):
     # REG_SCH
     if db.reg_sch_check_block():
@@ -247,7 +98,7 @@ def add_json_vvk(original_agent_scheme: dict, agent_reg_id: str, db):
 
     agent_scheme = copy.deepcopy(original_agent_scheme)
 
-    join_scheme, vvk_scheme, metric_info_list = db.reg_sch_select_vvk_schemes()
+    user_query_interval_revision, join_scheme, vvk_scheme, metric_info_list = db.reg_sch_select_vvk_schemes()
 
     json_agent_list = []
     for join_list in join_scheme["join_list"]:
@@ -359,11 +210,36 @@ def add_json_vvk(original_agent_scheme: dict, agent_reg_id: str, db):
         "agent_id": index,
         "item_id_list": json_agent_list
     }
-    db.gut_registration_agent(index, agent_reg_id, True, None)
-    db.reg_sch_registration_agent(index, original_agent_scheme["scheme_revision"], original_agent_scheme["scheme"], agent_scheme["scheme"], None)
+    db.gui_registration_agent(index, agent_reg_id, True, None)
+    db.reg_sch_registration_agent(index, original_agent_scheme["scheme_revision"], user_query_interval_revision, original_agent_scheme["scheme"], agent_scheme["scheme"], None)
 
     db.reg_sch_block_false()
     return json_agent_return
 
+def reg_vvk_scheme(db):
+    # REG_SCH
+    if db.reg_sch_check_block():
+        raise BlockingIOError
 
+    scheme_revision, scheme, metric_info_list = db.reg_sch_select_vvk_scheme()
+    data = {
+        "scheme_revision": scheme_revision,
+        "scheme": scheme
+    }
+    # url = f'http://192.168.123.54:25002/vvk-scheme'
+    url = f'http://127.0.0.1:8000/agent-scheme/save'
+    temp = save_json_vvk(url, data)
+
+    # GUI
+    db.gui_registration_vvk(temp["vvk_id"], True, None)
+
+    # SCH_VER
+    db.sch_ver_create_vvk_scheme(temp)
+
+    # REG_SCH
+    db.reg_sch_update_number_vvk(temp["vvk_id"])
+    db.reg_sch_update_all_user_query_revision(temp["user_query_interval_revision"])
+
+    print(temp)
+    return temp
 

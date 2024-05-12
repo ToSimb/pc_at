@@ -71,6 +71,7 @@ class Pf:
             sql_select_params = (f"SELECT id, item_id, metric_id, t, v, etmax, etmin, comment FROM pf "
                                  f"WHERE sent = False ORDER BY t LIMIT {int_limit};")
             cur.execute(sql_select_params)
+            self.conn.commit()
             data = cur.fetchall()
             columns = [desc[0] for desc in cur.description]
             result = []

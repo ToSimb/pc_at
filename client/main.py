@@ -35,46 +35,48 @@ with open("json/JoinScheme.json", 'r', encoding='utf-8') as file:
 json_data = json.loads(data)
 
 
+temp = {'vvk_id': 1, 'scheme_revision': 0, 'user_query_interval_revision': 0}
+
+
 # GUI
 db_gui = Gui(conn)
-db_gui.gui_drop_table()
-db_gui.gui_create_table()
-# 1 - vvk_name
-vvk_puth = json_data["scheme"]["item_id_list"][0]["full_path"].split("/")[0]
-vvk_name = [item for item in json_data["scheme"]["templates"] if item.get('template_id') == vvk_puth][0]["name"]
-# 2 - list agent_reg_id
-agent_reg_id = [item["agent_reg_id"] for item in json_data["scheme"]["join_list"]]
-db_gui.gui_registration_join_scheme(vvk_name, agent_reg_id)
+# db_gui.gui_drop_table()
+# db_gui.gui_create_table()
+# # 1 - vvk_name
+# vvk_puth = json_data["scheme"]["item_id_list"][0]["full_path"].split("/")[0]
+# vvk_name = [item for item in json_data["scheme"]["templates"] if item.get('template_id') == vvk_puth][0]["name"]
+# # 2 - list agent_reg_id
+# agent_reg_id = [item["agent_reg_id"] for item in json_data["scheme"]["join_list"]]
+# db_gui.gui_registration_join_scheme(vvk_name, agent_reg_id)
 
 
 # REG
 db_reg = Reg_sch(conn)
-db_reg.reg_sch_drop_table()
-db_reg.reg_sch_create_table()
+# db_reg.reg_sch_drop_table()
+# db_reg.reg_sch_create_table()
+#
+# a = create_vvk_scheme(json_data["scheme"])
+# db_reg.reg_sch_registration_vvk_scheme(json_data['scheme_revision'], json_data["scheme"], a, {})
+# db_reg.reg_sch_registration_agent(1,0,{},{},None)
 
-a = create_vvk_scheme(json_data["scheme"])
-db_reg.reg_sch_registration_vvk_scheme(json_data['scheme_revision'], json_data["scheme"], a, {})
-db_reg.reg_sch_registration_agent(1,0,{},{},None)
 
-
-
-# b, c, d = db_reg.reg_sch_select_vvk_schemes()
-# print (b['join_list'])
-# print (c)
-# print (d)
-
-# print(db_reg.reg_sch_check_block())
-# print( db_reg.reg_sch_count_agents())
 
 
 # SCH
-#
-# db_sch = Sch_ver(conn)
+db_sch = Sch_ver(conn)
 # db_sch.sch_ver_drop_table()
 # db_sch.sch_ver_create_table()
 
 
+#----
+# print (db_sch.sch_ver_create_vvk_scheme(temp))
+#
+# print (db_reg.reg_sch_select_full_vvk())
+#
+# db_reg.reg_sch_update_all_user_query_revision(4)
+# db_reg.reg_sch_update_number_vvk(12)
 
+print (db_sch.reg_sch_select_vvk_scheme())
 # остальное
 
 
