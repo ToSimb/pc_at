@@ -4,18 +4,65 @@
     <link href="{{ url_for('static', path='/styles.css') }}" rel="stylesheet">
 </head>
 <body>
-    <header class="header">
+    <main class="main">
         <div class="container">
             {% if vvk %}
-                <div>{{vvk}}</div>
-                {% for item in agents %}
-                    <div>{{item}}</div>
+                <div class="vvk border">
+                    <h1>{{vvk['vvk_name']}}</h1>
+                    {% if vvk["status_reg"] is none %}
+                        <p>Статус регистрации: Не зарегистрирован</p>
+                    {% elif vvk["status_reg"] is true %}
+                        <p>Статус регистрации: Зарегистрирован</p>
+                        <p>Время регистрации: {{vvk["time_reg"]}}</p>
+                    {% else %}
+                        <p>Статус регистрации: Ошибка</p>
+                        <p>Время ошибки: {{vvk["time_reg"]}}</p>
+                        <p>Ошибка: {{vvk["error_reg"]}}</p>
+                    {% endif %}
+                        <p></p>
+                    {% if vvk["time_value"] is not none %}
+                        <p>Время последней передачи ПФ: {{vvk["time_value"]}}</p>
+                    {% endif %}
+                    {% if vvk["error_value"] is not none %}
+                        <p>Получена ошибка: {{vvk["error_value"]}}</p>
+                    {% endif %}
+                </div>
+                <div class="visually-hidden">{{vvk}}</div>
+                <div class="border">
+                    <h2>Агенты</h2>
+                    {% for item in agents %}
+                    <div class="border border-mini">
+                        <p>Agent_id: {{item["number_id"]}}</p>
+                        <p>Agent_reg_id: {{item["agent_reg_id"]}}</p>
 
-                {% endfor %}
+                        {% if item["status_reg"] is none %}
+                            <p>Статус регистрации: Не зарегистрирован</p>
+                        {% elif item["status_reg"] is true %}
+                            <p>Статус регистрации: Зарегистрирован</p>
+                            <p>Время регистрации: {{item["time_reg"]}}</p>
+                        {% else %}
+                            <p>Статус регистрации: Ошибка</p>
+                            <p>Время ошибки: {{item["time_reg"]}}</p>
+                            <p>Ошибка: {{item["error_reg"]}}</p>
+                        {% endif %}
+                        <p></p>
+                        {% if item["time_value"] is not none %}
+                            <p>Время последней передачи ПФ: {{item["time_value"]}}</p>
+                        {% endif %}
+                        {% if item["error_value"] is not none %}
+                            <p>Получена ошибка: {{item["error_value"]}}</p>
+                        {% endif %}
+                        <div class="visually-hidden">{{item}}</div>
+                    </div>
+                    {% endfor %}
+                </div>
+
             {% else %}
-                <h1> Нет зарегистрированной JoinScheme</h1>
+                <div class="border">
+                    <h1> Нет зарегестрированной JoinScheme</h1>
+                </div>
             {% endif %}
         </div>
-    </header>
+    </main>
 </body>
 </html>
