@@ -41,7 +41,7 @@ def add_templates(json_vvk_return_templates, json_agent_scheme_templates):
             templates_list.append(item)
     return templates_list
 
-def save_json_vvk(url: str, json_vvk_return: dict):
+def request_json(url: str, json_vvk_return: dict):
     headers = {'Content-Type': 'application/json'}
     try:
         logger.info(f"Отправка: {url}")
@@ -50,9 +50,7 @@ def save_json_vvk(url: str, json_vvk_return: dict):
             logger.info("Успушная регистрация VvkScheme на стороне АФ")
             return response.json()
         else:
-            logger.error(f"Произошла ошибка: {response.status_code}")
-            logger.error(f"Произошла ошибка: {response.text}")
-            error_str = str(response.status_code) + " : " + str(response.text)
+            error_str = "Произошла ошибка при регистрации: " + str(response.status_code) + " : " + str(response.text)
             raise ValueError(error_str)
     except requests.RequestException as e:
         logger.error(f"Произошла ошибка при регистрации: {e}")
@@ -60,45 +58,52 @@ def save_json_vvk(url: str, json_vvk_return: dict):
 
 # ___________ работа только с БД _________
 
-def create_json_vvk(join_scheme: dict, db):
+def registration_join_scheme(join_scheme: dict, db) -> bool:
     # REG_SCH
-    if db.reg_sch_check_block():
+    if db.reg_sch_block_check():
         raise BlockingIOError
 
-    # Формируем структуру VvkScheme:Scheme
-    vvk_scheme = {
+    if db.reg_sch_select_check_vvk():
+# __ ПЕРЕРИГИСТРАЦИЯ __
+        return False
+    else:
+# __ РЕГИСТРАЦИЯ __
+        # Формируем структуру VvkScheme:Scheme
+        vvk_scheme = {
             "metrics": [],
             "templates": join_scheme["scheme"]["templates"],
             "item_id_list": [],
             "item_info_list": join_scheme["scheme"]["item_info_list"]
-    }
-    item_id_list = []
-    index = 0
-    for a in join_scheme["scheme"]["item_id_list"]:
-        item_id_list.append({"full_path": a["full_path"], "item_id": index})
-        index += 1
-    vvk_scheme["item_id_list"] = item_id_list
+        }
+        item_id_list = []
+        index = 0
+        for a in join_scheme["scheme"]["item_id_list"]:
+            item_id_list.append({"full_path": a["full_path"], "item_id": index})
+            index += 1
+        vvk_scheme["item_id_list"] = item_id_list
 
-    # GUI
-    vvk_puth = join_scheme["scheme"]["item_id_list"][0]["full_path"].split("/")[0]
-    vvk_name = [item for item in join_scheme["scheme"]["templates"] if item.get('template_id') == vvk_puth][0]["name"]
-    agent_reg_id = [item["agent_reg_id"] for item in join_scheme["scheme"]["join_list"]]
+        # GUI
+        vvk_puth = join_scheme["scheme"]["item_id_list"][0]["full_path"].split("/")[0]
+        vvk_name = [item for item in join_scheme["scheme"]["templates"] if item.get('template_id') == vvk_puth][0][
+            "name"]
+        agent_reg_id = [item["agent_reg_id"] for item in join_scheme["scheme"]["join_list"]]
 
-    db.gui_delete()
-    db.gui_registration_join_scheme(vvk_name, agent_reg_id)
+        db.gui_insert_join_scheme(vvk_name, agent_reg_id)
 
+        # REG_SCH
+        db.reg_sch_insert_vvk(join_scheme["scheme_revision"], join_scheme["scheme"], vvk_scheme, None)
+        return True
+
+
+def registration_agent_reg_id_scheme(original_agent_scheme: dict, agent_reg_id: str, db):
     # REG_SCH
-    db.reg_sch_registration_vvk_scheme(join_scheme["scheme_revision"], join_scheme["scheme"], vvk_scheme, None)
-
-def add_json_vvk(original_agent_scheme: dict, agent_reg_id: str, db):
-    # REG_SCH
-    if db.reg_sch_check_block():
+    if db.reg_sch_block_check():
         raise BlockingIOError
     db.reg_sch_block_true()
 
     agent_scheme = copy.deepcopy(original_agent_scheme)
 
-    user_query_interval_revision, join_scheme, vvk_scheme, metric_info_list = db.reg_sch_select_vvk_schemes()
+    user_query_interval_revision, join_scheme, vvk_scheme, metric_info_list = db.reg_sch_select_vvk_all()
 
     json_agent_list = []
     for join_list in join_scheme["join_list"]:
@@ -205,20 +210,20 @@ def add_json_vvk(original_agent_scheme: dict, agent_reg_id: str, db):
 
 
     db.reg_sch_update_vvk_scheme(vvk_scheme)
-    index = db.reg_sch_count_agents() + 1
+    index = db.reg_sch_select_count_agents() + 1
     json_agent_return = {
         "agent_id": index,
         "item_id_list": json_agent_list
     }
-    db.gui_registration_agent(index, agent_reg_id, True, None)
-    db.reg_sch_registration_agent(index, original_agent_scheme["scheme_revision"], user_query_interval_revision, original_agent_scheme["scheme"], agent_scheme["scheme"], None)
+    db.gui_update_agent_reg(index, agent_reg_id, True, None)
+    db.reg_sch_insert_agent(index, original_agent_scheme["scheme_revision"], user_query_interval_revision, original_agent_scheme["scheme"], agent_scheme["scheme"], None)
 
     db.reg_sch_block_false()
     return json_agent_return
 
-def reg_vvk_scheme(db):
+def registration_vvk_scheme(db):
     # REG_SCH
-    if db.reg_sch_check_block():
+    if db.reg_sch_block_check():
         raise BlockingIOError
 
     scheme_revision, scheme, metric_info_list = db.reg_sch_select_vvk_scheme()
@@ -228,16 +233,16 @@ def reg_vvk_scheme(db):
     }
     # url = f'http://192.168.123.54:25002/vvk-scheme'
     url = f'http://127.0.0.1:8000/agent-scheme/save'
-    temp = save_json_vvk(url, data)
+    temp = request_json(url, data)
 
     # GUI
-    db.gui_registration_vvk(temp["vvk_id"], True, None)
+    db.gui_update_vvk_reg(temp["vvk_id"], True, None)
 
     # SCH_VER
-    db.sch_ver_create_vvk_scheme(temp)
+    db.sch_ver_insert_vvk(temp)
 
     # REG_SCH
-    db.reg_sch_update_number_vvk(temp["vvk_id"])
+    db.reg_sch_update_vvk_id(temp["vvk_id"])
     db.reg_sch_update_all_user_query_revision(temp["user_query_interval_revision"])
 
     print(temp)

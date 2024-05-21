@@ -2,11 +2,14 @@ import json
 
 from logger.logger import logger
 
+
 class Reg_sch:
     def __init__(self, conn):
         self.conn = conn
 
 # ____________ REG_SCH _____________
+
+# __ Create Table __
     def reg_sch_create_table(self) -> bool:
         try:
             cur = self.conn.cursor()
@@ -28,9 +31,10 @@ class Reg_sch:
             logger.info("DB(reg_sch): таблица создана")
             return True
         except Exception as e:
-            logger.error("DB(reg_sch): ошибка создания таблицы: %s", e)
+            logger.error("DB(reg_sch): reg_sch_create_table: %s", e)
             raise e
 
+# __ Drop Table __
     def reg_sch_drop_table(self) -> bool:
         try:
             cur = self.conn.cursor()
@@ -40,48 +44,11 @@ class Reg_sch:
             logger.info("DB(reg_sch): таблица удалена")
             return True
         except Exception as e:
-            logger.error("DB(reg_sch): ошибка удаления таблицы: %s", e)
+            logger.error("DB(reg_sch): reg_sch_drop_table: %s", e)
             raise e
 
-
-    def reg_sch_registration_vvk_scheme(self, scheme_revision: int, original_scheme: dict, scheme: dict, metric_info_list: dict) -> bool:
-        try:
-            cur = self.conn.cursor()
-            sql_check_existence = "SELECT COUNT(*) FROM reg_sch WHERE type_id = FALSE;"
-            cur.execute(sql_check_existence)
-            count = cur.fetchone()[0]
-            self.conn.commit()
-            if count > 0:
-                print("Переригистрация VvkScheme еще не сделана!!!")
-                self.conn.commit()
-                raise Exception("Переригистрация VvkScheme еще не сделана!!!")
-            else:
-                sql_insert_scheme = ("INSERT INTO reg_sch (type_id, scheme_revision, user_query_interval_revision, original_scheme, scheme, metric_info_list) "
-                                     "VALUES (FALSE, %s, %s, %s, %s, %s);")
-                cur.execute(sql_insert_scheme, (scheme_revision, 0, json.dumps(original_scheme), json.dumps(scheme), json.dumps(metric_info_list)))
-                self.conn.commit()
-                logger.info("DB(reg_sch): VvkScheme зарегистрирована")
-            return True
-        except Exception as e:
-            self.conn.rollback()
-            logger.error("DB(reg_sch): ошибка регистрации VvkScheme: %s", e)
-            raise e
-
-    def reg_sch_select_vvk_schemes(self) -> tuple:
-        try:
-            cur = self.conn.cursor()
-            sql_select = "SELECT user_query_interval_revision, original_scheme, scheme, metric_info_list FROM reg_sch WHERE type_id = FALSE"
-            cur.execute(sql_select, )
-            result = cur.fetchone()
-            if result:
-                return result
-            else:
-                raise Exception("VvkScheme не зарегистирована!!")
-
-        except Exception as e:
-            logger.error("DB(reg_sch): ошибка при получении схемы из БД: %s", e)
-            raise e
-
+# __ Select __
+    # __ VVK __
     def reg_sch_select_vvk_scheme(self):
         try:
             cur = self.conn.cursor()
@@ -92,25 +59,25 @@ class Reg_sch:
                 return result
             else:
                 raise Exception("VvkScheme не зарегистирована!!")
-
         except Exception as e:
-            logger.error("DB(reg_sch): ошибка при получении схемы из БД: %s", e)
+            logger.error("DB(reg_sch): reg_sch_select_vvk_scheme: %s", e)
             raise e
 
-    def reg_sch_update_vvk_scheme(self, scheme: dict) -> bool:
+    def reg_sch_select_vvk_all(self) -> tuple:
         try:
             cur = self.conn.cursor()
-            sql_update_scheme = "UPDATE reg_sch SET scheme = %s WHERE type_id = FALSE;"
-            cur.execute(sql_update_scheme, (json.dumps(scheme),))
-            logger.info("DB(reg_sch): VvkScheme-scheme изменена")
-            self.conn.commit()
-            return True
+            sql_select = "SELECT user_query_interval_revision, original_scheme, scheme, metric_info_list FROM reg_sch WHERE type_id = FALSE"
+            cur.execute(sql_select, )
+            result = cur.fetchone()
+            if result:
+                return result
+            else:
+                raise Exception("VvkScheme не зарегистирована!!")
         except Exception as e:
-            self.conn.rollback()
-            logger.error("DB(reg_sch): ошибка при изменении VvkScheme-scheme: %s", e)
+            logger.error("DB(reg_sch): reg_sch_select_vvk_scheme_all: %s", e)
             raise e
 
-    def reg_sch_select_full_vvk(self) -> dict:
+    def reg_sch_select_vvk_all_json(self) -> dict:
         try:
             cur = self.conn.cursor()
             sql_select = "SELECT scheme_revision, user_query_interval_revision, original_scheme, scheme, metric_info_list FROM reg_sch WHERE type_id = FALSE"
@@ -124,13 +91,32 @@ class Reg_sch:
                 "scheme": data[0][3],
                 "metric_info_list": data[0][4]
             }
-            return result
+            if result:
+                return result
+            else:
+                raise Exception("VvkScheme не зарегистирована!!")
         except Exception as e:
-            logger.error("DB(reg_sch): ошибка при получении full_vvk из БД: %s", e)
+            logger.error("DB(reg_sch): reg_sch_select_vvk_full: %s", e)
             raise e
 
+    def reg_sch_select_check_vvk(self) -> bool:
+        try:
+            cur = self.conn.cursor()
+            sql_check = "SELECT COUNT(*) FROM reg_sch WHERE type_id = FALSE;"
+            cur.execute(sql_check)
+            count = cur.fetchone()[0]
+            self.conn.commit()
+            if count > 0:
+                return True
+            else:
+                return False
+        except Exception as e:
+            self.conn.rollback()
+            logger.error("DB(reg_sch): reg_sch_select_check_vvk: %s", e)
+            raise e
 
-    def reg_sch_count_agents(self) -> int:
+    # __ AGENTS __
+    def reg_sch_select_count_agents(self) -> int:
         try:
             cur = self.conn.cursor()
             sql_count_agents = "SELECT COUNT(*) FROM reg_sch WHERE type_id = TRUE;"
@@ -138,103 +124,10 @@ class Reg_sch:
             self.conn.commit()
             return cur.fetchone()[0]
         except Exception as e:
-            logger.error("DB(reg_sch): Ошибка при получении количества зарегистрированных агентов: %s", e)
+            logger.error("DB(reg_sch): reg_sch_select_count_agents: %s", e)
             raise
 
-    def reg_sch_registration_agent(self, number_id: int, scheme_revision: int, user_query_interval_revision: int, original_scheme: dict, scheme: dict, metric_info_list: dict) -> bool:
-        try:
-            cur = self.conn.cursor()
-            sql_check_existence = f"SELECT COUNT(*) FROM reg_sch WHERE number_id = {number_id};"
-            cur.execute(sql_check_existence)
-            count = cur.fetchone()[0]
-            self.conn.commit()
-            if count > 0:
-                sql_update = f"UPDATE reg_sch SET scheme_revision = %s, user_query_interval_revision = %s, original_scheme = %s, scheme = %s, metric_info_list = %s WHERE number_id = {number_id}"
-                cur.execute(sql_update, (scheme_revision, user_query_interval_revision, json.dumps(original_scheme), json.dumps(scheme), json.dumps(metric_info_list),))
-                self.conn.commit()
-                logger.info(f"DB(reg_sch): Agent '{number_id}' перезарегистрирована")
-            else:
-                sql_insert = ("INSERT INTO reg_sch (type_id, number_id, scheme_revision, user_query_interval_revision, original_scheme, scheme, metric_info_list) "
-                                     "VALUES (TRUE, %s, %s, %s, %s, %s, %s);")
-                cur.execute(sql_insert, (number_id, scheme_revision, user_query_interval_revision, json.dumps(original_scheme), json.dumps(scheme), json.dumps(metric_info_list)))
-                self.conn.commit()
-                logger.info(f"DB(reg_sch): Agent '{number_id}' зарегистрирована")
-            return True
-        except Exception as e:
-            self.conn.rollback()
-            logger.error("DB(reg_sch): ошибка регистрации agenta '%s': %s", number_id, e)
-            raise e
-
-    def reg_sch_update_number_vvk(self, vvk_id: int) -> bool:
-        try:
-            cur = self.conn.cursor()
-            sql_update = f"UPDATE reg_sch SET number_id = {vvk_id} WHERE type_id = FALSE;"
-            cur.execute(sql_update)
-            self.conn.commit()
-            logger.info("DB(reg_sch): значение vvk_id успешно изменено")
-            return True
-        except Exception as e:
-            self.conn.rollback()
-            logger.error("DB(reg_sch): ошибка при изменении значения vvk_id: %s", e)
-            raise e
-
-    def reg_sch_update_all_user_query_revision(self, user_query_interval_revision: int) -> bool:
-        try:
-            cur = self.conn.cursor()
-            sql_update = f"UPDATE reg_sch SET user_query_interval_revision = {user_query_interval_revision};"
-            cur.execute(sql_update)
-            self.conn.commit()
-            logger.info("DB(reg_sch): значение user_query_interval_revision успешно изменено")
-            return True
-        except Exception as e:
-            self.conn.rollback()
-            logger.error("DB(reg_sch): ошибка при изменении значения user_query_interval_revision: %s", e)
-            raise e
-
-
-    def reg_sch_block_true(self) -> bool:
-        try:
-            cur = self.conn.cursor()
-            sql_update = "UPDATE reg_sch SET block = TRUE WHERE type_id = FALSE;"
-            cur.execute(sql_update)
-            self.conn.commit()
-            logger.info("DB(reg_sch): значение block успешно изменено на True")
-            return True
-        except Exception as e:
-            self.conn.rollback()
-            logger.error("DB(reg_sch): ошибка при изменении значения block - True: %s", e)
-            raise e
-
-    def reg_sch_block_false(self) -> bool:
-        try:
-            cur = self.conn.cursor()
-            sql_update = "UPDATE reg_sch SET block = FALSE WHERE type_id = FALSE;"
-            cur.execute(sql_update)
-            self.conn.commit()
-            logger.info("DB(reg_sch): значение block успешно изменено на False")
-            return True
-        except Exception as e:
-            self.conn.rollback()
-            logger.error("DB(reg_sch): ошибка при изменении значения block - False: %s", e)
-            raise e
-
-    def reg_sch_check_block(self) -> bool:
-        try:
-            cur = self.conn.cursor()
-            sql_query = "SELECT block FROM reg_sch WHERE type_id = FALSE;"
-            cur.execute(sql_query)
-            self.conn.commit()
-            result = cur.fetchone()
-            if result:
-                return result[0]
-            else:
-                return False
-        except Exception as e:
-            logger.error("DB(reg_sch): ошибка получения значения block: %s", e)
-            raise e
-
-
-    def reg_sch_get_metrics_ids(self, agent_id) -> list:
+    def reg_sch_select_metrics_ids(self, agent_id: int) -> tuple:
         try:
             cur = self.conn.cursor()
             sql_query = f"SELECT scheme_revision, user_query_interval_revision, jsonb_array_elements(scheme->'metrics')->>'metric_id' AS metric_id FROM reg_sch WHERE number_id = {agent_id};"
@@ -248,8 +141,146 @@ class Reg_sch:
                 return scheme_revision, user_query_interval_revisions, metric_ids
             return None, None, []
         except Exception as e:
-            logger.error("DB(reg_sch): ошибка получения идентификаторов метрик: %s", e)
+            logger.error("DB(reg_sch): reg_sch_select_metrics_ids: %s", e)
             raise e
+
+# __ Insert __
+    def reg_sch_insert_vvk(self, scheme_revision: int, original_scheme: dict, scheme: dict, metric_info_list: dict) -> bool:
+        try:
+            cur = self.conn.cursor()
+            sql_insert_scheme = (
+                "INSERT INTO reg_sch (type_id, scheme_revision, user_query_interval_revision, original_scheme, scheme, metric_info_list) "
+                "VALUES (FALSE, %s, %s, %s, %s, %s);")
+            cur.execute(sql_insert_scheme, (scheme_revision, 0, json.dumps(original_scheme), json.dumps(scheme), json.dumps(metric_info_list)))
+            self.conn.commit()
+            logger.info("DB(reg_sch): VvkScheme зарегистрирована")
+            return True
+        except Exception as e:
+            self.conn.rollback()
+            logger.error("DB(reg_sch): reg_sch_insert_vvk: %s", e)
+            raise e
+
+    def reg_sch_insert_agent(self, number_id: int, scheme_revision: int, user_query_interval_revision: int, original_scheme: dict, scheme: dict, metric_info_list: dict) -> bool:
+        try:
+            cur = self.conn.cursor()
+            sql_insert = ("INSERT INTO reg_sch (type_id, number_id, scheme_revision, user_query_interval_revision, original_scheme, scheme, metric_info_list) "
+                                 "VALUES (TRUE, %s, %s, %s, %s, %s, %s);")
+            cur.execute(sql_insert, (number_id, scheme_revision, user_query_interval_revision, json.dumps(original_scheme), json.dumps(scheme), json.dumps(metric_info_list)))
+            self.conn.commit()
+            logger.info(f"DB(reg_sch): Agent '{number_id}' зарегистрирован")
+            return True
+        except Exception as e:
+            self.conn.rollback()
+            logger.error("DB(reg_sch): reg_sch_insert_agent '%s': %s", number_id, e)
+            raise e
+
+
+# __ Update __
+    def reg_sch_update_vvk_scheme(self, scheme: dict) -> bool:
+        try:
+            cur = self.conn.cursor()
+            sql_update_scheme = "UPDATE reg_sch SET scheme = %s WHERE type_id = FALSE;"
+            cur.execute(sql_update_scheme, (json.dumps(scheme),))
+            logger.info("DB(reg_sch): VvkScheme-scheme изменена")
+            self.conn.commit()
+            return True
+        except Exception as e:
+            self.conn.rollback()
+            logger.error("DB(reg_sch): reg_sch_update_vvk_scheme: %s", e)
+            raise e
+
+    def reg_sch_update_vvk_id(self, vvk_id: int) -> bool:
+        try:
+            cur = self.conn.cursor()
+            sql_update = f"UPDATE reg_sch SET number_id = {vvk_id} WHERE type_id = FALSE;"
+            cur.execute(sql_update)
+            self.conn.commit()
+            logger.info(f"DB(reg_sch): значение vvk_id '{vvk_id}' успешно изменено")
+            return True
+        except Exception as e:
+            self.conn.rollback()
+            logger.error("DB(reg_sch): reg_sch_update_vvk_id: %s", e)
+            raise e
+
+    def reg_sch_update_all_user_query_revision(self, user_query_interval_revision: int) -> bool:
+        try:
+            cur = self.conn.cursor()
+            sql_update = f"UPDATE reg_sch SET user_query_interval_revision = {user_query_interval_revision};"
+            cur.execute(sql_update)
+            self.conn.commit()
+            logger.info("DB(reg_sch): значение user_query_interval_revision успешно изменено")
+            return True
+        except Exception as e:
+            self.conn.rollback()
+            logger.error("DB(reg_sch): reg_sch_update_all_user_query_revision: %s", e)
+            raise e
+
+# __ Delete __
+
+# __ BLOCK __
+    def reg_sch_block_true(self) -> bool:
+        try:
+            cur = self.conn.cursor()
+            sql_update = "UPDATE reg_sch SET block = TRUE WHERE type_id = FALSE;"
+            cur.execute(sql_update)
+            self.conn.commit()
+            logger.info("DB(reg_sch): значение block успешно изменено на True")
+            return True
+        except Exception as e:
+            self.conn.rollback()
+            logger.error("DB(reg_sch): reg_sch_block_true: %s", e)
+            raise e
+
+    def reg_sch_block_false(self) -> bool:
+        try:
+            cur = self.conn.cursor()
+            sql_update = "UPDATE reg_sch SET block = FALSE WHERE type_id = FALSE;"
+            cur.execute(sql_update)
+            self.conn.commit()
+            logger.info("DB(reg_sch): значение block успешно изменено на False")
+            return True
+        except Exception as e:
+            self.conn.rollback()
+            logger.error("DB(reg_sch): reg_sch_block_false: %s", e)
+            raise e
+
+    def reg_sch_block_check(self) -> bool:
+        try:
+            cur = self.conn.cursor()
+            sql_query = "SELECT block FROM reg_sch WHERE type_id = FALSE;"
+            cur.execute(sql_query)
+            self.conn.commit()
+            result = cur.fetchone()
+            if result:
+                return result[0]
+            else:
+                return False
+        except Exception as e:
+            logger.error("DB(reg_sch): reg_sch_check_block: %s", e)
+            raise e
+
+
+
+
+    def reg_scg_update_agent(self, number_id: int, scheme_revision: int, user_query_interval_revision: int, original_scheme: dict, scheme: dict, metric_info_list: dict) -> bool:
+        try:
+            cur = self.conn.cursor()
+            sql_update = f"UPDATE reg_sch SET scheme_revision = %s, user_query_interval_revision = %s, original_scheme = %s, scheme = %s, metric_info_list = %s WHERE number_id = {number_id}"
+            cur.execute(sql_update, (scheme_revision, user_query_interval_revision, json.dumps(original_scheme), json.dumps(scheme), json.dumps(metric_info_list),))
+            self.conn.commit()
+            logger.info(f"DB(reg_sch): Agent '{number_id}' перезарегистрирована")
+            return True
+        except Exception as e:
+            self.conn.rollback()
+            logger.error("DB(reg_sch): reg_scg_update_agent '%s': %s", number_id, e)
+            raise e
+
+
+
+
+
+
+
 
 
 

@@ -21,9 +21,9 @@ async def gui_pages(request: Request, db=Depends(get_db_repo)):
     vvk = None
     agents = None
     if dump:
-        vvk = [item for item in dump if item.get("type_id") == False]
-        agents = [item for item in dump if item.get("type_id") == True]
-        vvk=vvk[0]
+        vvk = [item for item in dump if item.get("type_id") is False]
+        agents = [item for item in dump if item.get("type_id") is True]
+        vvk = vvk[0]
         agents.sort(key=lambda x: x.get("id"))
 
     return templates.TemplateResponse(
@@ -35,7 +35,7 @@ async def all_vvk_scheme(db=Depends(get_db_repo)):
     """
     Метод для просмотра всего VvkScheme
     """
-    return db.reg_sch_select_full_vvk()
+    return db.reg_sch_select_vvk_all_json()
 
 @router.get("/gui_table")
 async def gui_table(limit: int = 10, db=Depends(get_db_repo)):
@@ -69,7 +69,6 @@ async def sch_ver_table(limit: int = 10,db=Depends(get_db_repo)):
     """
     dump = db.select_last_agents_reg("sch_ver", limit)
     return dump
-
 
 @router.get("/pf_table")
 async def pf_table(limit: int = 10, db=Depends(get_db_repo)):

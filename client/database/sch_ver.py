@@ -2,11 +2,14 @@ import time
 
 from logger.logger import logger
 
+
 class Sch_ver:
     def __init__(self, conn):
         self.conn = conn
 
 # ____________ SCH_VER _____________
+
+# __ Create Table __
     def sch_ver_create_table(self) -> bool:
         try:
             cur = self.conn.cursor()
@@ -26,9 +29,10 @@ class Sch_ver:
             logger.info("DB(sch_ver): таблица создана")
             return True
         except Exception as e:
-            logger.error("DB(sch_ver): ошибка создания таблицы: %s", e)
+            logger.error("DB(sch_ver): sch_ver_create_table: %s", e)
             raise e
 
+# __ Drop Table __
     def sch_ver_drop_table(self) -> bool:
         try:
             cur = self.conn.cursor()
@@ -38,24 +42,11 @@ class Sch_ver:
             logger.info("DB(sch_ver): таблица удалена")
             return True
         except Exception as e:
-            logger.error("DB(sch_ver): ошибка удаления таблицы: %s", e)
+            logger.error("DB(sch_ver): sch_ver_drop_table: %s", e)
             raise e
 
-    def sch_ver_create_vvk_scheme(self, data: dict) -> bool:
-        try:
-            current_time = int(time.time())
-            cur = self.conn.cursor()
-            sql_create = ("INSERT INTO sch_ver (vvk_id, scheme_revision, user_query_interval_revision, date_create, status_reg) "
-                          "VALUES (%s,%s,%s,%s,%s);")
-            cur.execute(sql_create, (data["vvk_id"], data["scheme_revision"], data["user_query_interval_revision"], current_time, True))
-            self.conn.commit()
-            return True
-        except Exception as e:
-            self.conn.rollback()
-            logger.error("DB(sch_ver): ошибка регистации vvk_scheme у AF: %s", e)
-            raise e
-
-    def sch_ver_select_vvk_scheme(self) -> tuple:
+# __ Select __
+    def sch_ver_select_vvk_details(self) -> tuple:
         try:
             cur = self.conn.cursor()
             sql_select = ("SELECT vvk_id, scheme_revision, user_query_interval_revision, t3 FROM sch_ver "
@@ -66,7 +57,24 @@ class Sch_ver:
                 return result
             else:
                 return [None, None, None, None]
-
         except Exception as e:
-            logger.error("DB(sch_ver): ошибка при получении схемы из БД: %s", e)
+            logger.error("DB(sch_ver): sch_ver_select_vvk_scheme: %s", e)
             raise e
+
+# __ Insert __
+    def sch_ver_insert_vvk(self, data: dict) -> bool:
+        try:
+            current_time = int(time.time())
+            cur = self.conn.cursor()
+            sql_create = ("INSERT INTO sch_ver (vvk_id, scheme_revision, user_query_interval_revision, date_create, status_reg) "
+                          "VALUES (%s,%s,%s,%s,%s);")
+            cur.execute(sql_create, (data["vvk_id"], data["scheme_revision"], data["user_query_interval_revision"], current_time, True))
+            self.conn.commit()
+            return True
+        except Exception as e:
+            self.conn.rollback()
+            logger.error("DB(sch_ver): sch_ver_insert_vvk_scheme: ошибка регистации vvk_scheme у AF: %s", e)
+            raise e
+
+# __ Update __
+# __ Delete __

@@ -2,12 +2,15 @@ import datetime
 
 from logger.logger import logger
 
+
 class Gui:
     def __init__(self, conn):
         self.conn = conn
 
 # ______________ GUI _______________
-    def gui_create_table(self):
+
+# __ Create Table __
+    def gui_create_table(self) -> bool:
         try:
             cur = self.conn.cursor()
             sql_create_table = """
@@ -30,19 +33,10 @@ class Gui:
             logger.info("DB(gui): таблица создана")
             return True
         except Exception as e:
-            logger.error("DB(gui): ошибка создания таблицы: %s", e)
+            logger.error("DB(gui): gui_create_table: %s", e)
             raise e
-    def gui_delete(self) -> bool:
-        try:
-            cur = self.conn.cursor()
-            sql_delete_params = f"DELETE FROM gui;"
-            cur.execute(sql_delete_params)
-            self.conn.commit()
-            logger.info("DB(gui): таблица очищена")
-            return True
-        except Exception as e:
-            logger.error("DB(gui): ошибка удаления строк: %s", e)
-            raise e
+
+# __ Drop Table __
     def gui_drop_table(self) -> bool:
         try:
             cur = self.conn.cursor()
@@ -52,23 +46,10 @@ class Gui:
             logger.info("DB(gui): таблица удалена")
             return True
         except Exception as e:
-            logger.error("DB(gui): ошибка удаления таблицы: %s", e)
+            logger.error("DB(gui): gui_drop_table: %s", e)
             raise e
 
-    def gui_registration_join_scheme(self, vvk_name: str, agent_reg_id: list):
-        try:
-            cur = self.conn.cursor()
-            sql_create = "INSERT INTO gui (vvk_name, type_id) VALUES (%s,%s);"
-            cur.execute(sql_create, (vvk_name, False))
-            sql_create = "INSERT INTO gui (agent_reg_id) VALUES (%s);"
-            cur.executemany(sql_create, [(agent_id,) for agent_id in agent_reg_id])
-            self.conn.commit()
-            logger.info("DB(gui): JoinScheme загружена")
-            return True
-        except Exception as e:
-            logger.error("DB(gui): ошибка загрузки JoinScheme: %s", e)
-            raise e
-
+# __ Select __
     def gui_select_agents_reg(self) -> tuple:
         try:
             cur = self.conn.cursor()
@@ -80,11 +61,42 @@ class Gui:
             self.conn.commit()
             return number_id, agent_reg_id
         except Exception as e:
-            logger.error("DB(gui): ошибка получения agent_reg_id: %s", e)
+            logger.error("DB(gui): gui_select_agents_reg: %s", e)
+            raise e
+
+    def gui_select_check_agent_reg_id(self, agent_reg_id: str) -> int:
+        try:
+            cur = self.conn.cursor()
+            sql_select_check = "SELECT number_id FROM gui WHERE type_id = TRUE AND agent_reg_id = %s;"
+            cur.execute(sql_select_check, (agent_reg_id,))
+            result = cur.fetchall()
+            self.conn.commit()
+            if result:
+                return result[0][0]
+            else:
+                raise Exception("Такого быть не может!")
+        except Exception as e:
+            logger.error("DB(gui): gui_select_check_agent_reg_id: %s", e)
             raise e
 
 
-    def gui_registration_agent(self, agent_id: int, agent_reg_id: str, status_reg: bool, error_reg: str) -> bool:
+# __ Insert __
+    def gui_insert_join_scheme(self, vvk_name: str, agent_reg_id: list):
+        try:
+            cur = self.conn.cursor()
+            sql_insert1 = "INSERT INTO gui (vvk_name, type_id) VALUES (%s,%s);"
+            cur.execute(sql_insert1, (vvk_name, False))
+            sql_insert2 = "INSERT INTO gui (agent_reg_id) VALUES (%s);"
+            cur.executemany(sql_insert2, [(agent_id,) for agent_id in agent_reg_id])
+            self.conn.commit()
+            logger.info("DB(gui): JoinScheme загружена")
+            return True
+        except Exception as e:
+            logger.error("DB(gui): gui_insert_join_scheme: %s", e)
+            raise e
+
+# __ Update __
+    def gui_update_agent_reg(self, agent_id: int, agent_reg_id: str, status_reg: bool, error_reg: str) -> bool:
         try:
             time_reg = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             cur = self.conn.cursor()
@@ -96,11 +108,10 @@ class Gui:
                 logger.error(f"DB(gui):  agent_reg_id '{agent_reg_id}' ошибка: {error_reg}")
             return True
         except Exception as e:
-            logger.error("DB(gui): ошибка регистации agent_reg_id %s : %s", agent_reg_id, e)
+            logger.error("DB(gui): gui_update_agent_reg - agent_reg_id %s : %s", agent_reg_id, e)
             raise e
 
-
-    def gui_registration_vvk(self, vvk_id: int, status_reg: bool, error_reg: str) -> bool:
+    def gui_update_vvk_reg(self, vvk_id: int, status_reg: bool, error_reg: str) -> bool:
         try:
             time_reg = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             cur = self.conn.cursor()
@@ -112,21 +123,39 @@ class Gui:
                 logger.error(f"DB(gui):  agent_reg_id '{vvk_id}' ошибка: {error_reg}")
             return True
         except Exception as e:
-            logger.error("DB(gui): ошибка регистации vvk_id %s : %s", vvk_id, e)
+            logger.error("DB(gui): gui_update_vvk_reg - vvk_id %s : %s", vvk_id, e)
             raise e
 
-    def gui_params_reg_value(self, agent_id: int, error_value: str, type_id: bool) -> bool:
+    def gui_update_value(self, agent_id: int, error_value: str, type_id: bool) -> bool:
         try:
-            print("asASD", type_id)
             time_reg = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             cur = self.conn.cursor()
             sql_update_gui = "UPDATE gui SET time_value = %s, error_value = %s WHERE number_id = %s AND type_id = %s;"
             cur.execute(sql_update_gui, (time_reg, error_value, agent_id, type_id))
             self.conn.commit()
             if error_value:
-                logger.error(f"DB(gui): ошибка приема ПФ agent_id '{agent_id}': {error_value}")
+                if type_id:
+                    logger.error(f"DB(gui): ошибка приема ПФ agent_id '{agent_id}': {error_value}")
+                else:
+                    logger.error(f"DB(gui): ошибка приема ПФ vvk_id '{agent_id}': {error_value}")
             return True
         except Exception as e:
             self.conn.rollback()
-            logger.error("DB(gui): ошибка работы БД при вызове gui_params_reg_value: %s", e)
+            if type_id:
+                logger.error("DB(gui): gui_update_value - agent_id %s: %s", agent_id, e)
+            else:
+                logger.error("DB(gui): gui_update_value - vvk_id %s: %s", agent_id, e)
+            raise e
+
+# __ Delete __
+    def gui_delete(self) -> bool:
+        try:
+            cur = self.conn.cursor()
+            sql_delete = f"DELETE FROM gui;"
+            cur.execute(sql_delete)
+            self.conn.commit()
+            logger.info("DB(gui): таблица очищена")
+            return True
+        except Exception as e:
+            logger.error("DB(gui): gui_delete: %s", e)
             raise e
