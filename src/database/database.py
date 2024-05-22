@@ -40,6 +40,7 @@ class Database:
             self.conn.commit()
             return number_id, agent_reg_id
         except Exception as e:
+            self.conn.rollback()
             logger.error("DB(gui): gui_select_agents_reg: %s", e)
             raise e
 
@@ -55,6 +56,7 @@ class Database:
             else:
                 raise Exception("Такого быть не может!")
         except Exception as e:
+            self.conn.rollback()
             logger.error("DB(gui): gui_select_check_agent_reg_id: %s", e)
             raise e
 
@@ -70,37 +72,42 @@ class Database:
             logger.info("DB(gui): JoinScheme загружена")
             return True
         except Exception as e:
+            self.conn.rollback()
             logger.error("DB(gui): gui_insert_join_scheme: %s", e)
             raise e
 
 # __ Update _
-    def gui_update_agent_reg(self, agent_id: int, agent_reg_id: str, status_reg: bool, error_reg: str) -> bool:
+    def gui_update_agent_reg(self, agent_id: int, agent_reg_id: str, scheme_revision: int, status_reg: bool, error_reg: str) -> bool:
         try:
             time_reg = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             cur = self.conn.cursor()
-            sql_update_gui = "UPDATE gui SET number_id = %s, status_reg = %s, time_reg = %s, error_reg = %s WHERE agent_reg_id = %s;"
-            cur.execute(sql_update_gui, (agent_id, status_reg, time_reg, error_reg, agent_reg_id))
+            sql_update_gui = "UPDATE gui SET number_id = %s, scheme_revision = %s, status_reg = %s, time_reg = %s, error_reg = %s WHERE agent_reg_id = %s;"
+            cur.execute(sql_update_gui, (agent_id, scheme_revision, status_reg, time_reg, error_reg, agent_reg_id))
             self.conn.commit()
             logger.info(f"DB(gui): agent_reg_id '{agent_reg_id}' статус изменен: {status_reg}")
             if error_reg:
                 logger.error(f"DB(gui):  agent_reg_id '{agent_reg_id}' ошибка: {error_reg}")
             return True
         except Exception as e:
+            self.conn.rollback()
             logger.error("DB(gui): gui_update_agent_reg - agent_reg_id %s : %s", agent_reg_id, e)
             raise e
 
-    def gui_update_vvk_reg(self, vvk_id: int, status_reg: bool, error_reg: str) -> bool:
+    def gui_update_vvk_reg(self, vvk_id: int, scheme_revision: int, user_query_interval_revision: int, status_reg: bool,
+                           error_reg: str) -> bool:
         try:
             time_reg = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             cur = self.conn.cursor()
-            sql_update_gui = "UPDATE gui SET number_id = %s, status_reg = %s, time_reg = %s, error_reg = %s WHERE type_id = FALSE;"
-            cur.execute(sql_update_gui, (vvk_id, status_reg, time_reg, error_reg))
+            sql_update_gui = "UPDATE gui SET number_id = %s, scheme_revision = %s, user_query_interval_revision = %s, status_reg = %s, time_reg = %s, error_reg = %s WHERE type_id = FALSE;"
+            cur.execute(sql_update_gui,
+                        (vvk_id, scheme_revision, user_query_interval_revision, status_reg, time_reg, error_reg))
             self.conn.commit()
             logger.info(f"DB(gui): agent_reg_id '{vvk_id}' статус изменен: {status_reg}")
             if error_reg:
                 logger.error(f"DB(gui):  agent_reg_id '{vvk_id}' ошибка: {error_reg}")
             return True
         except Exception as e:
+            self.conn.rollback()
             logger.error("DB(gui): gui_update_vvk_reg - vvk_id %s : %s", vvk_id, e)
             raise e
 
@@ -135,6 +142,7 @@ class Database:
             logger.info("DB(gui): таблица очищена")
             return True
         except Exception as e:
+            self.conn.rollback()
             logger.error("DB(gui): gui_delete: %s", e)
             raise e
 
@@ -370,19 +378,34 @@ class Database:
 
 # ____________ SCH_VER _____________
 
+# __ Select __
+    def sch_ver_select_vvk_details(self) -> tuple:
+        try:
+            cur = self.conn.cursor()
+            sql_select = ("SELECT vvk_id, scheme_revision, user_query_interval_revision, t3 FROM sch_ver "
+                          "WHERE status_reg = TRUE ORDER BY date_create DESC LIMIT 1")
+            cur.execute(sql_select, )
+            result = cur.fetchone()
+            if result:
+                return result
+            else:
+                return [None, None, None, None]
+        except Exception as e:
+            logger.error("DB(sch_ver): sch_ver_select_vvk_scheme: %s", e)
+            raise e
+
 # __ Insert __
-    def sch_ver_insert_vvk(self, data: dict) -> bool:
+    def sch_ver_insert_vvk(self, data: dict, scheme: dict, metric_info_list) -> bool:
         try:
             current_time = int(time.time())
             cur = self.conn.cursor()
-            sql_create = (
-                "INSERT INTO sch_ver (vvk_id, scheme_revision, user_query_interval_revision, date_create, status_reg) "
-                "VALUES (%s,%s,%s,%s,%s);")
-            cur.execute(sql_create, (
-            data["vvk_id"], data["scheme_revision"], data["user_query_interval_revision"], current_time, True))
+            sql_create = ("INSERT INTO sch_ver (vvk_id, scheme_revision, user_query_interval_revision, date_create, status_reg, scheme, metric_info_list) "
+                          "VALUES (%s,%s,%s,%s,%s,%s,%s);")
+            cur.execute(sql_create, (data["vvk_id"], data["scheme_revision"], data["user_query_interval_revision"],
+                                     current_time, True, json.dumps(scheme), json.dumps(metric_info_list)))
             self.conn.commit()
             return True
         except Exception as e:
             self.conn.rollback()
-            logger.error("DB(sch_ver): sch_ver_insert_vvk_scheme: ошибка при регистации vvk_scheme у AF: %s", e)
+            logger.error("DB(sch_ver): sch_ver_insert_vvk_scheme: ошибка регистации vvk_scheme у AF: %s", e)
             raise e

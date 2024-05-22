@@ -1,12 +1,8 @@
-import os
-import json
-import fcntl
-import time
 import requests
 import copy
 
 from logger.logger import logger
-
+from config import PC_AF_PROTOCOL, PC_AF_IP, PC_AF_PORT
 
 def add_metrics(json_vvk_return_metrics, json_agent_scheme_metrics):
     metrics_list = []
@@ -41,7 +37,7 @@ def add_templates(json_vvk_return_templates, json_agent_scheme_templates):
             templates_list.append(item)
     return templates_list
 
-def request_json(url: str, json_vvk_return: dict):
+def request_registration_vvk(url: str, json_vvk_return: dict):
     headers = {'Content-Type': 'application/json'}
     try:
         logger.info(f"Отправка: {url}")
@@ -50,10 +46,10 @@ def request_json(url: str, json_vvk_return: dict):
             logger.info("Успушная регистрация VvkScheme на стороне АФ")
             return response.json()
         else:
-            error_str = "Произошла ошибка при регистрации: " + str(response.status_code) + " : " + str(response.text)
+            error_str = "(ValueError)Произошла ошибка при регистрации: " + str(response.status_code) + " : " + str(response.text)
             raise ValueError(error_str)
     except requests.RequestException as e:
-        logger.error(f"Произошла ошибка при регистрации: {e}")
+        logger.error(f"(RequestException)Произошла ошибка при регистрации: {e}")
         raise ValueError(e)
 
 # ___________ работа только с БД _________
@@ -215,7 +211,7 @@ def registration_agent_reg_id_scheme(original_agent_scheme: dict, agent_reg_id: 
         "agent_id": index,
         "item_id_list": json_agent_list
     }
-    db.gui_update_agent_reg(index, agent_reg_id, True, None)
+    db.gui_update_agent_reg(index, agent_reg_id, original_agent_scheme["scheme_revision"], True, None)
     db.reg_sch_insert_agent(index, original_agent_scheme["scheme_revision"], user_query_interval_revision, original_agent_scheme["scheme"], agent_scheme["scheme"], None)
 
     db.reg_sch_block_false()
@@ -225,26 +221,30 @@ def registration_vvk_scheme(db):
     # REG_SCH
     if db.reg_sch_block_check():
         raise BlockingIOError
+    db.reg_sch_block_true()
+
+    vvk_id, _, _, _ = db.sch_ver_select_vvk_details()
+    if vvk_id:
+        return ("Данный метрод можно использовать только для первичной регистрации")
 
     scheme_revision, scheme, metric_info_list = db.reg_sch_select_vvk_scheme()
     data = {
         "scheme_revision": scheme_revision,
         "scheme": scheme
     }
-    # url = f'http://192.168.123.54:25002/vvk-scheme'
+    # url = f'{PC_AF_PROTOCOL}://{PC_AF_IP}:{PC_AF_PORT}/vvk-scheme'
     url = f'http://127.0.0.1:8000/agent-scheme/save'
-    temp = request_json(url, data)
+    temp = request_registration_vvk(url, data)
 
     # GUI
-    db.gui_update_vvk_reg(temp["vvk_id"], True, None)
-
+    db.gui_update_vvk_reg(temp["vvk_id"], temp["scheme_revision"], temp["user_query_interval_revision"], True, None)
     # SCH_VER
-    db.sch_ver_insert_vvk(temp)
+    db.sch_ver_insert_vvk(True, temp, scheme, metric_info_list)
 
     # REG_SCH
     db.reg_sch_update_vvk_id(temp["vvk_id"])
     db.reg_sch_update_all_user_query_revision(temp["user_query_interval_revision"])
 
-    print(temp)
+    db.reg_sch_block_false()
     return temp
 

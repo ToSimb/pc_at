@@ -6,6 +6,7 @@ import sys
 
 from database.pf import Pf
 from database.sch_ver import Sch_ver
+from database.reg_sch import Reg_sch
 from database.gui import Gui
 from database.postgres import connect, disconnect
 from logger.logger import logger
@@ -19,9 +20,9 @@ def signal_handler(sig, frame):
     disconnect(conn)
     sys.exit(0)
 
-def request_json(final_result, vvk_id):
+def request_pf(final_result: dict, vvk_id: int) -> bool:
     # url = f'{PC_AF_PROTOCOL}://{PC_AF_IP}:{PC_AF_PORT}/params?vvk_id={vvk_id}'
-    url = f'http://localhost:8000/params?agent_id={vvk_id}'
+    url = f'http://localhost:8000/params/hole?vvk_id={vvk_id}'
     headers = {'Content-Type': 'application/json'}
     try:
         response = requests.post(url, json=final_result, headers=headers)
@@ -38,7 +39,7 @@ def request_json(final_result, vvk_id):
         logger.error(f"Произошла ошибка при отправке данных: {e}")
         return False
 
-def parse_value(params):
+def parse_value(params: list) -> tuple:
     result = {}
     result_id =[]
     for item in params:
@@ -75,45 +76,164 @@ def parse_value(params):
 
     return result_id, output_data
 
+def request_registration_vvk(url: str, json_vvk_return: dict):
+    headers = {'Content-Type': 'application/json'}
+    try:
+        logger.info(f"Отправка: {url}")
+        response = requests.post(url, json=json_vvk_return, headers=headers)
+        if response.status_code == 200:
+            logger.info("Успушная регистрация VvkScheme на стороне АФ")
+            return response.json()
+        else:
+            error_str = "Произошла ошибка при регистрации: " + str(response.status_code) + " : " + str(response.text)
+            raise ValueError(error_str)
+    except requests.RequestException as e:
+        error_str = f"RequestException: {e}."
+        logger.error(error_str)
+        db_gui.gui_update_vvk_reg(None, None, None, False, error_str)
+        return None
+    except ValueError as e:
+        error_str = f"ValueError: {e}."
+        logger.error(error_str)
+        db_gui.gui_update_vvk_reg(None, None, None, False, error_str)
+        return None
+
+def forming_registration_vvk() -> bool:
+    # REG_SCH
+    if db_reg.reg_sch_block_check():
+        error_str = f"VvkScheme занят другим процессом. Повторите попытку позже"
+        logger.info(error_str)
+        db_gui.gui_update_vvk_reg(None,None,None,False, error_str)
+        return False
+    db_reg.reg_sch_block_true()
+
+    scheme_revision, scheme, metric_info_list = db_reg.reg_sch_select_vvk_scheme()
+    data = {
+        "scheme_revision": scheme_revision,
+        "scheme": scheme
+    }
+    # url = f'{PC_AF_PROTOCOL}://{PC_AF_IP}:{PC_AF_PORT}/vvk-scheme'
+    url = f'http://127.0.0.1:8000/agent-scheme/save'
+    temp = request_registration_vvk(url, data)
+    if temp:
+        # GUI
+        db_gui.gui_update_vvk_reg(temp["vvk_id"], temp["scheme_revision"], temp["user_query_interval_revision"], True, None)
+
+        # SCH_VER
+        db_sch.sch_ver_insert_vvk(True, temp, scheme, metric_info_list)
+
+        # REG_SCH
+        db_reg.reg_sch_update_vvk_id(temp["vvk_id"])
+        db_reg.reg_sch_update_all_user_query_revision(temp["user_query_interval_revision"])
+
+        db_reg.reg_sch_block_false()
+        return True
+
+    db_reg.reg_sch_block_false()
+    return False
+
+def forming_re_registration_vvk() -> bool:
+    # REG_SCH
+    if db_reg.reg_sch_block_check():
+        error_str = f"VvkScheme занят другим процессом. Повторите попытку позже"
+        logger.info(error_str)
+        db_gui.gui_update_vvk_reg(None,None,None,False, error_str)
+        return False
+    db_reg.reg_sch_block_true()
+
+    vvk_id, scheme_revision, scheme, metric_info_list = db_sch.sch_ver_select_vvk_details_unreg()
+
+    data = {
+        "scheme_revision": scheme_revision,
+        "scheme": scheme
+    }
+    # url = f'{PC_AF_PROTOCOL}://{PC_AF_IP}:{PC_AF_PORT}/vvk-scheme?vvk_id={vvk_id}'
+    url = f'http://127.0.0.1:8000/agent-scheme/save?vvk_id={vvk_id}'
+    temp = request_registration_vvk(url, data)
+    if temp:
+        # GUI
+        db_gui.gui_update_vvk_reg(temp["vvk_id"], temp["scheme_revision"], temp["user_query_interval_revision"], True, None)
+
+        # SCH_VER
+        db_sch.sch_ver_update_status_reg(temp["scheme_revision"], temp["user_query_interval_revision"])
+        db_sch.sch_ver_update_all_user_query_revision(temp["user_query_interval_revision"])
+
+        # REG_SCH
+        db_reg.reg_sch_update_all_user_query_revision(temp["user_query_interval_revision"])
+
+        db_reg.reg_sch_block_false()
+        return True
+
+    db_reg.reg_sch_block_false()
+    return False
+
 signal.signal(signal.SIGTERM, signal_handler)
 signal.signal(signal.SIGINT, signal_handler)
 
 conn = connect()
 db_gui = Gui(conn)
 db_pf = Pf(conn)
+db_reg = Reg_sch(conn)
 db_sch = Sch_ver(conn)
 
-vvk_id = None # Необходима для исколючения
 
+vvk_id = None # Необходима для исколючения
+t3 = 2
 try:
+# регистрация ВВК
+    while True:
+        vvk_id, _, _, _ = db_sch.sch_ver_select_vvk_details()
+        if vvk_id:
+            logger.info("Есть зарегистрированная VVkScheme")
+            break
+        agent_ids, agents_reg_ids = db_gui.gui_select_agents_reg()
+        if agents_reg_ids == []:
+            logger.info("Загрузите JoinSCheme")
+        else:
+            if len(agent_ids) != len(agents_reg_ids):
+                logger.info("Не все агенты зарегистрированы!")
+            else:
+                if forming_registration_vvk():
+                    break
+        time.sleep(t3)
+
+# передача ПФ
     while True:
         start_time = time.time()
-
-        params = db_pf.pf_select_params_json(INT_LIMIT)
-        result_id, value = parse_value(params)
-        vvk_id, scheme_revision, user_query_interval_revision, t3 = db_sch.sch_ver_select_vvk_details()
-        t3 = t3 if t3 is not None else T3
-        if result_id != []:
-            if vvk_id:
-                result = {
-                    "scheme_revision": scheme_revision,
-                    "user_query_interval_revision": user_query_interval_revision,
-                    "value": value
-                }
-                start_request_time = time.time()
-                if request_json(result, vvk_id):
-                    updated_rows = db_pf.pf_update_sent_status(result_id)
-                    db_gui.gui_update_value(vvk_id, None, False)
-                    count_sent_false = db_pf.pf_select_count_sent_false()
-                    logger.info("DB(pf): изменено строк (true): %d | ОСТАЛОСЬ в БД: %d", updated_rows, count_sent_false)
-                    if count_sent_false > INT_LIMIT:
-                        t3 = 0
-                end_request_time = time.time()
-                logger.info("Время формирование ПФ: %.4f | время отправки: %.4f", start_request_time-start_time, end_request_time-start_request_time)
-            else:
-                logger.info("Нет зарегестрированного ВВК")
+        date_create = db_sch.sch_ver_select_date_create_unreg()
+        if date_create:
+            params = db_pf.pf_select_params_json_unreg(date_create, INT_LIMIT)
         else:
-            logger.info("В БД нет новых данных")
+            params = db_pf.pf_select_params_json(INT_LIMIT)
+        if len(params) > 0:
+            result_id, value = parse_value(params)
+            vvk_id, scheme_revision, user_query_interval_revision, t3 = db_sch.sch_ver_select_vvk_details()
+            t3 = t3 if t3 is not None else T3
+            result = {
+                "scheme_revision": scheme_revision,
+                "user_query_interval_revision": user_query_interval_revision,
+                "value": value
+            }
+            start_request_time = time.time()
+            if request_pf(result, vvk_id):
+                updated_rows = 0
+                # updated_rows = db_pf.pf_update_sent_status(result_id)
+                db_gui.gui_update_value(vvk_id, None, False)
+                count_sent_false = db_pf.pf_select_count_sent_false()
+                logger.info("DB(pf): изменено строк (true): %d | ОСТАЛОСЬ в БД: %d", updated_rows, count_sent_false)
+                if count_sent_false > INT_LIMIT:
+                    t3 = 0
+            end_request_time = time.time()
+            logger.info("Время формирование ПФ: %.4f | время отправки: %.4f", start_request_time-start_time, end_request_time-start_request_time)
+        else:
+            if date_create:
+                if forming_re_registration_vvk():
+                    logger.info("Успешная перегистрация")
+                else:
+                    logger.info("Не успешная перегистрация!!!")
+            else:
+                logger.info("В БД нет новых данных")
+
 
         end_time = time.time()
         time_transfer = end_time - start_time

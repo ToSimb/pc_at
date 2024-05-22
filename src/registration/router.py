@@ -85,24 +85,24 @@ def agent_scheme(agent_scheme: AgentScheme, agent_id: int = None, agent_reg_id: 
     except KeyError as e:
         error_str = f"KeyError: {e}. Не удалось найти ключ в словаре."
         logger.error(error_str)
-        db.gui_update_agent_reg(None, agent_reg_id, False, error_str)
+        db.gui_update_agent_reg(None, agent_reg_id, None, False, error_str)
         db.reg_sch_block_false()
         raise HTTPException(status_code=527, detail={"error_msg": error_str})
     except ValueError as e:
         error_str = f"ValueError: {e}."
         logger.error(error_str)
-        db.gui_update_agent_reg(None, agent_reg_id, False, error_str)
+        db.gui_update_agent_reg(None, agent_reg_id, None, False, error_str)
         db.reg_sch_block_false()
         raise HTTPException(status_code=527, detail={"error_msg": error_str})
     except BlockingIOError:
         error_str = f"VvkScheme занят другим процессом. Повторите попытку позже"
         logger.error(error_str)
-        db.gui_update_agent_reg(None, agent_reg_id, False, error_str)
+        db.gui_update_agent_reg(None, agent_reg_id, None, False, error_str)
         raise HTTPException(status_code=527, detail={"error_msg": error_str})
     except Exception as e:
         error_str = f"Exception: {e}."
         logger.error(error_str)
-        db.gui_update_agent_reg(None, agent_reg_id, False, error_str)
+        db.gui_update_agent_reg(None, agent_reg_id, None, False, error_str)
         db.reg_sch_block_false()
         raise HTTPException(status_code=527, detail={"error_msg": error_str})
 
@@ -115,15 +115,21 @@ async def return_scheme(db=Depends(get_db_repo)):
     try:
         return registration_vvk_scheme(db)
     except BlockingIOError:
+        db.reg_sch_block_false()
         error_str = f"VvkScheme занят другим процессом. Повторите попытку позже"
+        db.gui_update_vvk_reg(None, None, None, False, error_str)
         logger.error(error_str)
         raise HTTPException(status_code=527, detail={"error_msg": error_str})
     except ValueError as e:
+        db.reg_sch_block_false()
         error_str = f"ValueError: {e}."
+        db.gui_update_vvk_reg(None, None, None, False, error_str)
         logger.error(error_str)
-        return HTTPException(status_code=503, detail={"error_msg": error_str})
+        raise HTTPException(status_code=503, detail={"error_msg": error_str})
     except Exception as e:
+        db.reg_sch_block_false()
         error_str = f"Exception: {e}."
+        db.gui_update_vvk_reg(None, None, None, False, error_str)
         logger.error(error_str)
         raise HTTPException(status_code=527, detail={"error_msg": error_str})
 

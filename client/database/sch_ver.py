@@ -1,4 +1,5 @@
 import time
+import json
 
 from logger.logger import logger
 
@@ -19,9 +20,11 @@ class Sch_ver:
                     vvk_id INT,
                     scheme_revision INT,
                     user_query_interval_revision INT,
-                    date_create INT,
+                    date_create BIGINT,
                     t3 INT,
-                    status_reg BOOLEAN DEFAULT FALSE
+                    status_reg BOOLEAN DEFAULT FALSE,
+                    scheme JSONB,
+                    metric_info_list JSONB
                 );
             """
             cur.execute(sql_create_table)
@@ -29,6 +32,7 @@ class Sch_ver:
             logger.info("DB(sch_ver): таблица создана")
             return True
         except Exception as e:
+            self.conn.rollback()
             logger.error("DB(sch_ver): sch_ver_create_table: %s", e)
             raise e
 
@@ -42,6 +46,7 @@ class Sch_ver:
             logger.info("DB(sch_ver): таблица удалена")
             return True
         except Exception as e:
+            self.conn.rollback()
             logger.error("DB(sch_ver): sch_ver_drop_table: %s", e)
             raise e
 
@@ -58,17 +63,59 @@ class Sch_ver:
             else:
                 return [None, None, None, None]
         except Exception as e:
+            self.conn.rollback()
             logger.error("DB(sch_ver): sch_ver_select_vvk_scheme: %s", e)
             raise e
 
+    def sch_ver_select_date_create_unreg(self) -> int:
+        try:
+            cur = self.conn.cursor()
+            sql_select = (
+                "SELECT date_create FROM sch_ver "
+                "WHERE status_reg = FALSE "
+                "ORDER BY date_create "
+                "LIMIT 1"
+            )
+            cur.execute(sql_select)
+            result = cur.fetchone()
+            if result:
+                return result[0]
+            else:
+                return None
+        except Exception as e:
+            self.conn.rollback()
+            logger.error("DB(sch_ver): sch_ver_select_date_create: %s", e)
+            raise e
+
+    def sch_ver_select_vvk_details_unreg(self) -> tuple:
+        try:
+            cur = self.conn.cursor()
+            sql_select = (
+                "SELECT vvk_id, scheme_revision, scheme, metric_info_list FROM sch_ver "
+                "WHERE status_reg = FALSE "
+                "ORDER BY date_create "
+                "LIMIT 1"
+            )
+            cur.execute(sql_select)
+            result = cur.fetchone()
+            if result:
+                return result
+            else:
+                return (None, None, None, None)
+        except Exception as e:
+            self.conn.rollback()
+            logger.error("DB(sch_ver): sch_ver_select_vvk_details_unreg: %s", e)
+            raise e
+
 # __ Insert __
-    def sch_ver_insert_vvk(self, data: dict) -> bool:
+    def sch_ver_insert_vvk(self, first_reg: bool, data: dict, scheme: dict, metric_info_list) -> bool:
         try:
             current_time = int(time.time())
             cur = self.conn.cursor()
-            sql_create = ("INSERT INTO sch_ver (vvk_id, scheme_revision, user_query_interval_revision, date_create, status_reg) "
-                          "VALUES (%s,%s,%s,%s,%s);")
-            cur.execute(sql_create, (data["vvk_id"], data["scheme_revision"], data["user_query_interval_revision"], current_time, True))
+            sql_create = ("INSERT INTO sch_ver (vvk_id, scheme_revision, user_query_interval_revision, date_create, status_reg, scheme, metric_info_list) "
+                          "VALUES (%s,%s,%s,%s,%s,%s,%s);")
+            cur.execute(sql_create, (data["vvk_id"], data["scheme_revision"], data["user_query_interval_revision"],
+                                     current_time, first_reg, json.dumps(scheme), json.dumps(metric_info_list)))
             self.conn.commit()
             return True
         except Exception as e:
@@ -77,4 +124,33 @@ class Sch_ver:
             raise e
 
 # __ Update __
+    def sch_ver_update_status_reg(self, scheme_revision: int, user_query_interval_revision: int) -> bool:
+        try:
+            cur = self.conn.cursor()
+            sql_update = (
+                "UPDATE sch_ver "
+                "SET status_reg = TRUE "
+                "WHERE scheme_revision = %s AND user_query_interval_revision = %s"
+            )
+            cur.execute(sql_update, (scheme_revision, user_query_interval_revision))
+            self.conn.commit()
+            return cur.rowcount > 0
+        except Exception as e:
+            self.conn.rollback()
+            logger.error("DB(sch_ver): sch_ver_update_status_reg: ошибка обновления status_reg: %s", e)
+            raise e
+
+    def sch_ver_update_all_user_query_revision(self, user_query_interval_revision: int) -> bool:
+        try:
+            cur = self.conn.cursor()
+            sql_update = f"UPDATE sch_ver SET user_query_interval_revision = {user_query_interval_revision};"
+            cur.execute(sql_update)
+            self.conn.commit()
+            logger.info("DB(sch_ver): значение user_query_interval_revision успешно изменено")
+            return True
+        except Exception as e:
+            self.conn.rollback()
+            logger.error("DB(sch_ver): sch_ver_update_all_user_query_revision: %s", e)
+            raise e
+
 # __ Delete __

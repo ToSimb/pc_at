@@ -30,7 +30,7 @@ try:
     while True:
         current_timestamp = int(time.time())
         final_result = {
-            "scheme_revision": 0,
+            "scheme_revision": 1,
             "user_query_interval_revision": 0,
             "value": []
         }
@@ -42,7 +42,7 @@ try:
                               'chassis.memory.used',
                               'сompboard.voltage',
                               'сompboard.power',
-                              'сompboard.state1']:
+                              'сompboard.state']:
 
                 data = []
                 metric_data = {"t": current_timestamp-10, "v": str(random.randint(800, 1100))}

@@ -20,6 +20,8 @@ class Gui:
                     type_id BOOLEAN DEFAULT TRUE,
                     number_id INT,
                     agent_reg_id VARCHAR(20),
+                    scheme_revision INT,
+                    user_query_interval_revision INT,
                     status_reg BOOLEAN,
                     time_reg TIMESTAMP,
                     error_reg VARCHAR(200),
@@ -33,6 +35,7 @@ class Gui:
             logger.info("DB(gui): таблица создана")
             return True
         except Exception as e:
+            self.conn.rollback()
             logger.error("DB(gui): gui_create_table: %s", e)
             raise e
 
@@ -46,6 +49,7 @@ class Gui:
             logger.info("DB(gui): таблица удалена")
             return True
         except Exception as e:
+            self.conn.rollback()
             logger.error("DB(gui): gui_drop_table: %s", e)
             raise e
 
@@ -61,6 +65,7 @@ class Gui:
             self.conn.commit()
             return number_id, agent_reg_id
         except Exception as e:
+            self.conn.rollback()
             logger.error("DB(gui): gui_select_agents_reg: %s", e)
             raise e
 
@@ -76,9 +81,9 @@ class Gui:
             else:
                 raise Exception("Такого быть не может!")
         except Exception as e:
+            self.conn.rollback()
             logger.error("DB(gui): gui_select_check_agent_reg_id: %s", e)
             raise e
-
 
 # __ Insert __
     def gui_insert_join_scheme(self, vvk_name: str, agent_reg_id: list):
@@ -92,37 +97,40 @@ class Gui:
             logger.info("DB(gui): JoinScheme загружена")
             return True
         except Exception as e:
+            self.conn.rollback()
             logger.error("DB(gui): gui_insert_join_scheme: %s", e)
             raise e
 
 # __ Update __
-    def gui_update_agent_reg(self, agent_id: int, agent_reg_id: str, status_reg: bool, error_reg: str) -> bool:
+    def gui_update_agent_reg(self, agent_id: int, agent_reg_id: str, scheme_revision: int, status_reg: bool, error_reg: str) -> bool:
         try:
             time_reg = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             cur = self.conn.cursor()
-            sql_update_gui = "UPDATE gui SET number_id = %s, status_reg = %s, time_reg = %s, error_reg = %s WHERE agent_reg_id = %s;"
-            cur.execute(sql_update_gui, (agent_id, status_reg, time_reg, error_reg, agent_reg_id))
+            sql_update_gui = "UPDATE gui SET number_id = %s, scheme_revision = %s, status_reg = %s, time_reg = %s, error_reg = %s WHERE agent_reg_id = %s;"
+            cur.execute(sql_update_gui, (agent_id, scheme_revision, status_reg, time_reg, error_reg, agent_reg_id))
             self.conn.commit()
             logger.info(f"DB(gui): agent_reg_id '{agent_reg_id}' статус изменен: {status_reg}")
             if error_reg:
                 logger.error(f"DB(gui):  agent_reg_id '{agent_reg_id}' ошибка: {error_reg}")
             return True
         except Exception as e:
+            self.conn.rollback()
             logger.error("DB(gui): gui_update_agent_reg - agent_reg_id %s : %s", agent_reg_id, e)
             raise e
 
-    def gui_update_vvk_reg(self, vvk_id: int, status_reg: bool, error_reg: str) -> bool:
+    def gui_update_vvk_reg(self, vvk_id: int, scheme_revision: int, user_query_interval_revision: int, status_reg: bool, error_reg: str) -> bool:
         try:
             time_reg = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             cur = self.conn.cursor()
-            sql_update_gui = "UPDATE gui SET number_id = %s, status_reg = %s, time_reg = %s, error_reg = %s WHERE type_id = FALSE;"
-            cur.execute(sql_update_gui, (vvk_id, status_reg, time_reg, error_reg))
+            sql_update_gui = "UPDATE gui SET number_id = %s, scheme_revision = %s, user_query_interval_revision = %s, status_reg = %s, time_reg = %s, error_reg = %s WHERE type_id = FALSE;"
+            cur.execute(sql_update_gui, (vvk_id, scheme_revision, user_query_interval_revision, status_reg, time_reg, error_reg))
             self.conn.commit()
             logger.info(f"DB(gui): agent_reg_id '{vvk_id}' статус изменен: {status_reg}")
             if error_reg:
                 logger.error(f"DB(gui):  agent_reg_id '{vvk_id}' ошибка: {error_reg}")
             return True
         except Exception as e:
+            self.conn.rollback()
             logger.error("DB(gui): gui_update_vvk_reg - vvk_id %s : %s", vvk_id, e)
             raise e
 
@@ -157,5 +165,6 @@ class Gui:
             logger.info("DB(gui): таблица очищена")
             return True
         except Exception as e:
+            self.conn.rollback()
             logger.error("DB(gui): gui_delete: %s", e)
             raise e

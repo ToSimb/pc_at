@@ -54,11 +54,32 @@ class Pf:
             raise e
 
 # __ Select  __
-    def pf_select_params_json(self,  int_limit: int = 20000) -> list:
+    def pf_select_params_json(self, int_limit: int = 20000) -> list:
         try:
             cur = self.conn.cursor()
             sql_select_params = (f"SELECT id, item_id, metric_id, t, v, etmax, etmin, comment FROM pf "
                                  f"WHERE sent = False ORDER BY t LIMIT {int_limit};")
+            cur.execute(sql_select_params)
+            self.conn.commit()
+            data = cur.fetchall()
+            columns = [desc[0] for desc in cur.description]
+            result = []
+            for row in data:
+                item = {}
+                for i, value in enumerate(row):
+                    if value is not None:
+                        item[columns[i]] = value
+                result.append(item)
+            return result
+        except Exception as e:
+            logger.error("DB(pf): pf_select_params_json: %s", e)
+            raise e
+
+    def pf_select_params_json_unreg(self, time_create: int, int_limit: int = 20000) -> list:
+        try:
+            cur = self.conn.cursor()
+            sql_select_params = (f"SELECT id, item_id, metric_id, t, v, etmax, etmin, comment FROM pf "
+                                 f"WHERE sent = False AND t < {time_create} ORDER BY t LIMIT {int_limit};")
             cur.execute(sql_select_params)
             self.conn.commit()
             data = cur.fetchall()

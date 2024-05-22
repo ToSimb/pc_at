@@ -13,6 +13,9 @@
                         <p>Статус регистрации: Не зарегистрирован</p>
                     {% elif vvk["status_reg"] is true %}
                         <p>Статус регистрации: Зарегистрирован</p>
+                        <p>Vvk id: {{vvk["number_id"]}}</p>
+                        <p>Scheme revision: {{vvk["scheme_revision"]}}</p>
+                        <p>User query interval revision: {{vvk["user_query_interval_revision"]}}</p>
                         <p>Время регистрации: {{vvk["time_reg"]}}</p>
                     {% else %}
                         <p>Статус регистрации: Ошибка</p>
@@ -39,6 +42,7 @@
                             <p>Статус регистрации: Не зарегистрирован</p>
                         {% elif item["status_reg"] is true %}
                             <p>Статус регистрации: Зарегистрирован</p>
+                            <p>Scheme revision: {{item["scheme_revision"]}}</p>
                             <p>Время регистрации: {{item["time_reg"]}}</p>
                         {% else %}
                             <p>Статус регистрации: Ошибка</p>
