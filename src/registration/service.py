@@ -97,10 +97,9 @@ def registration_agent_reg_id_scheme(original_agent_scheme: dict, agent_reg_id: 
         raise BlockingIOError
     db.reg_sch_block_true()
 
-    agent_scheme = copy.deepcopy(original_agent_scheme)
-
     user_query_interval_revision, join_scheme, vvk_scheme, metric_info_list = db.reg_sch_select_vvk_all()
 
+    agent_scheme = copy.deepcopy(original_agent_scheme)
     json_agent_list = []
     for join_list in join_scheme["join_list"]:
         if agent_reg_id == join_list["agent_reg_id"]:
@@ -206,12 +205,13 @@ def registration_agent_reg_id_scheme(original_agent_scheme: dict, agent_reg_id: 
 
 
     db.reg_sch_update_vvk_scheme(vvk_scheme)
+
     index = db.reg_sch_select_count_agents() + 1
     json_agent_return = {
         "agent_id": index,
         "item_id_list": json_agent_list
     }
-    db.gui_update_agent_reg(index, agent_reg_id, original_agent_scheme["scheme_revision"], True, None)
+    db.gui_update_agent_reg(index, agent_reg_id, original_agent_scheme["scheme_revision"], True)
     db.reg_sch_insert_agent(index, original_agent_scheme["scheme_revision"], user_query_interval_revision, original_agent_scheme["scheme"], agent_scheme["scheme"], None)
 
     db.reg_sch_block_false()
@@ -237,7 +237,7 @@ def registration_vvk_scheme(db):
     temp = request_registration_vvk(url, data)
 
     # GUI
-    db.gui_update_vvk_reg(temp["vvk_id"], temp["scheme_revision"], temp["user_query_interval_revision"], True, None)
+    db.gui_update_vvk_reg(temp["vvk_id"], temp["scheme_revision"], temp["user_query_interval_revision"], True)
     # SCH_VER
     db.sch_ver_insert_vvk(True, temp, scheme, metric_info_list)
 

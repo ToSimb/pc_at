@@ -90,12 +90,12 @@ def request_registration_vvk(url: str, json_vvk_return: dict):
     except requests.RequestException as e:
         error_str = f"RequestException: {e}."
         logger.error(error_str)
-        db_gui.gui_update_vvk_reg(None, None, None, False, error_str)
+        db_gui.gui_update_vvk_reg_error(False, error_str)
         return None
     except ValueError as e:
         error_str = f"ValueError: {e}."
         logger.error(error_str)
-        db_gui.gui_update_vvk_reg(None, None, None, False, error_str)
+        db_gui.gui_update_vvk_reg_error(False, error_str)
         return None
 
 def forming_registration_vvk() -> bool:
@@ -103,10 +103,9 @@ def forming_registration_vvk() -> bool:
     if db_reg.reg_sch_block_check():
         error_str = f"VvkScheme занят другим процессом. Повторите попытку позже"
         logger.info(error_str)
-        db_gui.gui_update_vvk_reg(None,None,None,False, error_str)
+        db_gui.gui_update_vvk_reg_error(False, error_str)
         return False
     db_reg.reg_sch_block_true()
-
     scheme_revision, scheme, metric_info_list = db_reg.reg_sch_select_vvk_scheme()
     data = {
         "scheme_revision": scheme_revision,
@@ -117,7 +116,7 @@ def forming_registration_vvk() -> bool:
     temp = request_registration_vvk(url, data)
     if temp:
         # GUI
-        db_gui.gui_update_vvk_reg(temp["vvk_id"], temp["scheme_revision"], temp["user_query_interval_revision"], True, None)
+        db_gui.gui_update_vvk_reg(temp["vvk_id"], temp["scheme_revision"], temp["user_query_interval_revision"], True)
 
         # SCH_VER
         db_sch.sch_ver_insert_vvk(True, temp, scheme, metric_info_list)
@@ -137,7 +136,7 @@ def forming_re_registration_vvk() -> bool:
     if db_reg.reg_sch_block_check():
         error_str = f"VvkScheme занят другим процессом. Повторите попытку позже"
         logger.info(error_str)
-        db_gui.gui_update_vvk_reg(None,None,None,False, error_str)
+        db_gui.gui_update_vvk_reg_error(False, error_str)
         return False
     db_reg.reg_sch_block_true()
 
@@ -152,7 +151,7 @@ def forming_re_registration_vvk() -> bool:
     temp = request_registration_vvk(url, data)
     if temp:
         # GUI
-        db_gui.gui_update_vvk_reg(temp["vvk_id"], temp["scheme_revision"], temp["user_query_interval_revision"], True, None)
+        db_gui.gui_update_vvk_reg(temp["vvk_id"], temp["scheme_revision"], temp["user_query_interval_revision"], True)
 
         # SCH_VER
         db_sch.sch_ver_update_status_reg(temp["scheme_revision"], temp["user_query_interval_revision"])
@@ -242,6 +241,7 @@ try:
         time.sleep(t3 - time_transfer)
 
 except Exception as e:
+    db_reg.reg_sch_block_false()
     error_str = str(e)
     if vvk_id:
         db_gui.gui_update_value(vvk_id, error_str, False)
