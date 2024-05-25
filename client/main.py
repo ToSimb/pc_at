@@ -8,30 +8,22 @@ from database.sch_ver import Sch_ver
 
 conn = connect()
 
-def create_vvk_scheme(join_scheme):
-    # Формируем структуру VvkScheme
-    scheme = {
-            "metrics": [],
-            "templates": join_scheme["templates"],
-            "item_id_list": [],
-            "item_info_list": join_scheme["item_info_list"]
-    }
-    # Создаем пустой список и индекс для формирования item_id_list
-    item_id_list = []
-    index = 0
-    # формирования списка с item_id_list
-    for a in join_scheme["item_id_list"]:
-        item_id_list.append({"full_path": a["full_path"], "item_id": index})
-        index += 1
-    # Добавление item_id_list в json
-    scheme["item_id_list"] = item_id_list
-    return scheme
 
+def delete_metrics(vvk_scheme_metrics_list: dict, list_metrics: list):
+    print("metrics", len(list_metrics))
+    metrics_list = []
+    for item in vvk_scheme_metrics_list:
+        if item["metric_id"] in list_metrics:
+            metrics_list.append(item)
+    return metrics_list
 
-with open("json/JoinScheme.json", 'r', encoding='utf-8') as file:
-    data = file.read()
-# Преобразование JSON в словарь
-json_scheme = json.loads(data)
+def delete_templates(vvk_scheme_templates_list: list, list_templates: list):
+    print("templates", len(list_templates))
+    templates_list = []
+    for item in vvk_scheme_templates_list:
+        if item["template_id"] in list_templates:
+            templates_list.append(item)
+    return templates_list
 
 # GUI
 db_gui = Gui(conn)
@@ -40,7 +32,20 @@ db_gui = Gui(conn)
 # REG_SCH
 db_reg = Reg_sch(conn)
 
-print (db_reg.reg_sch_select_vvk_scheme())
+scheme_revision_vvk, user_query_interval_revision, join_scheme, vvk_scheme, metric_info_list = db_reg.reg_sch_select_vvk_all()
+
+agent_id = 1
+# очистка
+metrics_list_excluding_agent = db_reg.reg_sch_select_metrics_excluding_agent(agent_id)
+templates_list_excluding_agent = db_reg.reg_sch_select_templates_excluding_agent(agent_id)
+
+
+templates_new = delete_templates(vvk_scheme["templates"], templates_list_excluding_agent)
+print("templates_new:", len(templates_new))
+metrics_new = delete_metrics(vvk_scheme["metrics"], metrics_list_excluding_agent)
+print("metrics_new:", len(metrics_new))
+
+
 # SCH_VER
 db_sch = Sch_ver(conn)
 

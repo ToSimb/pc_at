@@ -19,7 +19,7 @@ class Gui:
                     vvk_name VARCHAR(50),
                     type_id BOOLEAN DEFAULT TRUE,
                     number_id INT,
-                    agent_reg_id VARCHAR(20),
+                    agent_reg_id VARCHAR(30),
                     scheme_revision INT,
                     user_query_interval_revision INT,
                     status_reg BOOLEAN,
@@ -102,7 +102,7 @@ class Gui:
             raise e
 
 # __ Update __
-    def gui_update_agent_reg_error(self, agent_reg_id: str, status_reg: bool, error_reg: str) -> bool:
+    def gui_update_agent_reg_id_error(self, agent_reg_id: str, status_reg: bool, error_reg: str) -> bool:
         try:
             time_reg = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             cur = self.conn.cursor()
@@ -113,10 +113,24 @@ class Gui:
             return True
         except Exception as e:
             self.conn.rollback()
-            logger.error("DB(gui): gui_update_agent_reg_error - agent_reg_id %s : %s", agent_reg_id, e)
+            logger.error("DB(gui): gui_update_agent_reg_id_error - agent_reg_id %s : %s", agent_reg_id, e)
             raise e
 
-    def gui_update_agent_reg(self, agent_id: int, agent_reg_id: str, scheme_revision: int, status_reg: bool) -> bool:
+    def gui_update_agent_id_error(self, agent_id: int, status_reg: bool, error_reg: str) -> bool:
+        try:
+            time_reg = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            cur = self.conn.cursor()
+            sql_update_gui = "UPDATE gui SET status_reg = %s, time_reg = %s, error_reg = %s WHERE number_id = %s;"
+            cur.execute(sql_update_gui, (status_reg, time_reg, error_reg, agent_id))
+            self.conn.commit()
+            logger.error(f"DB(gui): agent_id '{agent_id}' ошибка: {error_reg}")
+            return True
+        except Exception as e:
+            self.conn.rollback()
+            logger.error("DB(gui): gui_update_agent_id_error - agent_id %s : %s", agent_id, e)
+            raise e
+
+    def gui_update_agent_reg_id_reg(self, agent_id: int, agent_reg_id: str, scheme_revision: int, status_reg: bool) -> bool:
         try:
             time_reg = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             cur = self.conn.cursor()
@@ -127,7 +141,21 @@ class Gui:
             return True
         except Exception as e:
             self.conn.rollback()
-            logger.error("DB(gui): gui_update_agent_reg - agent_reg_id %s : %s", agent_reg_id, e)
+            logger.error("DB(gui): gui_update_agent_reg_id_reg - agent_reg_id %s : %s", agent_reg_id, e)
+            raise e
+
+    def gui_update_agent_id_reg(self, agent_id: int, scheme_revision: int, status_reg: bool) -> bool:
+        try:
+            time_reg = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            cur = self.conn.cursor()
+            sql_update_gui = "UPDATE gui SET scheme_revision = %s, status_reg = %s, time_reg = %s WHERE number_id = %s;"
+            cur.execute(sql_update_gui, (scheme_revision, status_reg, time_reg,  agent_id))
+            self.conn.commit()
+            logger.info(f"DB(gui): agent_id '{agent_id}' статус изменен: {status_reg}")
+            return True
+        except Exception as e:
+            self.conn.rollback()
+            logger.error("DB(gui): gui_update_agent_id_reg - agent_id %s : %s", agent_id, e)
             raise e
 
     def gui_update_vvk_reg_error(self,  status_reg: bool, error_reg: str) -> bool:
@@ -157,7 +185,6 @@ class Gui:
             self.conn.rollback()
             logger.error("DB(gui): gui_update_vvk_reg - vvk_id %s : %s", vvk_id, e)
             raise e
-
 
     def gui_update_value(self, agent_id: int, error_value: str, type_id: bool) -> bool:
         try:

@@ -2,7 +2,11 @@ from fastapi import APIRouter, Depends, HTTPException
 from deps import get_db_repo
 
 from logger.logger import logger
-from registration.service import registration_join_scheme, registration_agent_reg_id_scheme, registration_vvk_scheme
+from registration.service import (
+    registration_join_scheme,
+    registration_agent_reg_id_scheme,
+    re_registration_agent_id_scheme,
+    registration_vvk_scheme)
 from registration.schemas import AgentScheme
 
 class MyException427(Exception):
@@ -44,7 +48,7 @@ def agent_scheme(agent_scheme: AgentScheme, agent_id: int = None, agent_reg_id: 
     """
     Метод для регистрации агентов
     """
-    original_agent_scheme = {
+    all_agent_scheme = {
         "scheme_revision": agent_scheme.scheme_revision,
         "scheme": {
             "metrics": agent_scheme.scheme.metrics,
@@ -60,7 +64,17 @@ def agent_scheme(agent_scheme: AgentScheme, agent_id: int = None, agent_reg_id: 
             raise Exception("error: Не загрежена JoinScheme.")
         if agent_id:
             if agent_id in agent_ids:
-                raise Exception("метод перерегистрации еще не сделан!!")
+                agent_reg_id_old, scheme_revision_old_agent, original_scheme_old_agent, scheme_old_agent, metric_info_list_old_agent = db.reg_sch_select_agent_all(
+                    agent_id)
+                if all_agent_scheme["scheme_revision"] > scheme_revision_old_agent:
+                    # Перерегистрация
+                    agent_scheme_return = re_registration_agent_id_scheme(agent_id, agent_reg_id_old, all_agent_scheme,
+                                                                          original_scheme_old_agent, scheme_old_agent, metric_info_list_old_agent, db)
+                    return agent_scheme_return
+                else:
+                    error_str = f"Указана более старая версия scheme_revision у Агента {agent_id}."
+                    db.gui_update_agent_id_error(agent_id, False, error_str)
+                    raise MyException427(error_str)
             else:
                 raise MyException427(f"Не зарегистрирован agent_id '{agent_id}'.")
         elif agent_reg_id:
@@ -69,7 +83,8 @@ def agent_scheme(agent_scheme: AgentScheme, agent_id: int = None, agent_reg_id: 
                 if check_agent:
                     raise MyException427(f"Такой agent_reg_id '{agent_reg_id}' уже зарегистрирован, под agent_id = {check_agent}.")
                 else:
-                    agent_scheme_return = registration_agent_reg_id_scheme(original_agent_scheme, agent_reg_id, db)
+                    # Регистрация
+                    agent_scheme_return = registration_agent_reg_id_scheme(agent_reg_id, all_agent_scheme, db)
                     return agent_scheme_return
             else:
                 raise MyException427(f"Не такого agent_reg_id '{agent_reg_id}' в JoinScheme.")
@@ -85,24 +100,36 @@ def agent_scheme(agent_scheme: AgentScheme, agent_id: int = None, agent_reg_id: 
     except KeyError as e:
         error_str = f"KeyError: {e}. Не удалось найти ключ в словаре."
         logger.error(error_str)
-        db.gui_update_agent_reg_error(agent_reg_id, False, error_str)
+        if agent_id:
+            db.gui_update_agent_id_error(agent_id, False, error_str)
+        if agent_reg_id:
+            db.gui_update_agent_reg_id_error(agent_reg_id, False, error_str)
         db.reg_sch_block_false()
         raise HTTPException(status_code=527, detail={"error_msg": error_str})
     except ValueError as e:
         error_str = f"ValueError: {e}."
         logger.error(error_str)
-        db.gui_update_agent_reg_error(agent_reg_id, False, error_str)
+        if agent_id:
+            db.gui_update_agent_id_error(agent_id, False, error_str)
+        if agent_reg_id:
+            db.gui_update_agent_reg_id_error(agent_reg_id, False, error_str)
         db.reg_sch_block_false()
         raise HTTPException(status_code=527, detail={"error_msg": error_str})
     except BlockingIOError:
         error_str = f"VvkScheme занят другим процессом. Повторите попытку позже"
         logger.error(error_str)
-        db.gui_update_agent_reg_error(agent_reg_id, False, error_str)
+        if agent_id:
+            db.gui_update_agent_id_error(agent_id, False, error_str)
+        if agent_reg_id:
+            db.gui_update_agent_reg_id_error(agent_reg_id, False, error_str)
         raise HTTPException(status_code=527, detail={"error_msg": error_str})
     except Exception as e:
         error_str = f"Exception: {e}."
         logger.error(error_str)
-        db.gui_update_agent_reg_error(agent_reg_id, False, error_str)
+        if agent_id:
+            db.gui_update_agent_id_error(agent_id, False, error_str)
+        if agent_reg_id:
+            db.gui_update_agent_reg_id_error(agent_reg_id, False, error_str)
         db.reg_sch_block_false()
         raise HTTPException(status_code=527, detail={"error_msg": error_str})
 

@@ -30,11 +30,11 @@ try:
     while True:
         current_timestamp = int(time.time())
         final_result = {
-            "scheme_revision": 1,
+            "scheme_revision": 0,
             "user_query_interval_revision": 0,
             "value": []
         }
-        for item_id in range(1, 101):
+        for item_id in range(1, 1000):
             for metric_id in ['chassis.uptime',
                               'cpu.user.time',
                               'cpu.core.load',
@@ -53,7 +53,7 @@ try:
                 data.append(metric_data)
                 final_result["value"].append({"item_id": item_id, "metric_id": metric_id, "data": data})
         start_time = time.time()
-        requestjson(final_result, 2)
+        requestjson(final_result, 1)
         end_time = time.time()
         execution_time = end_time - start_time
         print("Время отправки и сохранения в БД:", execution_time)
