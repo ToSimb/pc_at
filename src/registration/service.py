@@ -65,6 +65,12 @@ def request_registration_vvk(url: str, json_vvk_return: dict):
         logger.error(f"(RequestException)Произошла ошибка при регистрации: {e}")
         raise ValueError(e)
 
+def check_full_path_exists(item_list, target_path):
+    for item in item_list:
+        if item['full_path'] == target_path:
+            return False
+    return True
+
 def formation_agent_reg_scheme(agent_reg_id: str, agent_scheme: dict, join_scheme: dict, vvk_scheme: dict):
     json_agent_list = []
     for join_list in join_scheme["join_list"]:
@@ -78,6 +84,15 @@ def formation_agent_reg_scheme(agent_reg_id: str, agent_scheme: dict, join_schem
                     vvk_scheme['templates'] = add_templates(vvk_scheme['templates'], agent_scheme['scheme']['templates'])
                 except ValueError as e:
                     raise ValueError(e)
+
+
+                for item in agent_scheme["scheme"]["join_id_list"]:
+                    full_path_item = join_list["join_item_full_path"] + '/' + item["full_path"]
+                    if check_full_path_exists(join_scheme["item_id_list"], full_path_item):
+                        raise ValueError(
+                            f"Ошибка: При попытки регистрации агента по типу соединения 'jtInclude' не был найден путь в Jion: {full_path_item}")
+
+
 
                 # поиск самого большого item_id
                 if vvk_scheme["item_id_list"]:
