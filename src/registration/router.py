@@ -4,6 +4,7 @@ from deps import get_db_repo
 from logger.logger import logger
 from registration.service import (
     registration_join_scheme,
+    re_registration_join_scheme,
     registration_agent_reg_id_scheme,
     re_registration_agent_id_scheme,
     registration_vvk_scheme)
@@ -26,10 +27,24 @@ def join_scheme(join_scheme: dict, db=Depends(get_db_repo)):
     Метод для загрузки JionScheme
     """
     try:
-        if registration_join_scheme(join_scheme, db):
-            return ("Схема сохранена")
+        if db.reg_sch_select_check_vvk():
+            scheme_revision_vvk, user_query_interval_revision, _, _, metric_info_list = db.reg_sch_select_vvk_all()
+            if join_scheme["scheme_revision"] > scheme_revision_vvk:
+                vvk_scheme_new = re_registration_join_scheme(join_scheme, user_query_interval_revision,
+                                            metric_info_list, db)
+                return (vvk_scheme_new)
+            else:
+                raise MyException427(
+                    f"Ошибка: Загрезите более свежую версию JoinScheme, чем scheme_revision: {scheme_revision_vvk}.")
         else:
-            raise Exception("Метод перерегистарции не реализован")
+            vvk_scheme = registration_join_scheme(join_scheme, db)
+            return (vvk_scheme)
+
+    except MyException427 as e:
+        error_str = str(e)
+        logger.error(error_str)
+        raise HTTPException(status_code=427, detail={"error_msg": error_str})
+
     except KeyError as e:
         error_str = f"KeyError: {e}. Не удалось найти ключ в словаре."
         logger.error(error_str)
@@ -64,12 +79,12 @@ def agent_scheme(agent_scheme: AgentScheme, agent_id: int = None, agent_reg_id: 
             raise Exception("error: Не загрежена JoinScheme.")
         if agent_id:
             if agent_id in agent_ids:
-                agent_reg_id_old, scheme_revision_old_agent, original_scheme_old_agent, scheme_old_agent, metric_info_list_old_agent = db.reg_sch_select_agent_all(
+                agent_reg_id_old, scheme_revision_old_agent, metric_info_list_old_agent = db.reg_sch_select_agent_all(
                     agent_id)
                 if all_agent_scheme["scheme_revision"] > scheme_revision_old_agent:
                     # Перерегистрация
                     agent_scheme_return = re_registration_agent_id_scheme(agent_id, agent_reg_id_old, all_agent_scheme,
-                                                                          original_scheme_old_agent, scheme_old_agent, metric_info_list_old_agent, db)
+                                                                          metric_info_list_old_agent, db)
                     return agent_scheme_return
                 else:
                     error_str = f"Указана более старая версия scheme_revision у Агента {agent_id}."

@@ -30,11 +30,11 @@ try:
     while True:
         current_timestamp = int(time.time())
         final_result = {
-            "scheme_revision": 0,
+            "scheme_revision": 10,
             "user_query_interval_revision": 0,
             "value": []
         }
-        for item_id in range(1, 1000):
+        for item_id in range(1, 10):
             for metric_id in ['chassis.uptime',
                               'cpu.user.time',
                               'cpu.core.load',
@@ -58,7 +58,7 @@ try:
         execution_time = end_time - start_time
         print("Время отправки и сохранения в БД:", execution_time)
 
-        time.sleep(1)
+        time.sleep(5)
 
 except Exception as e:
     sys.exit(1)

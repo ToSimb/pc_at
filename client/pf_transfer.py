@@ -177,7 +177,7 @@ db_sch = Sch_ver(conn)
 
 
 vvk_id = None # Необходима для исколючения
-t3 = 2
+t3 = T3
 try:
 # регистрация ВВК
     while True:
@@ -198,6 +198,7 @@ try:
 
 # передача ПФ
     while True:
+        t3 = T3
         start_time = time.time()
         date_create = db_sch.sch_ver_select_date_create_unreg()
         if date_create:
@@ -215,8 +216,8 @@ try:
             }
             start_request_time = time.time()
             if request_pf(result, vvk_id):
-                updated_rows = 0
-                # updated_rows = db_pf.pf_update_sent_status(result_id)
+                # updated_rows = 0
+                updated_rows = db_pf.pf_update_sent_status(result_id)
                 db_gui.gui_update_value(vvk_id, None, False)
                 count_sent_false = db_pf.pf_select_count_sent_false()
                 logger.info("DB(pf): изменено строк (true): %d | ОСТАЛОСЬ в БД: %d", updated_rows, count_sent_false)
@@ -228,8 +229,9 @@ try:
             if date_create:
                 if forming_re_registration_vvk():
                     logger.info("Успешная перегистрация")
+                    t3 = 0
                 else:
-                    logger.info("Не успешная перегистрация!!!")
+                    logger.error("Не успешная перегистрация!!!")
             else:
                 logger.info("В БД нет новых данных")
 

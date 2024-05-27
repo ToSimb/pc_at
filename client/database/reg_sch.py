@@ -134,6 +134,24 @@ class Reg_sch:
             logger.error("DB(reg_sch): reg_sch_select_count_agents: %s", e)
             raise
 
+    def reg_sch_select_agents_all_json(self) -> list:
+        try:
+            cur = self.conn.cursor()
+            sql_select = """
+                SELECT number_id, agent_reg_id, scheme_revision, original_scheme, scheme, metric_info_list 
+	            FROM reg_sch 
+	            WHERE type_id = TRUE
+            """
+            cur.execute(sql_select, )
+            results = cur.fetchall()
+            column_names = [desc[0] for desc in cur.description]
+            result_dicts = [dict(zip(column_names, row)) for row in results]
+            return result_dicts
+        except Exception as e:
+            self.conn.rollback()
+            logger.error("DB(reg_sch): reg_sch_select_agents_all: %s", e)
+            raise e
+
     def reg_sch_select_metrics_ids(self, agent_id: int) -> tuple:
         try:
             cur = self.conn.cursor()
@@ -142,8 +160,8 @@ class Reg_sch:
             result = cur.fetchall()
             self.conn.commit()
             if result:
-                scheme_revision = result[0][1]
-                user_query_interval_revisions = result[0][0]
+                scheme_revision = result[0][0]
+                user_query_interval_revisions = result[0][1]
                 metric_ids = [row[2] for row in result]
                 return scheme_revision, user_query_interval_revisions, metric_ids
             return None, None, []
@@ -155,7 +173,7 @@ class Reg_sch:
     def reg_sch_select_agent_all(self, agent_id: int) -> tuple:
         try:
             cur = self.conn.cursor()
-            sql_select = f"SELECT agent_reg_id, scheme_revision, original_scheme, scheme, metric_info_list FROM reg_sch WHERE number_id = {agent_id}"
+            sql_select = f"SELECT agent_reg_id, scheme_revision, metric_info_list FROM reg_sch WHERE number_id = {agent_id}"
             cur.execute(sql_select, )
             result = cur.fetchone()
             if result:
@@ -252,14 +270,25 @@ class Reg_sch:
             raise e
 
 
-
-
 # __ Update __
     def reg_sch_update_vvk_scheme(self, scheme_revision:int, scheme: dict) -> bool:
         try:
             cur = self.conn.cursor()
             sql_update_scheme = "UPDATE reg_sch SET scheme_revision = %s, scheme = %s WHERE type_id = FALSE;"
             cur.execute(sql_update_scheme, (scheme_revision, json.dumps(scheme),))
+            logger.info("DB(reg_sch): VvkScheme-scheme изменена")
+            self.conn.commit()
+            return True
+        except Exception as e:
+            self.conn.rollback()
+            logger.error("DB(reg_sch): reg_sch_update_vvk_scheme: %s", e)
+            raise e
+
+    def reg_sch_update_vvk_scheme_all(self, scheme_revision: int, original_scheme: dict,scheme: dict) -> bool:
+        try:
+            cur = self.conn.cursor()
+            sql_update_scheme = "UPDATE reg_sch SET scheme_revision = %s, original_scheme = %s, scheme = %s WHERE type_id = FALSE;"
+            cur.execute(sql_update_scheme, (scheme_revision, json.dumps(original_scheme), json.dumps(scheme),))
             logger.info("DB(reg_sch): VvkScheme-scheme изменена")
             self.conn.commit()
             return True
@@ -306,7 +335,20 @@ class Reg_sch:
             self.conn.rollback()
             logger.error("DB(reg_sch): reg_scg_update_agent '%s': %s", number_id, e)
             raise e
+
 # __ Delete __
+    def reg_sch_delete_agent(self, agent_id: int) -> bool:
+        try:
+            cur = self.conn.cursor()
+            sql_delete = f"DELETE FROM reg_sch WHERE number_id = {agent_id};"
+            cur.execute(sql_delete)
+            self.conn.commit()
+            logger.info(f"DB(reg_sch): удален агент {agent_id}")
+            return True
+        except Exception as e:
+            self.conn.rollback()
+            logger.error("DB(reg_sch): reg_sch_delete_agent: %s", e)
+            raise e
 
 # __ BLOCK __
     def reg_sch_block_true(self) -> bool:

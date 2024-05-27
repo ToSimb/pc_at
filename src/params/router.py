@@ -28,9 +28,10 @@ async def params_data(params: SchemeJson, agent_id: int, db=Depends(get_db_repo)
         scheme_revision, user_query_interval_revision, metric = db.reg_sch_select_metrics_ids(agent_id)
 
         if scheme_revision is None:
-            raise MyException427(f"Ошибка: Такой agent '{agent_id}' не зарегестрирован!.")
+            raise MyException427(f"Ошибка: Такой agent '{agent_id}' не зарегестрирован, или необходима перерегистарция.")
         if scheme_revision != params.scheme_revision:
             raise MyException427(f"Ошибка: Agent '{agent_id}' - неверная scheme_revision, зарегестрированна: {scheme_revision}.")
+
 
         add_params(params, agent_id, metric, db)
         if user_query_interval_revision != params.user_query_interval_revision:

@@ -85,13 +85,11 @@ def formation_agent_reg_scheme(agent_reg_id: str, agent_scheme: dict, join_schem
                 except ValueError as e:
                     raise ValueError(e)
 
-
                 for item in agent_scheme["scheme"]["join_id_list"]:
                     full_path_item = join_list["join_item_full_path"] + '/' + item["full_path"]
                     if check_full_path_exists(join_scheme["item_id_list"], full_path_item):
                         raise ValueError(
                             f"Ошибка: При попытки регистрации агента по типу соединения 'jtInclude' не был найден путь в Jion: {full_path_item}")
-
 
 
                 # поиск самого большого item_id
@@ -189,43 +187,175 @@ def formation_agent_reg_scheme(agent_reg_id: str, agent_scheme: dict, join_schem
                             join_id_list_scheme["agent_item_join_id"]))
     return agent_scheme, json_agent_list, vvk_scheme
 
+def formation_agent_update_join(agent_scheme: dict, join_scheme: dict, vvk_scheme: dict):
+    for join_list in join_scheme["join_list"]:
+        if agent_scheme["agent_reg_id"] == join_list["agent_reg_id"]:
+            # если тип подключения jtInclude
+            if join_list["join_type"] == "jtInclude":
+                try:
+                    # проверка и добавление metrics
+                    vvk_scheme['metrics'] = add_metrics(vvk_scheme['metrics'], agent_scheme['scheme']['metrics'])
+                    # проверка и добавление templates
+                    vvk_scheme['templates'] = add_templates(vvk_scheme['templates'], agent_scheme['scheme']['templates'])
+                except ValueError as e:
+                    raise ValueError(e)
+
+                for item in agent_scheme["scheme"]["join_id_list"]:
+                    full_path_item = join_list["join_item_full_path"] + '/' + item["full_path"]
+                    if check_full_path_exists(join_scheme["item_id_list"], full_path_item):
+                        raise ValueError(
+                            f"Ошибка: При попытки регистрации агента по типу соединения 'jtInclude' не был найден путь в Jion: {full_path_item}")
+
+                # Формирование нового item_id_list
+                for a in agent_scheme["scheme"]["item_id_list"]:
+                    for existing_item in vvk_scheme["item_id_list"]:
+                        if existing_item["full_path"] == a["full_path"]:
+                            existing_item["item_id"] = a["item_id"]
+                            break
+                    else:
+                        vvk_scheme["item_id_list"].append(a)
+
+                # Формирование нового item_info_list
+                for a in agent_scheme["scheme"]["item_info_list"]:
+                    b = next(
+                        (b for b in vvk_scheme["item_info_list"] if
+                         b["full_path"] == a["full_path"]),
+                        None)
+                    if b:
+                        b.update(a)
+                    else:
+                        vvk_scheme["item_info_list"].append(a)
+
+            # если тип подключения jtExclude
+            if join_list["join_type"] == "jtAssign":
+                # проверка и добавление metrics
+                vvk_scheme['metrics'] = add_metrics(vvk_scheme['metrics'], agent_scheme['scheme']['metrics'])
+                # проверка и добавление templates
+                vvk_scheme['templates'] = add_templates(vvk_scheme['templates'], agent_scheme['scheme']['templates'])
+
+                if len(join_list["joins"]) != len(agent_scheme["scheme"]["join_id_list"]):
+                    raise ValueError("Ошибка: разное количество join_id_list с JoinSheme")
+
+                # проходимся по join_id_list в json_agent_scheme
+                for join_id_list_scheme in join_list["joins"]:
+                    join_id_list_agent = next(
+                        (join_id_list_agent for join_id_list_agent in agent_scheme["scheme"]["join_id_list"]
+                         if join_id_list_scheme["agent_item_join_id"] == join_id_list_agent["join_id"]), None)
+                    if join_id_list_agent:
+                        # формирование списка item_id_list
+                        for a in agent_scheme["scheme"]["item_id_list"]:
+                            for existing_item in vvk_scheme["item_id_list"]:
+                                if existing_item["full_path"] == a["full_path"]:
+                                    existing_item["item_id"] = a["item_id"]
+                                    break
+                            else:
+                                vvk_scheme["item_id_list"].append(a)
+
+                        # формирование списка item_info_list
+                        for a in agent_scheme["scheme"]["item_info_list"]:
+                            b = next(
+                                (b for b in vvk_scheme["item_info_list"] if
+                                 b["full_path"] == a["full_path"]),
+                                None)
+                            if b:
+                                b.update(a)
+                            else:
+                                vvk_scheme["item_info_list"].append(a)
+
+                    else:
+                        raise ValueError("Ошибка: нет :{} в join_id_list".format(
+                            join_id_list_scheme["agent_item_join_id"]))
+
+    return vvk_scheme
+
 # ___________ работа только с БД _________
 
-def registration_join_scheme(join_scheme: dict, db) -> bool:
+def registration_join_scheme(join_scheme: dict, db) -> dict:
     # REG_SCH
     if db.reg_sch_block_check():
         raise BlockingIOError
+    # Формируем структуру VvkScheme:Scheme
+    vvk_scheme = {
+        "metrics": [],
+        "templates": join_scheme["scheme"]["templates"],
+        "item_id_list": [],
+        "item_info_list": join_scheme["scheme"]["item_info_list"]
+    }
+    item_id_list = []
+    index = 0
+    for a in join_scheme["scheme"]["item_id_list"]:
+        item_id_list.append({"full_path": a["full_path"], "item_id": index})
+        index += 1
+    vvk_scheme["item_id_list"] = item_id_list
+    # GUI
+    vvk_puth = join_scheme["scheme"]["item_id_list"][0]["full_path"].split("/")[0]
+    vvk_name = [item for item in join_scheme["scheme"]["templates"] if item.get('template_id') == vvk_puth][0][
+        "name"]
+    agent_reg_id = [item["agent_reg_id"] for item in join_scheme["scheme"]["join_list"]]
+    db.gui_insert_join_scheme(vvk_name, agent_reg_id)
+    # REG_SCH
+    db.reg_sch_insert_vvk(join_scheme["scheme_revision"], join_scheme["scheme"], vvk_scheme, None)
+    return vvk_scheme
 
-    if db.reg_sch_select_check_vvk():
-# __ ПЕРЕРИГИСТРАЦИЯ __
-        return False
-    else:
-# __ РЕГИСТРАЦИЯ __
-        # Формируем структуру VvkScheme:Scheme
-        vvk_scheme = {
-            "metrics": [],
-            "templates": join_scheme["scheme"]["templates"],
-            "item_id_list": [],
-            "item_info_list": join_scheme["scheme"]["item_info_list"]
+def re_registration_join_scheme(join_scheme_new, user_query_interval_revision,
+                                            metric_info_list, db) -> dict:
+    if db.reg_sch_block_check():
+        raise BlockingIOError
+    db.reg_sch_block_true()
+
+    # Формируем структуру VvkSchemeNew:Scheme
+    vvk_scheme_new = {
+        "metrics": [],
+        "templates": join_scheme_new["scheme"]["templates"],
+        "item_id_list": [],
+        "item_info_list": join_scheme_new["scheme"]["item_info_list"]
+    }
+    item_id_list = []
+    index = 0
+    for a in join_scheme_new["scheme"]["item_id_list"]:
+        item_id_list.append({"full_path": a["full_path"], "item_id": index})
+        index += 1
+    vvk_scheme_new["item_id_list"] = item_id_list
+
+    # GUI
+    db.gui_delete_agents()
+    agent_reg_id_new = [item["agent_reg_id"] for item in join_scheme_new["scheme"]["join_list"]]
+    db.gui_insert_agents(agent_reg_id_new)
+
+    # получаем схемы агентов
+    agents_all_list = db.reg_sch_select_agents_all_json()
+    count_agents = len(agents_all_list)
+
+    if count_agents > 0:
+        for agent in agents_all_list:
+            if agent["agent_reg_id"] in agent_reg_id_new:
+                try:
+                    vvk_scheme_new = formation_agent_update_join(agent, join_scheme_new["scheme"], vvk_scheme_new)
+                    db.gui_update_agent_reg_id_reg(agent["number_id"], agent["agent_reg_id"], agent["scheme_revision"], True, None)
+
+                except Exception as e:
+                    db.gui_update_agent_reg_id_reg(agent["number_id"], agent["agent_reg_id"], agent["scheme_revision"], False, str(e))
+                    db.reg_sch_update_agent_re_reg(agent["number_id"], agent["scheme_revision"], user_query_interval_revision,
+                                                       None, None, None)
+            else:
+                # необходимо удалить агент с gui, reg_ver
+                db.reg_sch_delete_agent(agent["number_id"])
+
+    # REG
+    db.reg_sch_update_vvk_scheme_all(join_scheme_new["scheme_revision"], join_scheme_new["scheme"], vvk_scheme_new)
+
+    # случай когда ввк схема зарегистрированна!
+    vvk_id, _, _, _ = db.sch_ver_select_vvk_details()
+    if vvk_id:
+        temp = {
+            "vvk_id": vvk_id,
+            "scheme_revision": join_scheme_new["scheme_revision"],
+            "user_query_interval_revision": user_query_interval_revision
         }
-        item_id_list = []
-        index = 0
-        for a in join_scheme["scheme"]["item_id_list"]:
-            item_id_list.append({"full_path": a["full_path"], "item_id": index})
-            index += 1
-        vvk_scheme["item_id_list"] = item_id_list
+        db.sch_ver_insert_vvk(False, temp, vvk_scheme_new, metric_info_list)
 
-        # GUI
-        vvk_puth = join_scheme["scheme"]["item_id_list"][0]["full_path"].split("/")[0]
-        vvk_name = [item for item in join_scheme["scheme"]["templates"] if item.get('template_id') == vvk_puth][0][
-            "name"]
-        agent_reg_id = [item["agent_reg_id"] for item in join_scheme["scheme"]["join_list"]]
-
-        db.gui_insert_join_scheme(vvk_name, agent_reg_id)
-
-        # REG_SCH
-        db.reg_sch_insert_vvk(join_scheme["scheme_revision"], join_scheme["scheme"], vvk_scheme, None)
-        return True
+    db.reg_sch_block_false()
+    return vvk_scheme_new
 
 def registration_agent_reg_id_scheme(agent_reg_id: str, all_agent_scheme: dict, db):
     # REG_SCH
@@ -237,6 +367,9 @@ def registration_agent_reg_id_scheme(agent_reg_id: str, all_agent_scheme: dict, 
 
     agent_scheme, json_agent_list, vvk_scheme_new = formation_agent_reg_scheme(agent_reg_id, all_agent_scheme, join_scheme, vvk_scheme)
 
+    # if all_agent_scheme == agent_scheme:
+    #     print("Да они ровны!!!!!!!!!!!!!!")
+
     db.reg_sch_update_vvk_scheme(scheme_revision_vvk, vvk_scheme_new)
 
     index = db.reg_sch_select_count_agents() + 1
@@ -244,7 +377,7 @@ def registration_agent_reg_id_scheme(agent_reg_id: str, all_agent_scheme: dict, 
         "agent_id": index,
         "item_id_list": json_agent_list
     }
-    db.gui_update_agent_reg_id_reg(index, agent_reg_id, all_agent_scheme["scheme_revision"], True)
+    db.gui_update_agent_reg_id_reg(index, agent_reg_id, all_agent_scheme["scheme_revision"], True, None)
     db.reg_sch_insert_agent(index, agent_reg_id, all_agent_scheme["scheme_revision"], user_query_interval_revision, all_agent_scheme["scheme"], agent_scheme["scheme"], None)
 
     db.reg_sch_block_false()
@@ -252,7 +385,7 @@ def registration_agent_reg_id_scheme(agent_reg_id: str, all_agent_scheme: dict, 
 
 
 def re_registration_agent_id_scheme(agent_id: int, agent_reg_id: str, all_agent_scheme: dict,
-                                    original_scheme_old_agent: dict, scheme_old_agent: dict, metric_info_list_old_agent: dict, db):
+                                    metric_info_list_old_agent: dict, db):
     # REG_SCH
     if db.reg_sch_block_check():
         raise BlockingIOError

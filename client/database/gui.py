@@ -101,6 +101,19 @@ class Gui:
             logger.error("DB(gui): gui_insert_join_scheme: %s", e)
             raise e
 
+    def gui_insert_agents(self, agent_reg_id: list):
+        try:
+            cur = self.conn.cursor()
+            sql_insert = "INSERT INTO gui (agent_reg_id) VALUES (%s);"
+            cur.executemany(sql_insert, [(agent_id,) for agent_id in agent_reg_id])
+            self.conn.commit()
+            return True
+        except Exception as e:
+            self.conn.rollback()
+            logger.error("DB(gui): gui_insert_agents: %s", e)
+            raise e
+
+
 # __ Update __
     def gui_update_agent_reg_id_error(self, agent_reg_id: str, status_reg: bool, error_reg: str) -> bool:
         try:
@@ -130,12 +143,12 @@ class Gui:
             logger.error("DB(gui): gui_update_agent_id_error - agent_id %s : %s", agent_id, e)
             raise e
 
-    def gui_update_agent_reg_id_reg(self, agent_id: int, agent_reg_id: str, scheme_revision: int, status_reg: bool) -> bool:
+    def gui_update_agent_reg_id_reg(self, agent_id: int, agent_reg_id: str, scheme_revision: int, status_reg: bool, error_reg: str) -> bool:
         try:
             time_reg = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             cur = self.conn.cursor()
-            sql_update_gui = "UPDATE gui SET number_id = %s, scheme_revision = %s, status_reg = %s, time_reg = %s WHERE agent_reg_id = %s;"
-            cur.execute(sql_update_gui, (agent_id, scheme_revision, status_reg, time_reg,  agent_reg_id))
+            sql_update_gui = "UPDATE gui SET number_id = %s, scheme_revision = %s, status_reg = %s, time_reg = %s, error_reg = %s WHERE agent_reg_id = %s;"
+            cur.execute(sql_update_gui, (agent_id, scheme_revision, status_reg, time_reg, error_reg, agent_reg_id))
             self.conn.commit()
             logger.info(f"DB(gui): agent_reg_id '{agent_reg_id}' статус изменен: {status_reg}")
             return True
@@ -219,4 +232,17 @@ class Gui:
         except Exception as e:
             self.conn.rollback()
             logger.error("DB(gui): gui_delete: %s", e)
+            raise e
+
+    def gui_delete_agents(self) -> bool:
+        try:
+            cur = self.conn.cursor()
+            sql_delete = "DELETE FROM gui WHERE type_id = TRUE;"
+            cur.execute(sql_delete)
+            self.conn.commit()
+            logger.info("DB(gui): таблица очищена для строк с type_id = TRUE")
+            return True
+        except Exception as e:
+            self.conn.rollback()
+            logger.error("DB(gui): gui_delete_agents: %s", e)
             raise e

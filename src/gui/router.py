@@ -30,6 +30,13 @@ async def gui_pages(request: Request, db=Depends(get_db_repo)):
         request=request, name="item.html", context={"vvk": vvk, "agents": agents}
     )
 
+@router.get("/vvk_scheme",)
+async def gui_pages(db=Depends(get_db_repo)):
+    """
+    Метод для просмотра VvkScheme
+    """
+    return db.reg_sch_select_vvk_json()
+
 @router.get("/all_vvk_scheme")
 async def all_vvk_scheme(db=Depends(get_db_repo)):
     """
