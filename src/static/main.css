@@ -16,6 +16,12 @@
 }
 
 
-.vvk {
+.main__vvk {
     margin-bottom: 20px;
+}
+
+.main__block-center {
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
 }

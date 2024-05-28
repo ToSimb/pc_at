@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Upload JSON File</title>
+    <link href="{{ url_for('static', path='/styles.css') }}" rel="stylesheet">
+
+    <script>
+        function redirectToBack() {
+            window.location.href = "{{ url_for('gui_pages') }}";
+        }
+    </script>
+
+</head>
+<body>
+    <main class="main">
+        <div class="container">
+            <div class="main__vvk border">
+                <h1>Upload JSON File</h1>
+                <form class="main__block-center flex" action="{{ url_for('upload_json_file') }}" method="post" enctype="multipart/form-data">
+                    <input type="file" name="file">
+                    <button class="btn reset-btn" type="submit">Upload</button>
+                </form>
+                <button class="btn reset-btn" onclick="redirectToBack()">
+                    Вернуться обратно
+                </button>
+            </div>
+        </div>
+    </main>
+</body>
+</html>

@@ -360,6 +360,20 @@ class Database:
             logger.error("DB(reg_sch): reg_sch_select_metrics_ids: %s", e)
             raise e
 
+    def reg_sch_select_agent_scheme(self, agent_id: int) -> tuple:
+        try:
+            cur = self.conn.cursor()
+            sql_select = f"SELECT scheme FROM reg_sch WHERE number_id = {agent_id}"
+            cur.execute(sql_select, )
+            result = cur.fetchone()
+            if result:
+                return result
+            else:
+                raise Exception(f"Такой агент {agent_id} не зарегистирована!!")
+        except Exception as e:
+            logger.error("DB(reg_sch): reg_sch_select_vvk_scheme_all: %s", e)
+            raise e
+
     def reg_sch_select_agent_all(self, agent_id: int) -> tuple:
         try:
             cur = self.conn.cursor()

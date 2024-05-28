@@ -6,6 +6,7 @@ from postgres import connect, disconnect
 from params.router import router as router_params
 from registration.router import router as router_registration
 from gui.router import router as router_gui
+from join_scheme.router import router as router_upload
 
 from logger.log_meddlewary import LogMiddleware
 
@@ -29,6 +30,8 @@ app.add_middleware(LogMiddleware)
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
 
-app.include_router(router_params)
+
+app.include_router(router_upload)
 app.include_router(router_registration)
+app.include_router(router_params)
 app.include_router(router_gui)

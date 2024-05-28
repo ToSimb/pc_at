@@ -1,13 +1,31 @@
-<html>
+<!DOCTYPE html>
+<html lang="ru">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
     <title>GUI</title>
     <link href="{{ url_for('static', path='/styles.css') }}" rel="stylesheet">
+
+    <script>
+        function redirectToVvkScheme() {
+            window.location.href = "{{ url_for('gui_pages_vvk') }}";
+        }
+
+        function redirectToUploadVvkScheme() {
+            window.location.href = "{{ url_for('upload_form_get') }}";
+        }
+
+        function redirectToAgentScheme(agent_id) {
+            window.location.href = `gui/agent_scheme/${agent_id}`;
+        }
+    </script>
 </head>
 <body>
     <main class="main">
         <div class="container">
             {% if vvk %}
-                <div class="vvk border">
+                <div class="main__vvk border">
                     <h1>{{vvk['vvk_name']}}</h1>
                     {% if vvk["status_reg"] is none %}
                         <p>Статус регистрации: Не зарегистрирован</p>
@@ -19,44 +37,57 @@
                         <p>Время регистрации: {{vvk["time_reg"]}}</p>
                     {% else %}
                         <p>Статус регистрации: Ошибка</p>
-                        <p>Время ошибки: {{vvk["time_reg"]}}</p>
-                        <p>Ошибка: {{vvk["error_reg"]}}</p>
+                        <p>Время ошибки при регистрации: {{vvk["time_reg"]}}</p>
+                        <p>Ошибка регистрации: {{vvk["error_reg"]}}</p>
                     {% endif %}
                         <p></p>
                     {% if vvk["time_value"] is not none %}
                         <p>Время последней передачи ПФ: {{vvk["time_value"]}}</p>
                     {% endif %}
                     {% if vvk["error_value"] is not none %}
-                        <p>Получена ошибка: {{vvk["error_value"]}}</p>
+                        <p>Ошибка передачи ПФ: {{vvk["error_value"]}}</p>
                     {% endif %}
+                    <div class="main__block-center flex">
+                        <button class="btn reset-btn" onclick="redirectToVvkScheme()">
+                            Посмотретреть Vvk Scheme
+                        </button>
+                        <button class="btn reset-btn" onclick="redirectToUploadVvkScheme()">
+                            Обновить Vvk Scheme
+                        </button>
+                    </div>
                 </div>
-                <div class="visually-hidden">{{vvk}}</div>
                 <div class="border">
                     <h2>Агенты</h2>
                     {% for item in agents %}
                     <div class="border border-mini">
                         <p>Agent_id: {{item["number_id"]}}</p>
                         <p>Agent_reg_id: {{item["agent_reg_id"]}}</p>
+                        <p>Scheme revision: {{item["scheme_revision"]}}</p>
 
                         {% if item["status_reg"] is none %}
                             <p>Статус регистрации: Не зарегистрирован</p>
                         {% elif item["status_reg"] is true %}
                             <p>Статус регистрации: Зарегистрирован</p>
-                            <p>Scheme revision: {{item["scheme_revision"]}}</p>
                             <p>Время регистрации: {{item["time_reg"]}}</p>
                         {% else %}
                             <p>Статус регистрации: Ошибка</p>
                             <p>Время ошибки: {{item["time_reg"]}}</p>
-                            <p>Ошибка: {{item["error_reg"]}}</p>
+                            <p>Ошибка регистрации: {{item["error_reg"]}}</p>
                         {% endif %}
                         <p></p>
                         {% if item["time_value"] is not none %}
                             <p>Время последней приема ПФ: {{item["time_value"]}}</p>
                         {% endif %}
                         {% if item["error_value"] is not none %}
-                            <p>Получена ошибка: {{item["error_value"]}}</p>
+                            <p>Ошибка приема ПФ: {{item["error_value"]}}</p>
                         {% endif %}
-                        <div class="visually-hidden">{{item}}</div>
+                        {% if item["status_reg"] is true %}
+                            <div class="main__block-center flex">
+                                <button class="btn reset-btn" onclick="redirectToAgentScheme({{item["number_id"]}})">
+                                Посмотретреть Agent Scheme
+                                </button>
+                            </div>
+                        {% endif %}
                     </div>
                     {% endfor %}
                 </div>
@@ -64,6 +95,11 @@
             {% else %}
                 <div class="border">
                     <h1> Нет зарегестрированной JoinScheme</h1>
+                    <div class="main__block-center flex">
+                        <button class="btn reset-btn" onclick="redirectToUploadVvkScheme()">
+                            Загрузить Join Scheme
+                        </button>
+                    </div>
                 </div>
             {% endif %}
         </div>
