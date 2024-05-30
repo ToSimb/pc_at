@@ -86,17 +86,15 @@ def request_registration_vvk(url: str, json_vvk_return: dict):
             return response.json()
         else:
             error_str = "Произошла ошибка при регистрации: " + str(response.status_code) + " : " + str(response.text)
-            raise ValueError(error_str)
+            logger.error(error_str)
+            db_gui.gui_update_vvk_reg_error(False, error_str)
+            return None
     except requests.RequestException as e:
         error_str = f"RequestException: {e}."
         logger.error(error_str)
         db_gui.gui_update_vvk_reg_error(False, error_str)
         return None
-    except ValueError as e:
-        error_str = f"ValueError: {e}."
-        logger.error(error_str)
-        db_gui.gui_update_vvk_reg_error(False, error_str)
-        return None
+
 
 def forming_registration_vvk() -> bool:
     # REG_SCH
@@ -127,9 +125,9 @@ def forming_registration_vvk() -> bool:
 
         db_reg.reg_sch_block_false()
         return True
-
-    db_reg.reg_sch_block_false()
-    return False
+    else:
+        db_reg.reg_sch_block_false()
+        return False
 
 def forming_re_registration_vvk() -> bool:
     # REG_SCH
@@ -162,9 +160,9 @@ def forming_re_registration_vvk() -> bool:
 
         db_reg.reg_sch_block_false()
         return True
-
-    db_reg.reg_sch_block_false()
-    return False
+    else:
+        db_reg.reg_sch_block_false()
+        return False
 
 signal.signal(signal.SIGTERM, signal_handler)
 signal.signal(signal.SIGINT, signal_handler)
@@ -200,7 +198,8 @@ try:
     while True:
         t3 = T3
         start_time = time.time()
-        date_create = db_sch.sch_ver_select_date_create_unreg()
+        scheme_revision_date_create, date_create = db_sch.sch_ver_select_date_create_unreg()
+        print("!!!!!!!!", scheme_revision_date_create, date_create)
         if date_create:
             params = db_pf.pf_select_params_json_unreg(date_create, INT_LIMIT)
         else:
@@ -216,7 +215,6 @@ try:
             }
             start_request_time = time.time()
             if request_pf(result, vvk_id):
-                # updated_rows = 0
                 updated_rows = db_pf.pf_update_sent_status(result_id)
                 db_gui.gui_update_value(vvk_id, None, False)
                 count_sent_false = db_pf.pf_select_count_sent_false()
@@ -229,9 +227,11 @@ try:
             if date_create:
                 if forming_re_registration_vvk():
                     logger.info("Успешная перегистрация")
-                    t3 = 0
+                    t3 = 5
                 else:
+                    db_sch.sch_ver_update_status_reg_null(scheme_revision_date_create)
                     logger.error("Не успешная перегистрация!!!")
+                    t3 = 5
             else:
                 logger.info("В БД нет новых данных")
 

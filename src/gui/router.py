@@ -50,7 +50,7 @@ async def gui_pages_agent(agent_id: int, db=Depends(get_db_repo)):
     """
     try:
         ans = db.reg_sch_select_agent_scheme(agent_id)
-        return ans[0]
+        return ans
     except Exception as e:
         return (str(e))
 

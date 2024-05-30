@@ -85,11 +85,13 @@ def formation_agent_reg_scheme(agent_reg_id: str, agent_scheme: dict, join_schem
                 except ValueError as e:
                     raise ValueError(e)
 
-                for item in agent_scheme["scheme"]["join_id_list"]:
-                    full_path_item = join_list["join_item_full_path"] + '/' + item["full_path"]
-                    if check_full_path_exists(join_scheme["item_id_list"], full_path_item):
-                        raise ValueError(
-                            f"Ошибка: При попытки регистрации агента по типу соединения 'jtInclude' не был найден путь в Jion: {full_path_item}")
+                print (agent_scheme["scheme"]["join_id_list"])
+                if agent_scheme["scheme"]["join_id_list"] is not None:
+                    for item in agent_scheme["scheme"]["join_id_list"]:
+                        full_path_item = join_list["join_item_full_path"] + '/' + item["full_path"]
+                        if check_full_path_exists(join_scheme["item_id_list"], full_path_item):
+                            raise ValueError(
+                                f"Ошибка: При попытки регистрации агента по типу соединения 'jtInclude' не был найден путь в Jion: {full_path_item}")
 
 
                 # поиск самого большого item_id
@@ -203,7 +205,8 @@ def registration_agent_reg_id_scheme(agent_reg_id: str, all_agent_scheme: dict, 
     # if all_agent_scheme == agent_scheme:
     #     print("Да они ровны!!!!!!!!!!!!!!")
 
-    db.reg_sch_update_vvk_scheme(scheme_revision_vvk, vvk_scheme_new)
+    db.gui_update_vvk_reg_none(scheme_revision_vvk + 1, user_query_interval_revision)
+    db.reg_sch_update_vvk_scheme(scheme_revision_vvk + 1, vvk_scheme_new)
 
     index = db.reg_sch_select_count_agents() + 1
     json_agent_return = {
@@ -212,6 +215,17 @@ def registration_agent_reg_id_scheme(agent_reg_id: str, all_agent_scheme: dict, 
     }
     db.gui_update_agent_reg_id_reg(index, agent_reg_id, all_agent_scheme["scheme_revision"], True, None)
     db.reg_sch_insert_agent(index, agent_reg_id, all_agent_scheme["scheme_revision"], user_query_interval_revision, all_agent_scheme["scheme"], agent_scheme["scheme"], None)
+
+    # случай когда ввк схема зарегистрированна!
+    vvk_id, _, _, _ = db.sch_ver_select_vvk_details()
+    if vvk_id:
+        temp = {
+            "vvk_id": vvk_id,
+            "scheme_revision": scheme_revision_vvk + 1,
+            "user_query_interval_revision": user_query_interval_revision
+        }
+        db.sch_ver_insert_vvk(False, temp, vvk_scheme_new, metric_info_list)
+
 
     db.reg_sch_block_false()
     return json_agent_return
@@ -248,6 +262,7 @@ def re_registration_agent_id_scheme(agent_id: int, agent_reg_id: str, all_agent_
 
     agent_scheme, json_agent_list, vvk_scheme_new = formation_agent_reg_scheme(agent_reg_id, all_agent_scheme, join_scheme, vvk_scheme_after_cleaning)
 
+    db.gui_update_vvk_reg_none(scheme_revision_vvk + 1, user_query_interval_revision)
     db.reg_sch_update_vvk_scheme(scheme_revision_vvk + 1, vvk_scheme_new)
 
     json_agent_return = {

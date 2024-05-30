@@ -28,7 +28,14 @@
                 <div class="main__vvk border">
                     <h1>{{vvk['vvk_name']}}</h1>
                     {% if vvk["status_reg"] is none %}
-                        <p>Статус регистрации: Не зарегистрирован</p>
+                        {% if vvk["number_id"] is none %}
+                            <p>Статус регистрации: Не зарегистрирован</p>
+                        {% else %}
+                            <p>Статус регистрации: Необходима перерегистрация</p>
+                            <p>Vvk id: {{vvk["number_id"]}}</p>
+                        {% endif %}
+                        <p>Scheme revision: {{vvk["scheme_revision"]}}</p>
+                        <p>User query interval revision: {{vvk["user_query_interval_revision"]}}</p>
                     {% elif vvk["status_reg"] is true %}
                         <p>Статус регистрации: Зарегистрирован</p>
                         <p>Vvk id: {{vvk["number_id"]}}</p>

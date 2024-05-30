@@ -42,11 +42,13 @@ def join_scheme(join_scheme: dict, db=Depends(get_db_repo)):
     except MyException427 as e:
         error_str = str(e)
         logger.error(error_str)
+        db.reg_sch_block_false()
         raise HTTPException(status_code=427, detail={"error_msg": error_str})
 
     except KeyError as e:
         error_str = f"KeyError: {e}. Не удалось найти ключ в словаре."
         logger.error(error_str)
+        db.reg_sch_block_false()
         raise HTTPException(status_code=527, detail={"error_msg": error_str})
     except BlockingIOError:
         error_str = f"VvkScheme занят другим процессом. Повторите попытку позже"
@@ -54,6 +56,7 @@ def join_scheme(join_scheme: dict, db=Depends(get_db_repo)):
         raise HTTPException(status_code=527, detail={"error_msg": error_str})
     except Exception as e:
         error_str = f"Exception: {e}."
+        db.reg_sch_block_false()
         raise HTTPException(status_code=527, detail={"error_msg": error_str})
 
 

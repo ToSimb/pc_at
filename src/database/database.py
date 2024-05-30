@@ -88,6 +88,21 @@ class Database:
             logger.error("DB(gui): gui_insert_agents: %s", e)
             raise e
 
+    def gui_select_check_agent_status_reg(self, number_id: int) -> int:
+        try:
+            cur = self.conn.cursor()
+            sql_select_check = "SELECT status_reg FROM gui WHERE number_id = %s;"
+            cur.execute(sql_select_check, (number_id,))
+            result = cur.fetchone()
+            self.conn.commit()
+            if result:
+                return result[0]
+            else:
+                return False
+        except Exception as e:
+            self.conn.rollback()
+            logger.error("DB(gui): gui_select_check_agent_status_reg: %s", e)
+            raise e
 # __ Update _
     def gui_update_agent_reg_id_error(self, agent_reg_id: str, status_reg: bool, error_reg: str) -> bool:
         try:
@@ -173,6 +188,19 @@ class Database:
             logger.error("DB(gui): gui_update_vvk_reg - vvk_id %s : %s", vvk_id, e)
             raise e
 
+    def gui_update_vvk_reg_none(self, scheme_revision: int, user_query_interval_revision: int) -> bool:
+        try:
+            cur = self.conn.cursor()
+            sql_update_gui = "UPDATE gui SET scheme_revision = %s, user_query_interval_revision = %s, status_reg = NULL WHERE type_id = FALSE;"
+            cur.execute(sql_update_gui,
+                        (scheme_revision, user_query_interval_revision))
+            self.conn.commit()
+            return True
+        except Exception as e:
+            self.conn.rollback()
+            logger.error("DB(gui): gui_update_vvk_reg_none: %s", e)
+            raise e
+
     def gui_update_value(self, agent_id: int, error_value: str, type_id: bool) -> bool:
         try:
             time_reg = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -242,14 +270,16 @@ class Database:
     def reg_sch_select_vvk_json(self) -> dict:
         try:
             cur = self.conn.cursor()
-            sql_select = "SELECT scheme FROM reg_sch WHERE type_id = FALSE"
+            sql_select = "SELECT scheme_revision, user_query_interval_revision, scheme FROM reg_sch WHERE type_id = FALSE"
             cur.execute(sql_select, )
             self.conn.commit()
             data = cur.fetchall()
-            result = {
-                "scheme": data[0][0],
-            }
-            if result:
+            if data:
+                result = {
+                    "scheme_revision": data[0][0],
+                    "user_query_interval_revision": data[0][1],
+                    "scheme": data[0][2],
+                }
                 return result
             else:
                 raise Exception("VvkScheme не зарегистирована!!")
@@ -363,10 +393,15 @@ class Database:
     def reg_sch_select_agent_scheme(self, agent_id: int) -> tuple:
         try:
             cur = self.conn.cursor()
-            sql_select = f"SELECT scheme FROM reg_sch WHERE number_id = {agent_id}"
+            sql_select = f"SELECT scheme_revision, user_query_interval_revision, scheme FROM reg_sch WHERE number_id = {agent_id}"
             cur.execute(sql_select, )
-            result = cur.fetchone()
-            if result:
+            data = cur.fetchall()
+            if data:
+                result = {
+                    "scheme_revision": data[0][0],
+                    "user_query_interval_revision": data[0][1],
+                    "scheme": data[0][2],
+                }
                 return result
             else:
                 raise Exception(f"Такой агент {agent_id} не зарегистирована!!")
@@ -625,6 +660,25 @@ class Database:
                 return [None, None, None, None]
         except Exception as e:
             logger.error("DB(sch_ver): sch_ver_select_vvk_scheme: %s", e)
+            raise e
+
+    def sch_ver_select_latest_status(self) -> tuple:
+        try:
+            cur = self.conn.cursor()
+            sql_select = (
+                "SELECT status_reg FROM sch_ver "
+                "ORDER BY id DESC "
+                "LIMIT 1"
+            )
+            cur.execute(sql_select)
+            result = cur.fetchone()
+            if result:
+                return result[0]
+            else:
+                return None
+        except Exception as e:
+            self.conn.rollback()
+            logger.error("DB(sch_ver): get_latest_status: %s", e)
             raise e
 
 # __ Insert __

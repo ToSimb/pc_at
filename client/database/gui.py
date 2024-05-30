@@ -24,9 +24,9 @@ class Gui:
                     user_query_interval_revision INT,
                     status_reg BOOLEAN,
                     time_reg TIMESTAMP,
-                    error_reg VARCHAR(200),
+                    error_reg VARCHAR(250),
                     time_value TIMESTAMP,
-                    error_value VARCHAR(200),
+                    error_value VARCHAR(250),
                     time_conn TIMESTAMP
                 );
             """
@@ -83,6 +83,22 @@ class Gui:
         except Exception as e:
             self.conn.rollback()
             logger.error("DB(gui): gui_select_check_agent_reg_id: %s", e)
+            raise e
+
+    def gui_select_check_agent_status_reg(self, number_id: int) -> int:
+        try:
+            cur = self.conn.cursor()
+            sql_select_check = "SELECT status_reg FROM gui WHERE number_id = %s;"
+            cur.execute(sql_select_check, (number_id,))
+            result = cur.fetchone()
+            self.conn.commit()
+            if result:
+                return result[0]
+            else:
+                return False
+        except Exception as e:
+            self.conn.rollback()
+            logger.error("DB(gui): gui_select_check_agent_status_reg: %s", e)
             raise e
 
 # __ Insert __
@@ -197,6 +213,19 @@ class Gui:
         except Exception as e:
             self.conn.rollback()
             logger.error("DB(gui): gui_update_vvk_reg - vvk_id %s : %s", vvk_id, e)
+            raise e
+
+    def gui_update_vvk_reg_none(self, scheme_revision: int, user_query_interval_revision: int) -> bool:
+        try:
+            cur = self.conn.cursor()
+            sql_update_gui = "UPDATE gui SET scheme_revision = %s, user_query_interval_revision = %s, status_reg = NULL WHERE type_id = FALSE;"
+            cur.execute(sql_update_gui,
+                        (scheme_revision, user_query_interval_revision))
+            self.conn.commit()
+            return True
+        except Exception as e:
+            self.conn.rollback()
+            logger.error("DB(gui): gui_update_vvk_reg_none: %s", e)
             raise e
 
     def gui_update_value(self, agent_id: int, error_value: str, type_id: bool) -> bool:

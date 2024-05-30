@@ -25,24 +25,27 @@ async def params_data(params: SchemeJson, agent_id: int, db=Depends(get_db_repo)
     Метод для получения ПФ и сохранения в БД
     """
     try:
-        scheme_revision, user_query_interval_revision, metric = db.reg_sch_select_metrics_ids(agent_id)
-
-        if scheme_revision is None:
-            raise MyException427(f"Ошибка: Такой agent '{agent_id}' не зарегестрирован, или необходима перерегистарция.")
-        if scheme_revision != params.scheme_revision:
-            raise MyException427(f"Ошибка: Agent '{agent_id}' - неверная scheme_revision, зарегестрированна: {scheme_revision}.")
-
-
-        add_params(params, agent_id, metric, db)
-        if user_query_interval_revision != params.user_query_interval_revision:
-            raise MyException227
-        return ("OK")
+        if db.sch_ver_select_latest_status():
+            if db.gui_select_check_agent_status_reg(agent_id):
+                scheme_revision, user_query_interval_revision, metric = db.reg_sch_select_metrics_ids(agent_id)
+                if scheme_revision != params.scheme_revision:
+                    raise MyException427(f"Ошибка: Agent '{agent_id}' - неверная scheme_revision, зарегестрированна: {scheme_revision}.")
+                add_params(params, agent_id, metric, db)
+                if user_query_interval_revision != params.user_query_interval_revision:
+                    raise MyException227
+                return ("OK")
+            else:
+                raise MyException427(
+                    f"Ошибка: Agent '{agent_id}' - необходима перерегистарция.")
+        else:
+            raise Exception("The last scheme is not registered")
 
     except MyException227:
         raise HTTPException(status_code=227, detail="OK")
     except MyException427 as e:
         error_str = str(e)
         logger.error(error_str)
+        db.gui_update_value(agent_id, error_str, True)
         raise HTTPException(status_code=427, detail={"error_msg": error_str})
 
     except KeyError as e:

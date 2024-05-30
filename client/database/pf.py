@@ -53,6 +53,22 @@ class Pf:
             logger.error("DB(pf): pf_drop_table: %s", e)
             raise e
 
+    def pf_drop_table_no_index(self) -> bool:
+        try:
+            cur = self.conn.cursor()
+            sql_drop_index1 = "DROP INDEX IF EXISTS idx_pf_t_not_sent;"
+            cur.execute(sql_drop_index1)
+            sql_drop_index2 = "DROP INDEX IF EXISTS idx_pf_t;"
+            cur.execute(sql_drop_index2)
+            sql_drop_table = "DROP TABLE IF EXISTS pf;"
+            cur.execute(sql_drop_table)
+            self.conn.commit()
+            logger.info("DB(pf): таблица удалена")
+            return True
+        except Exception as e:
+            logger.error("DB(pf): pf_drop_table: %s", e)
+            raise e
+
 # __ Select  __
     def pf_select_params_json(self, int_limit: int = 20000) -> list:
         try:

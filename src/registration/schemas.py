@@ -6,7 +6,7 @@ class AgentSchemeValue(BaseModel):
     metrics: List[Any]
     templates: List[Any]
     item_id_list: List[Any]
-    join_id_list: List[Any]
+    join_id_list: Optional[List[Any]] = None
     item_info_list: List[Any]
 
 

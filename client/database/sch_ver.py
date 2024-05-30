@@ -71,7 +71,7 @@ class Sch_ver:
         try:
             cur = self.conn.cursor()
             sql_select = (
-                "SELECT date_create FROM sch_ver "
+                "SELECT scheme_revision, date_create FROM sch_ver "
                 "WHERE status_reg = FALSE "
                 "ORDER BY date_create "
                 "LIMIT 1"
@@ -79,9 +79,9 @@ class Sch_ver:
             cur.execute(sql_select)
             result = cur.fetchone()
             if result:
-                return result[0]
+                return result[0], result[1]
             else:
-                return None
+                return None, None
         except Exception as e:
             self.conn.rollback()
             logger.error("DB(sch_ver): sch_ver_select_date_create: %s", e)
@@ -105,6 +105,25 @@ class Sch_ver:
         except Exception as e:
             self.conn.rollback()
             logger.error("DB(sch_ver): sch_ver_select_vvk_details_unreg: %s", e)
+            raise e
+
+    def sch_ver_select_latest_status(self) -> bool:
+        try:
+            cur = self.conn.cursor()
+            sql_select = (
+                "SELECT status_reg FROM sch_ver "
+                "ORDER BY id DESC "
+                "LIMIT 1"
+            )
+            cur.execute(sql_select)
+            result = cur.fetchone()
+            if result:
+                return result[0]
+            else:
+                return False
+        except Exception as e:
+            self.conn.rollback()
+            logger.error("DB(sch_ver): get_latest_status: %s", e)
             raise e
 
 # __ Insert __
@@ -140,6 +159,22 @@ class Sch_ver:
             logger.error("DB(sch_ver): sch_ver_update_status_reg: ошибка обновления status_reg: %s", e)
             raise e
 
+    def sch_ver_update_status_reg_null(self, scheme_revision: int) -> bool:
+        try:
+            cur = self.conn.cursor()
+            sql_update = (
+                "UPDATE sch_ver "
+                "SET status_reg = NULL "
+                f"WHERE scheme_revision = {scheme_revision} "
+            )
+            cur.execute(sql_update, )
+            self.conn.commit()
+            return cur.rowcount > 0
+        except Exception as e:
+            self.conn.rollback()
+            logger.error("DB(sch_ver): sch_ver_update_status_reg_null: ошибка обновления status_reg: %s", e)
+            raise e
+
     def sch_ver_update_all_user_query_revision(self, user_query_interval_revision: int) -> bool:
         try:
             cur = self.conn.cursor()
@@ -154,3 +189,19 @@ class Sch_ver:
             raise e
 
 # __ Delete __
+
+    def sch_ver_delete_vvk_no_reg(self) -> bool:
+        try:
+            cur = self.conn.cursor()
+            sql_delete = (
+                "DELETE FROM sch_ver "
+                "WHERE ctid = (SELECT ctid FROM sch_ver WHERE status_reg = FALSE ORDER BY date_create LIMIT 1);"
+            )
+            cur.execute(sql_delete)
+            self.conn.commit()
+            logger.info(f"DB(sch_ver): Удалена не удачная версия Vvk Scheme")
+            return True
+        except Exception as e:
+            self.conn.rollback()
+            logger.error("DB(sch_ver): sch_ver_delete_vvk_no_reg: %s", e)
+            raise e

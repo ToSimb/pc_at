@@ -53,11 +53,12 @@ def formation_agent_update_join(agent_scheme: dict, join_scheme: dict, vvk_schem
                 except ValueError as e:
                     raise ValueError(e)
 
-                for item in agent_scheme["scheme"]["join_id_list"]:
-                    full_path_item = join_list["join_item_full_path"] + '/' + item["full_path"]
-                    if check_full_path_exists(join_scheme["item_id_list"], full_path_item):
-                        raise ValueError(
-                            f"Ошибка: При попытки регистрации агента по типу соединения 'jtInclude' не был найден путь в Jion: {full_path_item}")
+                if agent_scheme["scheme"]["join_id_list"] is not None:
+                    for item in agent_scheme["scheme"]["join_id_list"]:
+                        full_path_item = join_list["join_item_full_path"] + '/' + item["full_path"]
+                        if check_full_path_exists(join_scheme["item_id_list"], full_path_item):
+                            raise ValueError(
+                                f"Ошибка: При попытки регистрации агента по типу соединения 'jtInclude' не был найден путь в Jion: {full_path_item}")
 
                 # Формирование нового item_id_list
                 for a in agent_scheme["scheme"]["item_id_list"]:
@@ -188,11 +189,12 @@ def re_registration_join_scheme(join_scheme_new, user_query_interval_revision,
 
                 except Exception as e:
                     db.gui_update_agent_reg_id_reg(agent["number_id"], agent["agent_reg_id"], agent["scheme_revision"], False, str(e))
-                    db.reg_sch_update_agent_re_reg(agent["number_id"], agent["scheme_revision"], user_query_interval_revision,
-                                                       None, None, None)
             else:
                 # необходимо удалить агент с gui, reg_ver
                 db.reg_sch_delete_agent(agent["number_id"])
+
+    # GUI
+    db.gui_update_vvk_reg_none(join_scheme_new["scheme_revision"], user_query_interval_revision)
 
     # REG
     db.reg_sch_update_vvk_scheme_all(join_scheme_new["scheme_revision"], join_scheme_new["scheme"], vvk_scheme_new)
