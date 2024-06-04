@@ -152,8 +152,9 @@ def forming_re_registration_vvk() -> bool:
         db_gui.gui_update_vvk_reg(temp["vvk_id"], temp["scheme_revision"], temp["user_query_interval_revision"], True)
 
         # SCH_VER
-        db_sch.sch_ver_update_status_reg(temp["scheme_revision"], temp["user_query_interval_revision"])
         db_sch.sch_ver_update_all_user_query_revision(temp["user_query_interval_revision"])
+        db_sch.sch_ver_update_status_reg(temp["scheme_revision"], temp["user_query_interval_revision"])
+
 
         # REG_SCH
         db_reg.reg_sch_update_all_user_query_revision(temp["user_query_interval_revision"])
@@ -199,7 +200,6 @@ try:
         t3 = T3
         start_time = time.time()
         scheme_revision_date_create, date_create = db_sch.sch_ver_select_date_create_unreg()
-        print("!!!!!!!!", scheme_revision_date_create, date_create)
         if date_create:
             params = db_pf.pf_select_params_json_unreg(date_create, INT_LIMIT)
         else:

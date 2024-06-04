@@ -10,7 +10,7 @@ class MyException427(Exception):
         self.message = message
         super().__init__(self.message)
 class MyException227(Exception):
-    def __init__(self, message="427:"):
+    def __init__(self, message="227:"):
         self.message = message
         super().__init__(self.message)
 
@@ -27,10 +27,10 @@ async def params_data(params: SchemeJson, agent_id: int, db=Depends(get_db_repo)
     try:
         if db.sch_ver_select_latest_status():
             if db.gui_select_check_agent_status_reg(agent_id):
-                scheme_revision, user_query_interval_revision, metric = db.reg_sch_select_metrics_ids(agent_id)
+                scheme_revision, user_query_interval_revision, metrics, items_id = db.reg_sch_select_metrics_and_items(agent_id)
                 if scheme_revision != params.scheme_revision:
                     raise MyException427(f"Ошибка: Agent '{agent_id}' - неверная scheme_revision, зарегестрированна: {scheme_revision}.")
-                add_params(params, agent_id, metric, db)
+                add_params(params, agent_id, metrics, items_id, db)
                 if user_query_interval_revision != params.user_query_interval_revision:
                     raise MyException227
                 return ("OK")
@@ -48,12 +48,12 @@ async def params_data(params: SchemeJson, agent_id: int, db=Depends(get_db_repo)
         db.gui_update_value(agent_id, error_str, True)
         raise HTTPException(status_code=427, detail={"error_msg": error_str})
 
-    except KeyError as e:
-        error_str = f"KeyError: {e}. Не удалось найти ключ в словаре."
-        db.gui_update_value(agent_id, error_str, True)
-        raise HTTPException(status_code=527, detail={"error_msg": error_str})
     except ValueError as e:
         error_str = f"ValueError: {e}."
+        db.gui_update_value(agent_id, error_str, True)
+        raise HTTPException(status_code=427, detail={"error_msg": error_str})
+    except KeyError as e:
+        error_str = f"KeyError: {e}. Не удалось найти ключ в словаре."
         db.gui_update_value(agent_id, error_str, True)
         raise HTTPException(status_code=527, detail={"error_msg": error_str})
     except Exception as e:

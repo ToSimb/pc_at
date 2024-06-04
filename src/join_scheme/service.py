@@ -125,6 +125,10 @@ def formation_agent_update_join(agent_scheme: dict, join_scheme: dict, vvk_schem
 # ___________ работа только с БД _________
 
 def registration_join_scheme(join_scheme: dict, db) -> dict:
+    """
+        04.06
+        при загрузке MIL не меняем
+    """
     # REG_SCH
     if db.reg_sch_block_check():
         raise BlockingIOError
@@ -153,6 +157,10 @@ def registration_join_scheme(join_scheme: dict, db) -> dict:
 
 def re_registration_join_scheme(join_scheme_new, user_query_interval_revision,
                                             metric_info_list, db) -> dict:
+    """
+        04.06
+
+    """
     if db.reg_sch_block_check():
         raise BlockingIOError
     db.reg_sch_block_true()
@@ -207,6 +215,7 @@ def re_registration_join_scheme(join_scheme_new, user_query_interval_revision,
             "scheme_revision": join_scheme_new["scheme_revision"],
             "user_query_interval_revision": user_query_interval_revision
         }
+        # 04.06 !!! тут можно сделать следующее.. если последняя схема не зарегана, то ее перепистать!
         db.sch_ver_insert_vvk(False, temp, vvk_scheme_new, metric_info_list)
 
     db.reg_sch_block_false()

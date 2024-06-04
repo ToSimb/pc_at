@@ -107,6 +107,8 @@ class Sch_ver:
             logger.error("DB(sch_ver): sch_ver_select_vvk_details_unreg: %s", e)
             raise e
 
+
+
     def sch_ver_select_latest_status(self) -> bool:
         try:
             cur = self.conn.cursor()
@@ -125,6 +127,7 @@ class Sch_ver:
             self.conn.rollback()
             logger.error("DB(sch_ver): get_latest_status: %s", e)
             raise e
+
 
 # __ Insert __
     def sch_ver_insert_vvk(self, first_reg: bool, data: dict, scheme: dict, metric_info_list) -> bool:
@@ -153,6 +156,7 @@ class Sch_ver:
             )
             cur.execute(sql_update, (scheme_revision, user_query_interval_revision))
             self.conn.commit()
+            logger.info(f"DB(sch_ver): sch_ver_update_status_reg: {scheme_revision} - {user_query_interval_revision} : TRUE")
             return cur.rowcount > 0
         except Exception as e:
             self.conn.rollback()
@@ -204,4 +208,37 @@ class Sch_ver:
         except Exception as e:
             self.conn.rollback()
             logger.error("DB(sch_ver): sch_ver_delete_vvk_no_reg: %s", e)
+            raise e
+
+
+
+
+
+
+
+
+
+
+
+    def sch_ver_select_vvk_reg_all_json(self) -> dict:
+        try:
+            cur = self.conn.cursor()
+            sql_select = "SELECT vvk_id, scheme_revision, user_query_interval_revision, scheme, metric_info_list FROM sch_ver WHERE status_reg = TRUE ORDER BY id DESC LIMIT 1"
+            cur.execute(sql_select, )
+            self.conn.commit()
+            data = cur.fetchall()
+            result = {
+                "vvk_id": data[0][0],
+                "scheme_revision": data[0][1],
+                "user_query_interval_revision": data[0][2],
+                "scheme": data[0][3],
+                "metric_info_list": data[0][4]
+            }
+            if result:
+                return result
+            else:
+                raise Exception("VvkScheme не зарегистирована!!")
+        except Exception as e:
+            self.conn.rollback()
+            logger.error("DB(reg_sch): sch_ver_select_vvk_reg_all_json: %s", e)
             raise e

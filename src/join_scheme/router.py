@@ -74,7 +74,6 @@ async def upload_json_file(file: UploadFile = File(...), db=Depends(get_db_repo)
         if not isinstance(join_scheme, dict) or "scheme_revision" not in join_scheme or "scheme" not in join_scheme:
             raise HTTPException(status_code=400, detail="Что то не так с этим JSON")
 
-
         if db.reg_sch_select_check_vvk():
             scheme_revision_vvk, user_query_interval_revision, _, _, metric_info_list = db.reg_sch_select_vvk_all()
             if join_scheme["scheme_revision"] > scheme_revision_vvk:

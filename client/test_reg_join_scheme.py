@@ -5,7 +5,7 @@ import requests
 
 def requestjson(final_result):
     # url = f'{PC_AF_PROTOCOL}://{PC_AF_IP}:{PC_AF_PORT}/params?vvk_id={vvk_id}'
-    url = f'http://localhost:8000/agent-scheme/join-scheme'
+    url = f'http://localhost:8000/join-scheme'
     headers = {'Content-Type': 'application/json'}
     try:
         response = requests.post(url, json=final_result, headers=headers)

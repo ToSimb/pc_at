@@ -4,18 +4,39 @@ from logger.logger import logger
 from .schemas import SchemeJson
 
 
-def add_params(params, agent_id: int, metric: list, db) -> bool:
+def add_params(params, agent_id: int, metrics_id: list, items_id: list, db) -> bool:
+    """
+        Добавляет параметры в базу данных.
+
+    Args:
+        params: Объект, содержащий значения и данные для добавления.
+        agent_id: Идентификатор агента.
+        metrics_id: Список допустимых метрик.
+        items_id: Список допустимых идентификаторов объектов.
+        db: Объект базы данных с методами для вставки и обновления данных.
+
+    Returns:
+        bool: True, если функция выполнена успешно.
+
+    Raises:
+        ValueError: Если метрика из params отсутствует в списке metrics_id.
+        ValueError: Если идентификатор объекта из params отсутствует в списке items_id.
+    """
     start_time = time.time()
     pf = []
     for value in params.value:
-        for data in value.data:
-            if value.metric_id in metric:
-                pf.append((value.item_id, value.metric_id, data.t, data.v, data.etmax, data.etmin, data.comment))
+        if value.metric_id in metrics_id:
+            if str(value.item_id) in items_id:
+                for data in value.data:
+                    pf.append((value.item_id, value.metric_id, data.t, data.v, data.etmax, data.etmin, data.comment))
             else:
-                raise ValueError(f"Метрики {value.metric_id} нет в схеме!!")
+                raise ValueError(f"Item_id '{value.item_id}' is not in the scheme!")
+        else:
+            raise ValueError(f"Metric '{value.metric_id}' is not in the scheme!")
     db.pf_insert_params(pf)
     end_time = time.time()
     execution_time = end_time - start_time
     db.gui_update_value(agent_id, None, True)
     logger.info(f"Сохранение в бд ({agent_id}:{params.scheme_revision}:{params.user_query_interval_revision}) "
                 f"count: {len(pf)} time: {execution_time}")
+    return True

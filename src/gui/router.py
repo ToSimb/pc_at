@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, Request
+from fastapi import APIRouter, Depends, Request, HTTPException
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 from deps import get_db_repo
@@ -18,7 +18,7 @@ async def gui_pages(request: Request, db=Depends(get_db_repo)):
     GUI
     """
     try:
-        dump = db.select_last_agents_reg("gui", 20)
+        dump = db.select_last_agents_reg("gui", 50)
         vvk = None
         agents = None
         if dump:
@@ -31,7 +31,10 @@ async def gui_pages(request: Request, db=Depends(get_db_repo)):
             request=request, name="item.html", context={"vvk": vvk, "agents": agents}
         )
     except Exception as e:
-        return (str(e))
+        error_str = f"Exception: {e}."
+        logger.error(error_str)
+        db.reg_sch_block_false()
+        raise HTTPException(status_code=527, detail={"error_msg": error_str})
 
 @router.get("/vvk_scheme",)
 async def gui_pages_vvk(db=Depends(get_db_repo)):
