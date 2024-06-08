@@ -44,12 +44,14 @@
                         <p>Время регистрации: {{vvk["time_reg"]}}</p>
                     {% else %}
                         <p>Статус регистрации: Ошибка</p>
+                        <p>Scheme revision: {{vvk["scheme_revision"]}}</p>
+                        <p>User query interval revision: {{vvk["user_query_interval_revision"]}}</p>
                         <p>Время ошибки при регистрации: {{vvk["time_reg"]}}</p>
                         <p>Ошибка регистрации: {{vvk["error_reg"]}}</p>
                     {% endif %}
                         <p></p>
                     {% if vvk["time_value"] is not none %}
-                        <p>Время последней передачи ПФ: {{vvk["time_value"]}}</p>
+                        <p>Время последней успешной передачи ПФ: {{vvk["time_value"]}}</p>
                     {% endif %}
                     {% if vvk["error_value"] is not none %}
                         <p>Ошибка передачи ПФ: {{vvk["error_value"]}}</p>
@@ -72,10 +74,22 @@
                         <p>Scheme revision: {{item["scheme_revision"]}}</p>
 
                         {% if item["status_reg"] is none %}
-                            <p>Статус регистрации: Не зарегистрирован</p>
+                            {% if item["error_reg"] is none %}
+                                <p>Статус регистрации: Не зарегистрирован</p>
+                            {% else %}
+                                <p>Статус регистрации: Не зарегистрирован (Но была сделана попытка регистрации)</p>
+                                <p>Время ошибки: {{item["time_reg"]}}</p>
+                                <p>Ошибка регистрации: {{item["error_reg"]}}</p>
+                            {% endif %}
                         {% elif item["status_reg"] is true %}
-                            <p>Статус регистрации: Зарегистрирован</p>
-                            <p>Время регистрации: {{item["time_reg"]}}</p>
+                            {% if item["error_reg"] is none %}
+                                <p>Статус регистрации: Зарегистрирован</p>
+                                <p>Время регистрации: {{item["time_reg"]}}</p>
+                            {% else %}
+                                <p>Статус регистрации: Зарегистрирован (Но была сделана попытка перерегистрации)</p>
+                                <p>Время ошибки: {{item["time_reg"]}}</p>
+                                <p>Ошибка перерегистрации: {{item["error_reg"]}}</p>
+                            {% endif %}
                         {% else %}
                             <p>Статус регистрации: Ошибка</p>
                             <p>Время ошибки: {{item["time_reg"]}}</p>
@@ -83,7 +97,7 @@
                         {% endif %}
                         <p></p>
                         {% if item["time_value"] is not none %}
-                            <p>Время последней приема ПФ: {{item["time_value"]}}</p>
+                            <p>Время последней успешного приема ПФ: {{item["time_value"]}}</p>
                         {% endif %}
                         {% if item["error_value"] is not none %}
                             <p>Ошибка приема ПФ: {{item["error_value"]}}</p>
@@ -101,7 +115,7 @@
 
             {% else %}
                 <div class="border">
-                    <h1> Нет зарегестрированной JoinScheme</h1>
+                    <h1> Нет зарегистрированной JoinScheme</h1>
                     <div class="main__block-center flex">
                         <button class="btn reset-btn" onclick="redirectToUploadVvkScheme()">
                             Загрузить Join Scheme

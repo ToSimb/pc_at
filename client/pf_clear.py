@@ -3,7 +3,7 @@ import time
 import signal
 import sys
 
-from database.pf import Pf
+from database.db import Database
 from database.postgres import connect, disconnect
 from logger.logger_clear import logger_clear
 
@@ -17,7 +17,7 @@ signal.signal(signal.SIGTERM, signal_handler)
 signal.signal(signal.SIGINT, signal_handler)
 
 conn = connect()
-db = Pf(conn)
+db = Database(conn)
 
 try:
     while True:

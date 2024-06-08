@@ -2,8 +2,6 @@ from logger.logger import logger
 
 
 class Pf:
-    def __init__(self, conn):
-        self.conn = conn
 
 # _______________ PF _______________
 
@@ -56,6 +54,19 @@ class Pf:
 
 # __ Select  __
     def pf_select_params_json(self, int_limit: int = 20000) -> list:
+        """
+            SQL-запрос: Получить ПФ (неотправленные).
+
+        Args:
+            int_limit (int, optional): Максимальное количество записей для выборки. По умолчанию 20000.
+
+        Returns:
+            list: Список словарей, где каждый словарь представляет одну запись из таблицы PF.
+                  Ключи словаря - это имена столбцов, значения - соответствующие данные записи.
+
+        Raises:
+            Exception: Если произошла ошибка при выполнении запроса.
+        """
         try:
             cur = self.conn.cursor()
             sql_select_params = (f"SELECT id, item_id, metric_id, t, v, etmax, etmin, comment FROM pf "
@@ -76,7 +87,22 @@ class Pf:
             logger.error("DB(pf): pf_select_params_json: %s", e)
             raise e
 
+    # !!!
     def pf_select_params_json_unreg(self, time_create: int, int_limit: int = 20000) -> list:
+        """
+            SQL-запрос: Получить ПФ (неотправленные) для старой схему ВВК.
+
+        Args:
+            time_create (int): Время регистрации следующей схемы ВВК.
+            int_limit (int, optional): Максимальное количество записей для выборки. По умолчанию 20000.
+
+        Returns:
+            list: Список словарей, где каждый словарь представляет одну запись из таблицы PF.
+                  Ключи словаря - это имена столбцов, значения - соответствующие данные записи.
+
+        Raises:
+            Exception: Если произошла ошибка при выполнении запроса.
+        """
         try:
             cur = self.conn.cursor()
             sql_select_params = (f"SELECT id, item_id, metric_id, t, v, etmax, etmin, comment FROM pf "
@@ -97,7 +123,17 @@ class Pf:
             logger.error("DB(pf): pf_select_params_json: %s", e)
             raise e
 
+    # !!!
     def pf_select_count_sent_false(self) -> int:
+        """
+            SQL-запрос: Считает количество неотправленных записей.
+
+        Returns:
+            int: Количество записей со статусом sent = False.
+
+        Raises:
+            Exception: Если произошла ошибка при выполнении запроса.
+        """
         try:
             cur = self.conn.cursor()
             sql_count_rows = "SELECT COUNT(*) FROM pf WHERE sent = False;"
@@ -120,19 +156,22 @@ class Pf:
             raise e
 
 # __ Insert __
-    def pf_insert_params(self, data: list) -> bool:
-        try:
-            with self.conn.cursor() as cur:
-                sql_insert_data = "INSERT INTO pf (item_id, metric_id, t, v, etmax, etmin, comment) VALUES (%s,%s,%s,%s,%s,%s,%s);"
-                cur.executemany(sql_insert_data, data)
-            self.conn.commit()
-            return True
-        except Exception as e:
-            logger.error("DB(pf): pf_insert_params: %s", e)
-            raise e
 
 # __ Update __
+    # !!!
     def pf_update_sent_status(self, id_list: list) -> int:
+        """
+            SQL-запрос: Обновляет у ПФ статус на отправлено.
+
+        Args:
+            id_list (list): Список идентификаторов записей, для которых нужно обновить статус.
+
+        Returns:
+            int: Количество обновленных записей.
+
+        Raises:
+            Exception: Если произошла ошибка при выполнении запроса.
+        """
         try:
             cur = self.conn.cursor()
             id_string = ','.join(map(str, id_list))

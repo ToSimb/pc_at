@@ -1,6 +1,10 @@
-from database.postgres import connect, disconnect
-from database.db import Database
+import sys
+import os
 
+sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
+
+from client.database.postgres import connect, disconnect
+from client.database.db import Database
 
 try:
     conn = connect()

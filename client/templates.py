@@ -26,10 +26,10 @@ def build_paths(templates_all, root_item, parent_path=""):
 
 
 try:
-    join = open_json('json/1.json')
-    agent1 = open_json('json/11.json')
-    agent2 = open_json('json/12.json')
-    agent3 = open_json('json/13.json')
+    join = open_json('../test/json/1.json')
+    agent1 = open_json('../test/json/11.json')
+    agent2 = open_json('../test/json/12.json')
+    agent3 = open_json('../test/json/13.json')
 
     templatres_all = []
     for item in join['scheme']['templates']:
@@ -54,7 +54,7 @@ try:
         print(i)
 
 
-    return_path = open_json("json/ret.json")
+    return_path = open_json("../test/json/ret.json")
 
     old_path = []
     for item in return_path['scheme']['item_id_list']:

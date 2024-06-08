@@ -1,7 +1,10 @@
 import sys
-import time
-import random
-import requests
+
+from database.postgres import connect, disconnect
+from client.database.classes.db_pf import Pf
+from client.database.classes.db_gui import Gui
+from client.database.classes.db_reg_sch import Reg_sch
+from client.database.classes.db_sch_ver import Sch_ver
 
 def metric_info_if_value(Met):
     if Met is None:
@@ -21,13 +24,6 @@ def metric_info_if_value(Met):
         else:
             return Met['metric_info_list']
     return None
-
-from database.postgres import connect, disconnect
-from database.pf import Pf
-from database.gui import Gui
-from database.reg_sch import Reg_sch
-from database.sch_ver import Sch_ver
-
 
 conn = connect()
 db_gui = Gui(conn)
@@ -54,8 +50,6 @@ try:
     met = {
         'metric_info_list': [{"a":12, "b": 12},{"a":12, "b": 12},{"a":12, "b": 12}]
     }
-
-    db_sch.sch_ver_insert_vvk(True, data1, data["scheme"], met)
 
 except Exception as e:
     print(e)

@@ -1,8 +1,8 @@
 from logger.logger import logger
-from database.classes.db_gui import Gui
-from database.classes.db_reg_sch import Reg_sch
-from database.classes.db_sch_ver import Sch_ver
-from database.classes.db_pf import Pf
+from database.classes.gui import Gui
+from database.classes.reg_sch import Reg_sch
+from database.classes.sch_ver import Sch_ver
+from database.classes.pf import Pf
 
 
 class Database(Gui, Reg_sch, Sch_ver, Pf):

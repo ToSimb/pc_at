@@ -5,14 +5,8 @@ from logger.logger import logger
 from .schemas import SchemeJson
 from params.service import add_params
 
-class MyException427(Exception):
-    def __init__(self, message="427:"):
-        self.message = message
-        super().__init__(self.message)
-class MyException227(Exception):
-    def __init__(self, message="227:"):
-        self.message = message
-        super().__init__(self.message)
+from myException import MyException227, MyException427, MyException527
+
 
 router = APIRouter(
     prefix="/params",
@@ -29,16 +23,16 @@ async def params_data(params: SchemeJson, agent_id: int, db=Depends(get_db_repo)
             if db.gui_select_check_agent_status_reg(agent_id):
                 scheme_revision, user_query_interval_revision, metrics, items_id = db.reg_sch_select_metrics_and_items(agent_id)
                 if scheme_revision != params.scheme_revision:
-                    raise MyException427(f"Ошибка: Agent '{agent_id}' - неверная scheme_revision, зарегестрированна: {scheme_revision}.")
+                    raise MyException427(f"Agent '{agent_id}' - invalid scheme_revision, registered: {scheme_revision}.")
                 add_params(params, agent_id, metrics, items_id, db)
                 if user_query_interval_revision != params.user_query_interval_revision:
                     raise MyException227
                 return ("OK")
             else:
-                raise MyException427(
-                    f"Ошибка: Agent '{agent_id}' - необходима перерегистарция.")
+                raise MyException527(
+                    f"Agent '{agent_id}' - re-registration required.")
         else:
-            raise Exception("The last scheme is not registered")
+            raise Exception("The latest VVK scheme is not registered")
 
     except MyException227:
         raise HTTPException(status_code=227, detail="OK")
@@ -47,13 +41,18 @@ async def params_data(params: SchemeJson, agent_id: int, db=Depends(get_db_repo)
         logger.error(error_str)
         db.gui_update_value(agent_id, error_str, True)
         raise HTTPException(status_code=427, detail={"error_msg": error_str})
+    except MyException527 as e:
+        error_str = str(e)
+        logger.error(error_str)
+        db.gui_update_value(agent_id, error_str, True)
+        raise HTTPException(status_code=527, detail={"error_msg": error_str})
 
     except ValueError as e:
         error_str = f"ValueError: {e}."
         db.gui_update_value(agent_id, error_str, True)
         raise HTTPException(status_code=427, detail={"error_msg": error_str})
     except KeyError as e:
-        error_str = f"KeyError: {e}. Не удалось найти ключ в словаре."
+        error_str = f"KeyError: {e}. Could not find the key in the dictionary."
         db.gui_update_value(agent_id, error_str, True)
         raise HTTPException(status_code=527, detail={"error_msg": error_str})
     except Exception as e:
@@ -63,5 +62,5 @@ async def params_data(params: SchemeJson, agent_id: int, db=Depends(get_db_repo)
 
 @router.post("/hole")
 async def params_hole(params: SchemeJson, vvk_id: int):
-    print ("пришли ПФ от ввк:", vvk_id, params.scheme_revision)
+    print("пришли ПФ от ввк:", vvk_id, params.scheme_revision)
     return ("OK")

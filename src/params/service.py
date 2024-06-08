@@ -1,10 +1,12 @@
 import time
 
 from logger.logger import logger
-from .schemas import SchemeJson
 
+from database.database import Database
+from myException import MyException427
 
-def add_params(params, agent_id: int, metrics_id: list, items_id: list, db) -> bool:
+# !!!
+def add_params(params, agent_id: int, metrics_id: list, items_id: list, db: Database) -> bool:
     """
         Добавляет параметры в базу данных.
 
@@ -30,9 +32,9 @@ def add_params(params, agent_id: int, metrics_id: list, items_id: list, db) -> b
                 for data in value.data:
                     pf.append((value.item_id, value.metric_id, data.t, data.v, data.etmax, data.etmin, data.comment))
             else:
-                raise ValueError(f"Item_id '{value.item_id}' is not in the scheme!")
+                raise MyException427(f"Item_id '{value.item_id}' is not in the scheme!")
         else:
-            raise ValueError(f"Metric '{value.metric_id}' is not in the scheme!")
+            raise MyException427(f"Metric '{value.metric_id}' is not in the scheme!")
     db.pf_insert_params(pf)
     end_time = time.time()
     execution_time = end_time - start_time

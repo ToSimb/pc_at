@@ -1,0 +1,368 @@
+{
+	"scheme_revision": 0,
+	"scheme": {
+    "item_info_list": [
+		{
+			"full_path": "win2016[0]",
+            "comment": "VM4 (СУ ВВК ЗМСН)",
+			"sn": "12345678"
+		}
+	],
+	"item_id_list": [
+		{
+			"full_path": "win2016[0]",
+			"item_id": 1
+		},
+		{
+			"full_path": "win2016[0]/cpu_win2016[0]",
+			"item_id": 2
+		},
+		{
+			"full_path": "win2016[0]/cpu_win2016[1]",
+			"item_id": 3
+		},
+		{
+			"full_path": "win2016[0]/hdd_win2016[0]",
+			"item_id": 4
+		},
+		{
+			"full_path": "win2016[0]/ram_win2016[0]",
+			"item_id": 5
+		},
+		{
+			"full_path": "win2016[0]/gpu_win2016[0]",
+			"item_id": 6
+		},
+        {
+			"full_path": "win2016[0]/if_win2016[0]",
+			"item_id": 7
+		},
+        {
+			"full_path": "win2016[0]/cpu_win2016[0]/core[0]",
+			"item_id": 8
+		},
+        {
+			"full_path": "win2016[0]/cpu_win2016[1]/core[0]",
+			"item_id": 9
+		}
+	],
+	"templates": [
+		{
+			"template_id": "core",
+			"metrics": [
+				"core.user.time",
+				"core.privileged.time",
+				"core.idle.time",
+				"core.interrupt.time",
+				"core.interrupts.sec",
+				"core.utilisation"
+			],
+			"name": "Ядро ЦП",
+            "description": "Ядро ЦП"
+		},
+        {
+		    "template_id": "cpu_win2016",
+            "includes": [
+				{
+					"count": 2,
+					"template_id": "core"
+				}
+			],
+			"metrics": [
+				"cpu_win2016.freq",
+				"cpu_win2016.temp",
+				"cpu_win2016.power",
+				"cpu_win2016.multiplier",
+                "cpu_win2016.voltage"
+			],
+			"name": "Процессор Intel(R) Core(TM) i5-8600 cpu_win2016 @ 3.10GHz",
+            "description": "Intel(R) Core(TM) i5-8600 cpu_win2016 @ 3.10GHz"
+		},
+		{
+			"template_id": "ram_win2016",
+			"metrics": [
+				"ram_win2016.total_physical_memory",
+				"ram_win2016.free_physical_memory",
+				"ram_win2016.used_physical_memory",
+				"ram_win2016.total_virtual_memory",
+				"ram_win2016.free_virtual_memory",
+				"ram_win2016.used_virtual_memory",
+                "ram_win2016.modules.count",
+                "ram_win2016.load"
+        ],
+			"name": "Оперативная память DDR4",
+            "description": "Оперативная память DDR4"
+		},
+		{
+			"template_id": "hdd_win2016",
+			"metrics": [
+				"hdd_win2016.size"
+			],
+			"name": "VMware Virtual disk SCSI Disk Device",
+       		"description": "SCSI Disk Device"
+		},
+		{
+			"template_id": "gpu_win2016",
+			"metrics": [
+				"gpu_win2016.memory.total",
+				"gpu_win2016.memory.free",
+				"gpu_win2016.freq",
+                "gpu_win2016.usage",
+                "gpu_win2016.temperature",
+				"gpu_win2016.core.count"
+			],
+			"name": "VMware SVGA 3D",
+     		"description": "VMware SVGA 3D"
+		},
+        {
+			"template_id": "if_win2016",
+			"metrics": [
+				"if_win2016.bytes_received_persec",
+				"if_win2016.bytes_sent_persec",
+				"if_win2016.packets_received_persec",
+				"if_win2016.packets_sent_persec"
+			],
+			"name": "Сетевой интерфейс",
+     		"description": "Intel[R] 82574L Gigabit Network Connection"
+		}
+	],
+	"metrics": [
+        {
+            "dimension": "%",
+            "metric_id": "core.utilisation",
+            "name": "Загруженность ядра ЦП",
+            "comment": "Загруженность ядра ЦП",
+            "query_interval": 3,
+            "type": "integer"
+        },
+        {
+            "dimension": "none",
+            "metric_id": "core.interrupts.sec",
+            "name": "Кол-во прерываний в сек.",
+            "comment": "Количество прерываний в секунду",
+            "query_interval": 3,
+            "type": "integer"
+        },
+        {
+            "dimension": "%",
+            "metric_id": "core.interrupt.time",
+            "name": "% времени на обработку прерываний",
+            "comment": "Процент времени, которое ядро тратит на обработку прерываний от устройств",
+            "query_interval": 3,
+            "type": "integer"
+        },
+        {
+            "dimension": "%",
+            "metric_id": "core.idle.time",
+            "name": "% времени простоя",
+            "comment": "Процент времени простоя",
+            "query_interval": 3,
+            "type": "integer"
+        },
+        {
+            "dimension": "%",
+            "metric_id": "core.privileged.time",
+            "name": "% времени на обработку запросов системы",
+            "comment": "Процент времени на обработку запросов системы",
+            "query_interval": 3,
+            "type": "integer"
+        },
+        {
+            "dimension": "%",
+            "metric_id": "core.user.time",
+            "name": "% времени полезной нагрузки",
+            "comment": "Процент времени на обработку полезной нагрузки",
+            "query_interval": 3,
+            "type": "integer"
+        },
+        {
+            "dimension": "m",
+            "metric_id": "chassis_win2016.uptime",
+            "name": "Время непр. раб. (мин.)",
+            "comment": "Времы непрерывной работы",
+            "query_interval": 10,
+            "type": "integer"
+        },
+		{
+			"dimension": "Hz",
+			"metric_id": "cpu_win2016.freq",
+            "is_config": true,
+			"name": "Частота ядра",
+			"query_interval": 3,
+			"type": "integer"
+		},
+		{
+			"dimension": "C",
+			"metric_id": "cpu_win2016.temp",
+			"name": "Температура",
+			"query_interval": 3,
+			"type": "integer"
+		},
+		{
+			"dimension": "W",
+			"metric_id": "cpu_win2016.power",
+			"name": "Мощность процессора",
+			"query_interval": 3,
+			"type": "integer"
+		},
+		{
+			"dimension": "none",
+			"metric_id": "cpu_win2016.multiplier",
+			"name": "Множитель процессора",
+			"query_interval": 3,
+			"type": "integer"
+		},
+        {
+			"dimension": "V",
+			"metric_id": "cpu_win2016.voltage",
+			"name": "Напряжение питания процессора",
+			"query_interval": 3,
+			"type": "integer"
+		},
+		{
+			"dimension": "MB",
+			"metric_id": "ram_win2016.total_physical_memory",
+            "min": 1,
+			"name": "Общее количество оперативной памяти в системе (в Мбайт)",
+            "is_config": true,
+			"query_interval": 3,
+			"type": "integer"
+		},
+		{
+			"dimension": "MB",
+			"metric_id": "ram_win2016.free_physical_memory",
+			"min": 1,
+			"name": "Количество свободной оперативной памяти в системе (в Мбайт)",
+			"query_interval": 3,
+			"type": "integer"
+		},
+		{
+			"dimension": "MB",
+			"metric_id": "ram_win2016.used_physical_memory",
+			"name": "Количество занятой оперативной памяти в системе (в Мбайт)",
+			"query_interval": 3,
+			"type": "integer"
+		},
+			{
+			"dimension": "MB",
+			"metric_id": "ram_win2016.total_virtual_memory",
+            "is_config": true,
+            "min": 1,
+			"name": "Общее количество виртуальной оперативной памяти в системе (в Мбайт)",
+			"query_interval": 3,
+			"type": "integer"
+		},
+		{
+			"dimension": "MB",
+			"metric_id": "ram_win2016.free_virtual_memory",
+			"min": 1,
+			"name": "Количество свободной виртуальной оперативной памяти в системе (в Мбайт)",
+			"query_interval": 3,
+			"type": "integer"
+		},
+		{
+			"dimension": "MB",
+			"metric_id": "ram_win2016.used_virtual_memory",
+			"name": "Количество занятой виртуальной оперативной памяти в системе (в Мбайт)",
+			"query_interval": 3,
+			"type": "integer"
+		},
+		{
+			"dimension": "none",
+			"metric_id": "ram_win2016.load",
+			"name": "Загрузка оперативной памяти (в %)",
+			"query_interval": 3,
+			"type": "integer"
+		},
+		{
+			"dimension": "none",
+			"metric_id": "ram_win2016.modules.count",
+			"name": "Кол-во модулей памяти",
+			"query_interval": 3,
+			"type": "integer"
+		},
+		{
+			"dimension": "MB",
+			"metric_id": "hdd_win2016.size",
+            "is_config": true,
+			"name": "Размер жёсткого диска (в Мбайт)",
+			"query_interval": 3,
+			"type": "integer"
+		},
+		{
+			"dimension": "MB",
+			"metric_id": "gpu_win2016.memory.free",
+			"name": "Свободное количество памяти gpu_win2016 (в Мбайт)",
+			"query_interval": 3,
+			"type": "integer"
+		},
+		{
+			"dimension": "MB",
+			"metric_id": "gpu_win2016.memory.total",
+            "is_config": true,
+			"name": "Общее количество памяти gpu_win2016 (в Мбайт)",
+			"query_interval": 3,
+			"type": "integer"
+		},
+		{
+			"dimension": "MB",
+			"metric_id": "gpu_win2016.usage",
+            "is_config": true,
+			"name": "Количество занятой памяти ГПУ (в Мбайт)",
+			"query_interval": 3,
+			"type": "integer"
+		},
+		{
+			"dimension": "C",
+			"metric_id": "gpu_win2016.temperature",
+			"name": "Температура ГПУ",
+			"query_interval": 3,
+			"type": "integer"
+		},
+		{
+			"dimension": "Hz",
+			"metric_id": "gpu_win2016.freq",
+            "is_config": true,
+			"name": "Частота gpu_win2016",
+			"query_interval": 3,
+			"type": "integer"
+		},
+		{
+			"dimension": "none",
+			"metric_id": "gpu_win2016.core.count",
+            "is_config": true,
+			"name": "Количество ядер gpu_win2016",
+			"query_interval": 3,
+			"type": "integer"
+		},
+        {
+			"dimension": "B",
+			"metric_id": "if_win2016.bytes_received_persec",
+			"name": "Количество полученных байт через сетевой интерфейс",
+			"query_interval": 3,
+			"type": "integer"
+		},
+        {
+			"dimension": "B",
+			"metric_id": "if_win2016.bytes_sent_persec",
+			"name": "Количество отправленных байт через сетевой интерфейс",
+			"query_interval": 3,
+			"type": "integer"
+		},
+        {
+			"dimension": "B",
+			"metric_id": "if_win2016.packets_received_persec",
+			"name": "Количество полученных пакетов через сетевой интерфейс",
+			"query_interval": 3,
+			"type": "integer"
+		},
+        {
+			"dimension": "B",
+			"metric_id": "if_win2016.packets_sent_persec",
+			"name": "Количество отправленных пакетов через сетевой интерфейс",
+			"query_interval": 3,
+			"type": "integer"
+		}
+	]
+	}
+}

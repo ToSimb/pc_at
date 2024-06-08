@@ -5,8 +5,6 @@ from logger.logger import logger
 
 
 class Sch_ver:
-    def __init__(self, conn):
-        self.conn = conn
 
 # ____________ SCH_VER _____________
 
@@ -51,7 +49,18 @@ class Sch_ver:
             raise e
 
 # __ Select __
+    # !!!
     def sch_ver_select_vvk_details(self) -> tuple:
+        """
+            SQL-запрос: Получения деталей по зарегистрированной схему ВВК.
+
+        Returns:
+            tuple: Кортеж, содержащий vvk_id, scheme_revision, user_query_interval_revision и t3.
+                   Если запись не найдена, возвращает кортеж из четырех элементов [None, None, None, None].
+
+        Raises:
+            Exception: Если произошла ошибка при выполнении запроса.
+        """
         try:
             cur = self.conn.cursor()
             sql_select = ("SELECT vvk_id, scheme_revision, user_query_interval_revision, t3 FROM sch_ver "
@@ -67,7 +76,40 @@ class Sch_ver:
             logger.error("DB(sch_ver): sch_ver_select_vvk_scheme: %s", e)
             raise e
 
+    # !!!
     def sch_ver_select_date_create_unreg(self) -> int:
+        """
+            SQL-запрос: Получить время регистрации последней успешной зарегистрированной схемы ВВК.
+
+        Returns:
+            int: Значение date_create для первой найденной записи.
+                 Если запись не найдена, возвращает None.
+
+        Raises:
+            Exception: Если произошла ошибка при выполнении запроса.
+        """
+        try:
+            cur = self.conn.cursor()
+            sql_select = (
+                "SELECT date_create FROM sch_ver "
+                "WHERE status_reg = FALSE "
+                "ORDER BY date_create "
+                "LIMIT 1"
+            )
+            cur.execute(sql_select)
+            result = cur.fetchone()
+            if result:
+                return result[0]
+            else:
+                return None
+        except Exception as e:
+            self.conn.rollback()
+            logger.error("DB(sch_ver): sch_ver_select_date_create: %s", e)
+            raise e
+
+
+    # возжно приходится !?!
+    def sch_ver_select_date_create_unreg_old(self) -> int:
         try:
             cur = self.conn.cursor()
             sql_select = (
@@ -88,13 +130,20 @@ class Sch_ver:
             raise e
 
     def sch_ver_select_vvk_details_unreg(self) -> tuple:
+        """
+            SQL-запрос: Извлекает детали незарегистрированной VVK.
+
+        Returns:
+            tuple: Кортеж с деталями незарегистрированной VVK, включая vvk_id, scheme_revision, scheme и metric_info_list.
+
+        Raises:
+            Exception: Если произошла ошибка при выполнении запроса.
+        """
         try:
             cur = self.conn.cursor()
             sql_select = (
                 "SELECT vvk_id, scheme_revision, scheme, metric_info_list FROM sch_ver "
                 "WHERE status_reg = FALSE "
-                "ORDER BY date_create "
-                "LIMIT 1"
             )
             cur.execute(sql_select)
             result = cur.fetchone()
@@ -109,35 +158,35 @@ class Sch_ver:
 
 
 
-    def sch_ver_select_latest_status(self) -> bool:
-        try:
-            cur = self.conn.cursor()
-            sql_select = (
-                "SELECT status_reg FROM sch_ver "
-                "ORDER BY id DESC "
-                "LIMIT 1"
-            )
-            cur.execute(sql_select)
-            result = cur.fetchone()
-            if result:
-                return result[0]
-            else:
-                return False
-        except Exception as e:
-            self.conn.rollback()
-            logger.error("DB(sch_ver): get_latest_status: %s", e)
-            raise e
-
-
 # __ Insert __
-    def sch_ver_insert_vvk(self, first_reg: bool, data: dict, scheme: dict, metric_info_list) -> bool:
+    # !!!
+    def sch_ver_insert_vvk(self, status_reg: bool, vvk_id: int, scheme_revision: int, user_query_interval_revision: int,
+                           scheme: dict, metric_info_list: dict) -> bool:
+        """
+            SQL-запрос на новую запись зарегистрированной схемы ВВК в таблицу 'sch_ver'.
+
+        Args:
+            status_reg (bool): Флаг, указывающий, является ли это первая регистрация VVK.
+            vvk_id (int): Идентификатор VVK.
+            scheme_revision (int): Ревизия схемы.
+            user_query_interval_revision (int): Ревизия интервала пользовательских запросов.
+            scheme (dict): Схема VVK.
+            metric_info_list (dict): Список информации о метриках.
+
+        Returns:
+            bool: Возвращает True, если регистрация прошла успешно.
+
+        Raises:
+            Exception: Если произошла ошибка при выполнении запроса к базе данных.
+        """
         try:
             current_time = int(time.time())
             cur = self.conn.cursor()
-            sql_create = ("INSERT INTO sch_ver (vvk_id, scheme_revision, user_query_interval_revision, date_create, status_reg, scheme, metric_info_list) "
-                          "VALUES (%s,%s,%s,%s,%s,%s,%s);")
-            cur.execute(sql_create, (data["vvk_id"], data["scheme_revision"], data["user_query_interval_revision"],
-                                     current_time, first_reg, json.dumps(scheme), json.dumps(metric_info_list)))
+            sql_create = (
+                "INSERT INTO sch_ver (vvk_id, scheme_revision, user_query_interval_revision, date_create, status_reg, scheme, metric_info_list) "
+                "VALUES (%s,%s,%s,%s,%s,%s,%s);")
+            cur.execute(sql_create, (vvk_id, scheme_revision, user_query_interval_revision,
+                                     current_time, status_reg, json.dumps(scheme), json.dumps(metric_info_list)))
             self.conn.commit()
             return True
         except Exception as e:
@@ -146,40 +195,50 @@ class Sch_ver:
             raise e
 
 # __ Update __
-    def sch_ver_update_status_reg(self, scheme_revision: int, user_query_interval_revision: int) -> bool:
+    # !!!
+    def sch_ver_update_status_reg(self, scheme_revision: int) -> bool:
+        """
+            SQL-запрос: Обновляет статус регистрации схемы в таблице SCH_VER.
+
+        Args:
+            scheme_revision (int): Версия схемы, для которой обновляется статус регистрации.
+
+        Returns:
+            bool: Возвращает True, если обновление выполнено успешно, иначе False.
+
+        Raises:
+            Exception: Если произошла ошибка при выполнении запроса.
+        """
         try:
             cur = self.conn.cursor()
             sql_update = (
                 "UPDATE sch_ver "
                 "SET status_reg = TRUE "
-                "WHERE scheme_revision = %s AND user_query_interval_revision = %s"
+                "WHERE scheme_revision = %s"
             )
-            cur.execute(sql_update, (scheme_revision, user_query_interval_revision))
+            cur.execute(sql_update, (scheme_revision,))
             self.conn.commit()
-            logger.info(f"DB(sch_ver): sch_ver_update_status_reg: {scheme_revision} - {user_query_interval_revision} : TRUE")
+            logger.info(f"DB(sch_ver): sch_ver_update_status_reg: {scheme_revision} : TRUE")
             return cur.rowcount > 0
         except Exception as e:
             self.conn.rollback()
             logger.error("DB(sch_ver): sch_ver_update_status_reg: ошибка обновления status_reg: %s", e)
             raise e
 
-    def sch_ver_update_status_reg_null(self, scheme_revision: int) -> bool:
-        try:
-            cur = self.conn.cursor()
-            sql_update = (
-                "UPDATE sch_ver "
-                "SET status_reg = NULL "
-                f"WHERE scheme_revision = {scheme_revision} "
-            )
-            cur.execute(sql_update, )
-            self.conn.commit()
-            return cur.rowcount > 0
-        except Exception as e:
-            self.conn.rollback()
-            logger.error("DB(sch_ver): sch_ver_update_status_reg_null: ошибка обновления status_reg: %s", e)
-            raise e
-
+    # !!!
     def sch_ver_update_all_user_query_revision(self, user_query_interval_revision: int) -> bool:
+        """
+            SQL-запрос: Обновляет версию интервала запроса пользователя в таблице SCH_VER для всех записей.
+
+        Args:
+            user_query_interval_revision (int): Новая версия интервала запроса пользователя.
+
+        Returns:
+            bool: Возвращает True, если обновление выполнено успешно.
+
+        Raises:
+            Exception: Если произошла ошибка при выполнении запроса.
+        """
         try:
             cur = self.conn.cursor()
             sql_update = f"UPDATE sch_ver SET user_query_interval_revision = {user_query_interval_revision};"
@@ -242,3 +301,4 @@ class Sch_ver:
             self.conn.rollback()
             logger.error("DB(reg_sch): sch_ver_select_vvk_reg_all_json: %s", e)
             raise e
+

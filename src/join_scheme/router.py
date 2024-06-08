@@ -2,16 +2,12 @@ import json
 from fastapi import APIRouter, Depends, HTTPException, File, UploadFile
 from deps import get_db_repo
 
-
 from logger.logger import logger
 from join_scheme.service import (
     registration_join_scheme,
     re_registration_join_scheme)
 
-class MyException427(Exception):
-    def __init__(self, message="427:"):
-        self.message = message
-        super().__init__(self.message)
+from myException import MyException427
 
 
 router = APIRouter(
@@ -27,14 +23,14 @@ def join_scheme(join_scheme: dict, db=Depends(get_db_repo)):
     """
     try:
         if db.reg_sch_select_check_vvk():
-            scheme_revision_vvk, user_query_interval_revision, _, _, metric_info_list = db.reg_sch_select_vvk_all()
+            scheme_revision_vvk, user_query_interval_revision, _, _, metric_info_list_raw = db.reg_sch_select_vvk_all()
             if join_scheme["scheme_revision"] > scheme_revision_vvk:
                 vvk_scheme_new = re_registration_join_scheme(join_scheme, user_query_interval_revision,
-                                            metric_info_list, db)
+                                            metric_info_list_raw, db)
                 return (vvk_scheme_new)
             else:
                 raise MyException427(
-                    f"Ошибка: Загрезите более свежую версию JoinScheme, чем scheme_revision: {scheme_revision_vvk}.")
+                    f"Download a newer version of JoinScheme than scheme_revision: {scheme_revision_vvk}.")
         else:
             vvk_scheme = registration_join_scheme(join_scheme, db)
             return (vvk_scheme)
@@ -44,14 +40,13 @@ def join_scheme(join_scheme: dict, db=Depends(get_db_repo)):
         logger.error(error_str)
         db.reg_sch_block_false()
         raise HTTPException(status_code=427, detail={"error_msg": error_str})
-
     except KeyError as e:
-        error_str = f"KeyError: {e}. Не удалось найти ключ в словаре."
+        error_str = f"KeyError: {e}. Could not find the key in the dictionary."
         logger.error(error_str)
         db.reg_sch_block_false()
         raise HTTPException(status_code=527, detail={"error_msg": error_str})
     except BlockingIOError:
-        error_str = f"VvkScheme занят другим процессом. Повторите попытку позже"
+        error_str = f"Vvk Scheme is busy with another process. Please try again later"
         logger.error(error_str)
         raise HTTPException(status_code=527, detail={"error_msg": error_str})
     except Exception as e:
@@ -63,45 +58,58 @@ def join_scheme(join_scheme: dict, db=Depends(get_db_repo)):
 @router.post("/upload")
 async def upload_json_file(file: UploadFile = File(...), db=Depends(get_db_repo)):
     """
-    Метод для загрузки JionScheme через файл
+    Метод для загрузки JoinScheme через файл
     """
     if file.content_type not in ["application/json", "text/json"]:
-        raise HTTPException(status_code=400, detail="Это не JSON")
+        raise HTTPException(status_code=427, detail="This is not JSON format")
 
     try:
         contents = await file.read()
         join_scheme = json.loads(contents)
         if not isinstance(join_scheme, dict) or "scheme_revision" not in join_scheme or "scheme" not in join_scheme:
-            raise HTTPException(status_code=400, detail="Что то не так с этим JSON")
+            raise MyException427("Not correct JSON")
 
         if db.reg_sch_select_check_vvk():
-            scheme_revision_vvk, user_query_interval_revision, _, _, metric_info_list = db.reg_sch_select_vvk_all()
+            scheme_revision_vvk, user_query_interval_revision, _, _, metric_info_list_raw = db.reg_sch_select_vvk_all()
             if join_scheme["scheme_revision"] > scheme_revision_vvk:
                 vvk_scheme_new = re_registration_join_scheme(join_scheme, user_query_interval_revision,
-                                            metric_info_list, db)
+                                            metric_info_list_raw, db)
                 return (vvk_scheme_new)
             else:
                 raise MyException427(
-                    f"Ошибка: Загрезите более свежую версию JoinScheme, чем scheme_revision: {scheme_revision_vvk}.")
+                    f"Download a newer version of JoinScheme than scheme_revision: {scheme_revision_vvk}.")
         else:
             vvk_scheme = registration_join_scheme(join_scheme, db)
             return (vvk_scheme)
 
     except json.JSONDecodeError:
-        raise HTTPException(status_code=400, detail="Файл JSON не корректный")
+        raise HTTPException(status_code=400, detail="JSON file is not correct")
     except MyException427 as e:
         error_str = str(e)
         logger.error(error_str)
         raise HTTPException(status_code=427, detail={"error_msg": error_str})
-
     except KeyError as e:
-        error_str = f"KeyError: {e}. Не удалось найти ключ в словаре."
+        error_str = f"KeyError: {e}. Could not find the key in the dictionary."
         logger.error(error_str)
         raise HTTPException(status_code=527, detail={"error_msg": error_str})
     except BlockingIOError:
-        error_str = f"VvkScheme занят другим процессом. Повторите попытку позже"
+        error_str = f"Vvk Scheme is busy with another process. Please try again later"
         logger.error(error_str)
         raise HTTPException(status_code=527, detail={"error_msg": error_str})
     except Exception as e:
         error_str = f"Exception: {e}."
         raise HTTPException(status_code=527, detail={"error_msg": error_str})
+
+
+
+@router.post("/save")
+async def return_scheme(vvk_scheme: dict):
+    """
+    Метод для тестовой регистрации VvkScheme
+    """
+    return_scheme = {
+        "vvk_id": 51,
+        "scheme_revision": vvk_scheme["scheme_revision"],
+        "user_query_interval_revision": 0
+    }
+    return return_scheme

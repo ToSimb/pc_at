@@ -1,0 +1,223 @@
+{
+	"scheme_revision": 10,
+	"scheme": {
+		"metrics": [
+			{
+				"dimension": "h",
+				"metric_id": "chassis.uptime",
+				"name": "Время непр. раб.",
+				"comment": "Времы непрерывной работы",
+				"query_interval": 10,
+				"type": "double"
+			},
+			{
+				"dimension": "%",
+				"metric_id": "cpu.user.time",
+				"name": "% времени польз. операций",
+				"comment": "% времени, кот. ЦП тратит на пользоват. операции за 1 секунд",
+				"query_interval": 10,
+				"type": "double"
+			},						
+			{
+				"dimension": "%",
+				"metric_id": "cpu.core.load",
+				"name": "Загрузка процессора",
+				"query_interval": 10,
+				"type": "double"
+			},
+			{
+				"dimension": "B",
+				"metric_id": "if.byte.received",
+				"name": "Кол-во полученных байт через сет. интерф.",
+				"query_interval": 10,
+				"type": "integer"
+			},
+			{
+				"dimension": "B",
+				"metric_id": "if.byte.sent",
+				"name": "Кол-во отправленных байт через сет. интерф.",
+				"query_interval": 10,
+				"type": "integer"
+			},
+			{
+				"dimension": "string",
+				"metric_id": "if.ip.address",
+				"is_config": true,
+				"name": "IP адрес сетевого интерфейса",
+				"query_interval": 10,
+				"type": "string"
+			},						
+			{
+				"dimension": "B",
+				"metric_id": "chassis.memory.total",
+				"is_config": true,
+				"name": "Общее кол-во опер. пам. в системе",				
+				"query_interval": 10,
+				"type": "integer"
+			},
+			{
+				"dimension": "B",
+				"metric_id": "chassis.memory.used",
+				"name": "Кол-во занятой опер. пам. в системе",
+				"query_interval": 10,
+				"type": "integer"
+			},			
+						{
+				"dimension": "W",
+				"metric_id": "сompboard.power",
+				"name": "Потребляемая мощность",
+				"query_interval": 10,
+				"type": "double"
+			},
+			{
+				"dimension": "V",
+				"metric_id": "сompboard.voltage",
+				"name": "Напряжение",
+				"query_interval": 10,
+				"type": "double",
+				"err_thr_max": 1.9,
+				"err_thr_min": 0.91
+			},
+			{				
+				"metric_id": "сompboard.state",
+				"name": "Работоспособность",
+				"query_interval": 10,
+				"type": "state"				
+			}
+		],
+		"templates": [
+			{
+				"template_id": "cpu_xeon_8860_v3",
+				"metrics": [
+					"cpu.user.time",					
+					"cpu.core.load"
+				],
+				"name": "Процессор CPU Xeon"
+			},
+			{
+				"template_id": "ram_ddr4",
+				"metrics": [
+					"chassis.memory.total",
+					"chassis.memory.used"
+				],
+				"name": "Оперативная память DDR4"
+			},
+			{
+				"template_id": "port",
+				"metrics": [
+					"if.byte.received",
+					"if.byte.sent",					
+					"if.ip.address"
+				],
+				"name": "Порт"
+			},			
+			{
+				"template_id": "server_supermicro_2029U",
+				"includes": [
+					{
+						"count": 1,
+						"template_id": "cpu_xeon_8860_v3"
+					},
+					{
+						"count": 1,
+						"template_id": "ram_ddr4"
+					}
+				],
+				"metrics": [
+					"chassis.uptime"
+				],
+				"name": "Управляющий сервер Supermicro",
+				"description": "Управляющий сервер Supermicro 2029U-TR4. Предназначен для управления задачами"
+			},
+			{
+				"template_id": "switch_dlink_DGS121052ME",
+				"includes": [
+					{
+						"count": 2,
+						"template_id": "port"
+					}
+				],
+				"name": "Коммутатор D-Link",
+				"description": "Коммутатор D-Link DGS-1210-52/ME. Предназначен для организации вычислительной сети"
+			},
+			{
+				"template_id": "сomp_board",
+				"metrics": [
+					"сompboard.power",
+					"сompboard.voltage",
+					"сompboard.state"
+				],
+				"name": "Вычислительная плата"
+			},
+			{
+				"template_id": "сomp_node",
+				"includes": [
+					{
+						"count": 2,
+						"template_id": "сomp_board"
+					}
+				],
+				"name": "Вычислительный узел",
+				"description": "Вычислительное устройство, предназначенное для выполнения вычислительных задач"
+			}
+		],
+		"item_id_list": [
+			{				
+				"full_path": "server_supermicro_2029U[0]",
+				"item_id": null				
+			},			
+			{
+				"full_path": "server_supermicro_2029U[0]/ram_ddr4[0]",
+				"item_id": null
+			},
+			{
+				"full_path": "server_supermicro_2029U[0]/cpu_xeon_8860_v3[0]",
+				"item_id": null
+			},
+			{
+				"full_path": "switch_dlink_DGS121052ME[0]",
+				"item_id": null
+			},
+			{
+				"full_path": "switch_dlink_DGS121052ME[0]/port[0]",
+				"item_id": null
+			},
+			{
+				"full_path": "switch_dlink_DGS121052ME[0]/port[1]",
+				"item_id": null
+			},			
+			{
+				"full_path": "сomp_node[0]",
+				"item_id": null
+			},
+			{
+				"full_path": "сomp_node[0]/сomp_board[0]",
+				"item_id": null
+			},
+			{
+				"full_path": "сomp_node[0]/сomp_board[1]",
+				"item_id": null
+			}
+		],
+		"join_id_list": [
+			{
+				"full_path": "server_supermicro_2029U[0]",
+				"join_id": "2"
+			},			
+			{
+				"full_path": "сomp_node[0]",
+				"join_id": "1"
+			}
+		],		
+		"item_info_list": [
+			{
+				"full_path": "server_supermicro_2029U[0]",				
+				"sn": "1244053618996"
+			},
+			{
+				"full_path": "сomp_node[0]",				
+				"sn": "7122846577598"
+			}
+		]		
+	}
+}
