@@ -8,6 +8,8 @@ from registration.router import router as router_registration
 from gui.router import router as router_gui
 from join_scheme.router import router as router_join_scheme
 from metric_info.router import router as router_metric_info
+from check.router import router as router_check
+from test.router import router as router_test
 
 from logger.log_meddlewary import LogMiddleware
 
@@ -34,6 +36,8 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 
 app.include_router(router_join_scheme)
 app.include_router(router_registration)
+app.include_router(router_check)
 app.include_router(router_metric_info)
 app.include_router(router_params)
 app.include_router(router_gui)
+app.include_router(router_test)

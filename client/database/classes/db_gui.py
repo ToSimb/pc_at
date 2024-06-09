@@ -25,7 +25,8 @@ class Gui:
                     error_reg VARCHAR(250),
                     time_value TIMESTAMP,
                     error_value VARCHAR(250),
-                    time_conn TIMESTAMP
+                    time_conn TIMESTAMP,
+                    error_conn BOOLEAN DEFAULT FALSE
                 );
             """
             cur.execute(sql_create_table)
@@ -196,6 +197,63 @@ class Gui:
                 logger.error("DB(gui): gui_update_value - agent_id %s: %s", agent_id, e)
             else:
                 logger.error("DB(gui): gui_update_value - vvk_id %s: %s", agent_id, e)
+            raise e
+
+    # !!!
+    def gui_update_check_number_id(self, number_id: int, error_conn: bool) -> bool:
+        """
+            SQL-запрос на обновление последней проверки соединения агента/ВВК.
+
+        Args:
+            agent_id (int): Идентификатор агента.
+            error_conn (bool): Состояние потери соединения.
+
+        Returns:
+            bool: Возвращает True, если обновление прошло успешно.
+
+        Raises:
+            Exception: Если произошла ошибка при выполнении запроса к базе данных.
+        """
+        try:
+            time_conn = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            cur = self.conn.cursor()
+            sql_update_gui = "UPDATE gui SET time_conn = %s, error_conn = %s WHERE number_id = %s;"
+            cur.execute(sql_update_gui, (time_conn, error_conn, number_id))
+            self.conn.commit()
+            if error_conn:
+                logger.info(f"DB(gui): agent_id/VVk '{number_id}' - проверка связи не успешная")
+            else:
+                logger.info(f"DB(gui): agent_id/VVk '{number_id}' - проверка связи успешная")
+            return True
+        except Exception as e:
+            self.conn.rollback()
+            logger.error("DB(gui): gui_update_check_number_id - %s : %s", number_id, e)
+            raise e
+
+    # !!!
+    def gui_update_all_user_query_revision(self, user_query_interval_revision: int) -> bool:
+        """
+            SQL-запрос: Обновляет версию интервала запроса пользователя в таблице gui для всех записей.
+
+        Args:
+            user_query_interval_revision (int): Новая версия интервала запроса пользователя.
+
+        Returns:
+            bool: Возвращает True, если обновление выполнено успешно.
+
+        Raises:
+            Exception: Если произошла ошибка при выполнении запроса.
+        """
+        try:
+            cur = self.conn.cursor()
+            sql_update = f"UPDATE gui SET user_query_interval_revision = {user_query_interval_revision};"
+            cur.execute(sql_update)
+            self.conn.commit()
+            logger.info("DB(gui): значение user_query_interval_revision успешно изменено")
+            return True
+        except Exception as e:
+            self.conn.rollback()
+            logger.error("DB(gui): gui_update_all_user_query_revision: %s", e)
             raise e
 
 # __ Delete __

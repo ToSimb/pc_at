@@ -122,7 +122,8 @@ def check_full_path_exists(item_list, target_path):
     return not any(item['full_path'] == target_path for item in item_list)
 
 # ??? надо добавить метрик инфо!
-def formation_agent_reg_scheme(agent_reg_id: str, agent_scheme: dict, join_scheme: dict, vvk_scheme: dict):
+def formation_agent_reg_scheme(agent_reg_id: str, agent_scheme: dict, join_scheme: dict, vvk_scheme: dict,
+                               item_id_list_agent: list):
     """
         Формирует схему регистрации агента.
 
@@ -133,9 +134,10 @@ def formation_agent_reg_scheme(agent_reg_id: str, agent_scheme: dict, join_schem
         vvk_scheme (dict): Схема VVK.
 
     Returns:
-        tuple: Кортеж, содержащий схему агента, список агентов в JSON формате и схему VVK.
+        tuple: Кортеж, содержащий схему агента, список агентов в JSON формате и схему VVK, а так же item_id(совпадения) для перерегистрированного агента.
     """
     json_agent_list = []
+    item_id_list_new = []
     for join_list in join_scheme["join_list"]:
         if agent_reg_id == join_list["agent_reg_id"]:
             # если тип подключения jtInclude
@@ -163,10 +165,18 @@ def formation_agent_reg_scheme(agent_reg_id: str, agent_scheme: dict, join_schem
                 # Формирование нового item_id_list
                 for a in agent_scheme["scheme"]["item_id_list"]:
                     b = copy.deepcopy(a)
-                    index += 1
                     a["full_path"] = join_list["join_item_full_path"] + '/' + a["full_path"]
-                    a["item_id"] = index
-                    b["item_id"] = index
+                    # изменения - вернуть старые item_id !!
+                    for item in item_id_list_agent:
+                        if item['full_path'] == a["full_path"]:
+                            a["item_id"] = item["item_id"]
+                            b["item_id"] = item["item_id"]
+                            item_id_list_new.append(item["item_id"])
+                            break
+                    else:
+                        index += 1
+                        a["item_id"] = index
+                        b["item_id"] = index
                     for existing_item in vvk_scheme["item_id_list"]:
                         if existing_item["full_path"] == a["full_path"]:
                             existing_item["item_id"] = a["item_id"]
@@ -218,9 +228,16 @@ def formation_agent_reg_scheme(agent_reg_id: str, agent_scheme: dict, join_schem
                                 a["full_path"] = join_id_list_scheme["join_item_full_path"] + a[
                                     "full_path"].replace(
                                     a["full_path"].split('/')[0], "")
-                                index += 1
-                                a["item_id"] = index
-                                b["item_id"] = index
+                                for item in item_id_list_agent:
+                                    if item['full_path'] == a["full_path"]:
+                                        a["item_id"] = item["item_id"]
+                                        b["item_id"] = item["item_id"]
+                                        item_id_list_new.append(item["item_id"])
+                                        break
+                                else:
+                                    index += 1
+                                    a["item_id"] = index
+                                    b["item_id"] = index
                                 for existing_item in vvk_scheme["item_id_list"]:
                                     if existing_item["full_path"] == a["full_path"]:
                                         existing_item["item_id"] = a["item_id"]
@@ -246,8 +263,33 @@ def formation_agent_reg_scheme(agent_reg_id: str, agent_scheme: dict, join_schem
 
                     else:
                         raise MyException427(f"No join_id:{join_id_list_scheme['agent_item_join_id']} in join_id_list")
-    return agent_scheme, json_agent_list, vvk_scheme
+    return agent_scheme, json_agent_list, vvk_scheme, item_id_list_new
 
+# !!!
+def delete_metric_info(metric_info, remaining_item_id_list, metrics_id_agent):
+    """
+        Удаляет элементы из `metric_info`, которые соответствуют определенным критериям.
+
+    Args:
+        metric_info (dict): Словарь, содержащий информацию о метриках.
+        remaining_item_id_list (list): Список оставшихся идентификаторов элементов, которых больше нет в новом агенте.
+        metrics_id_agent (list): Список идентификаторов метрик агента.
+
+    Returns:
+        dict: Словарь с ключом 'metric_info_list', значение которого является отфильтрованным списком метрик.
+    """
+    metric_info_list = if_metric_info(metric_info)
+    if metric_info_list == []:
+        return metric_info
+    else:
+        metric_info_list_new = []
+        for item in metric_info_list:
+            if not (item["item_id"] in remaining_item_id_list and item["metric_id"] in metrics_id_agent):
+                metric_info_list_new.append(item)
+        metric_info_list_dict = {
+            "metric_info_list": metric_info_list_new
+        }
+        return metric_info_list_dict
 
 # ___________ работа только с БД _________
 
@@ -273,13 +315,13 @@ def registration_agent_reg_id_scheme(agent_reg_id: str, all_agent_scheme: dict, 
     db.reg_sch_block_true()
 
     scheme_revision_vvk, user_query_interval_revision, join_scheme, vvk_scheme, metric_info_list_raw = db.reg_sch_select_vvk_all()
-    metric_info_list = if_metric_info(metric_info_list_raw) # ???
 
-    agent_scheme, json_agent_list, vvk_scheme_new = formation_agent_reg_scheme(agent_reg_id, all_agent_scheme, join_scheme, vvk_scheme)
+    agent_scheme, json_agent_list, vvk_scheme_new, _ = formation_agent_reg_scheme(agent_reg_id, all_agent_scheme,
+                                                                               join_scheme, vvk_scheme, [])
 
     db.gui_update_vvk_reg_none(scheme_revision_vvk + 1, user_query_interval_revision)
     # может и не надо +1 - может быть ошибка при регистрации агента, когда схема ВВК зарегистрирована
-    db.reg_sch_update_vvk_scheme(scheme_revision_vvk + 1, vvk_scheme_new)
+    db.reg_sch_update_vvk_scheme(scheme_revision_vvk + 1, vvk_scheme_new, metric_info_list_raw)
 
     index = db.reg_sch_select_count_agents() + 1
     json_agent_return = {
@@ -292,23 +334,21 @@ def registration_agent_reg_id_scheme(agent_reg_id: str, all_agent_scheme: dict, 
 
     # SCH - случай когда ввк схема зарегистрированна!
     vvk_id = db.sch_ver_select_check_vvk_id()
-    metric_info_list_dict = {
-        "metric_info_list": metric_info_list
-    }
+
     if vvk_id:
         if db.sch_ver_select_latest_status():
             db.sch_ver_insert_vvk(False, vvk_id, scheme_revision_vvk + 1, user_query_interval_revision,
-                                  vvk_scheme_new, metric_info_list_dict)
+                                  vvk_scheme_new, metric_info_list_raw)
         else:
             db.sch_ver_update_vvk_if_false(scheme_revision_vvk + 1, user_query_interval_revision,
-                                  vvk_scheme_new, metric_info_list_dict)
+                                  vvk_scheme_new, metric_info_list_raw)
             print("RERERERERERER")
 
     db.reg_sch_block_false()
     return json_agent_return
 
 # !!!
-def re_registration_agent_id_scheme(agent_id: int, agent_reg_id: str, all_agent_scheme: dict, db):
+def re_registration_agent_id_scheme(agent_id: int, agent_reg_id: str, all_agent_scheme: dict, db: Database):
     """
         Перерегистрирует агента.
 
@@ -330,19 +370,26 @@ def re_registration_agent_id_scheme(agent_id: int, agent_reg_id: str, all_agent_
     db.reg_sch_block_true()
 
     scheme_revision_vvk, user_query_interval_revision, join_scheme, vvk_scheme, metric_info_list_raw = db.reg_sch_select_vvk_all()
-    metric_info_list = if_metric_info(metric_info_list_raw) # ???
 
 
     # получение данных с помощью которых будет произоводиться очистка
     metrics_list_excluding_agent = db.reg_sch_select_metrics_excluding_agent(agent_id)
     templates_list_excluding_agent = db.reg_sch_select_templates_excluding_agent(agent_id)
-    full_paths_agent = db.reg_sch_select_full_paths_agent(agent_id) # в теории можно достать еще и item_id
+    # !!!!!ИЗМЕНЕНИЯ
+    item_id_list_agent = db.reg_sch_select_agent_item_id_list(agent_id)
+    full_paths_agent = []
+    item_id_agent = []
+    for item in item_id_list_agent:
+        full_paths_agent.append(item["full_path"])
+        item_id_agent.append(item["item_id"])
+    _, _, metrics_id_agent, _ = db.reg_sch_select_metrics_and_items(agent_id)
 
+    # очистка схемы ВВК от агента !
     templates_new = delete_templates(vvk_scheme["templates"], templates_list_excluding_agent)
     metrics_new = delete_metrics(vvk_scheme["metrics"], metrics_list_excluding_agent)
     item_id_list_new = delete_item_id_list(vvk_scheme["item_id_list"], full_paths_agent)
     item_info_list_new = delete_item_info_list(vvk_scheme['item_info_list'], join_scheme['item_info_list'], full_paths_agent)
-    # Тут надо написать алгоритм, который будет удалять лишние Метрикинфо по итем айди и метрик айди ???
+
 
     vvk_scheme_after_cleaning = {
         "metrics": metrics_new,
@@ -353,11 +400,21 @@ def re_registration_agent_id_scheme(agent_id: int, agent_reg_id: str, all_agent_
 
     # а потом зарегистрировать заново агент, используя старый метод!
 
-    agent_scheme, json_agent_list, vvk_scheme_new = formation_agent_reg_scheme(agent_reg_id, all_agent_scheme,
-                                                                               join_scheme, vvk_scheme_after_cleaning)
+    agent_scheme, json_agent_list, vvk_scheme_new, item_id_list_new_agent = formation_agent_reg_scheme(agent_reg_id, all_agent_scheme,
+                                                                               join_scheme, vvk_scheme_after_cleaning,
+                                                                               item_id_list_agent)
+
+    remaining_item_id_list = [item for item in item_id_agent if item not in item_id_list_new_agent]
+    print(remaining_item_id_list)
+    print(metrics_id_agent)
+
+
+    metric_info_list_dict = delete_metric_info(metric_info_list_raw, remaining_item_id_list, metrics_id_agent)
+
+
 
     db.gui_update_vvk_reg_none(scheme_revision_vvk + 1, user_query_interval_revision)
-    db.reg_sch_update_vvk_scheme(scheme_revision_vvk + 1, vvk_scheme_new)
+    db.reg_sch_update_vvk_scheme(scheme_revision_vvk + 1, vvk_scheme_new, metric_info_list_dict)
 
     json_agent_return = {
         "agent_id": agent_id,
@@ -370,9 +427,7 @@ def re_registration_agent_id_scheme(agent_id: int, agent_reg_id: str, all_agent_
 
     # SCH - случай когда ввк схема зарегистрированна!
     vvk_id = db.sch_ver_select_check_vvk_id()
-    metric_info_list_dict = {
-        "metric_info_list": metric_info_list
-    }
+
     if vvk_id:
         if db.sch_ver_select_latest_status():
             db.sch_ver_insert_vvk(False, vvk_id, scheme_revision_vvk + 1, user_query_interval_revision,

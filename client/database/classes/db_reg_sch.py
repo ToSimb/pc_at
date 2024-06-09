@@ -155,6 +155,37 @@ class Reg_sch:
             logger.error("DB(reg_sch): reg_sch_update_all_user_query_revision: %s", e)
             raise e
 
+    # !!!
+    def reg_sch_update_vvk_metric_info(self, metric_info_list: dict) -> bool:
+        """
+        SQL-запрос: Обновляет metric_info_list зарегистрированной VVK в таблице reg_sch.
+
+        Args:
+            metric_info_list (dict): Новый метрики VVK.
+
+        Returns:
+            bool: Возвращает True, если обновление выполнено успешно.
+
+        Raises:
+            Exception: Если произошла ошибка при выполнении запроса.
+        """
+        try:
+            cur = self.conn.cursor()
+            sql_update = """
+                UPDATE reg_sch
+                SET metric_info_list = %s
+                WHERE type_id = FALSE;
+            """
+            cur.execute(sql_update, (json.dumps(metric_info_list),))
+            self.conn.commit()
+            logger.info("DB(reg_sch): значение metric_info_list успешно обновлено")
+            return True
+        except Exception as e:
+            self.conn.rollback()
+            logger.error("DB(reg_sch): reg_sch_update_vvk_metric_info: %s", e)
+            raise e
+
+
 # __ Delete __
 
 # __ BLOCK __

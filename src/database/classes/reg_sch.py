@@ -277,6 +277,34 @@ class Reg_sch:
             raise e
 
     # !!!
+    def reg_sch_select_agent_user_q(self, agent_id: int) -> int:
+        """
+            SQL-запрос для получения 'user_query_interval_revision' агента.
+
+        Args:
+            agent_id (int): Идентификатор агента.
+
+        Returns:
+            int: Значение 'user_query_interval_revision' или None, если агент не найден.
+
+        Raises:
+            Exception: Если произошла ошибка при выполнении запроса.
+        """
+        try:
+            cur = self.conn.cursor()
+            sql_select = f"SELECT user_query_interval_revision FROM reg_sch WHERE number_id = {agent_id}"
+            cur.execute(sql_select)
+            data = cur.fetchone()
+            self.conn.commit()
+            if data:
+                return data[0]
+            else:
+                return None
+        except Exception as e:
+            logger.error("DB(reg_sch): reg_sch_select_agent_details: %s", e)
+            raise e
+
+    # !!!
     def reg_sch_select_templates_excluding_agent(self, agent_id: int) -> list:
         """
             SQL-запрос для выбора уникальных template_id, исключая шаблоны указанного агента.
@@ -340,15 +368,15 @@ class Reg_sch:
             raise e
 
     # !!!
-    def reg_sch_select_full_paths_agent(self, agent_id: int) -> list:
+    def reg_sch_select_agent_item_id_list(self, agent_id: int) -> list:
         """
-        SQL-запрос для выбора значений 'full_path' из 'item_id_list'.
+        SQL-запрос для получения 'item_id_list' агента.
 
         Args:
             agent_id (int): Идентификатор агента.
 
         Returns:
-            list: Список строковых значений 'full_path'.
+            list: Список item_id_list.
                   В случае отсутствия записей возвращает пустой список.
 
         Raises:
@@ -358,7 +386,7 @@ class Reg_sch:
         try:
             cur = self.conn.cursor()
             sql_select = """
-                    SELECT jsonb_array_elements(scheme->'item_id_list')->>'full_path' AS full_paths
+                    SELECT jsonb_array_elements(scheme->'item_id_list') AS item_id_list
                     FROM reg_sch
                     WHERE number_id = %s
                 """
@@ -444,13 +472,14 @@ class Reg_sch:
 
     # __ Update __
     # !!!
-    def reg_sch_update_vvk_scheme(self, scheme_revision: int, scheme: dict) -> bool:
+    def reg_sch_update_vvk_scheme(self, scheme_revision: int, scheme: dict, metric_info_list: dict) -> bool:
         """
             SQL-запрос: Обновляет схему VVK в таблице.
 
         Args:
             scheme_revision (int): Номер ревизии схемы.
             scheme (dict): Схема VVK в формате словаря.
+            metric_info_list (dict):n Метрики.
 
         Returns:
             bool: Возвращает True, если обновление схемы выполнено успешно.
@@ -460,8 +489,9 @@ class Reg_sch:
         """
         try:
             cur = self.conn.cursor()
-            sql_update_scheme = "UPDATE reg_sch SET scheme_revision = %s, scheme = %s WHERE type_id = FALSE;"
-            cur.execute(sql_update_scheme, (scheme_revision, json.dumps(scheme),))
+            sql_update_scheme = ("UPDATE reg_sch SET scheme_revision = %s, scheme = %s, metric_info_list = %s "
+                                 "WHERE type_id = FALSE;")
+            cur.execute(sql_update_scheme, (scheme_revision, json.dumps(scheme), json.dumps(metric_info_list),))
             logger.info("DB(reg_sch): VvkScheme-scheme изменена")
             self.conn.commit()
             return True

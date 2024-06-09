@@ -100,16 +100,3 @@ async def upload_json_file(file: UploadFile = File(...), db=Depends(get_db_repo)
         error_str = f"Exception: {e}."
         raise HTTPException(status_code=527, detail={"error_msg": error_str})
 
-
-
-@router.post("/save")
-async def return_scheme(vvk_scheme: dict):
-    """
-    Метод для тестовой регистрации VvkScheme
-    """
-    return_scheme = {
-        "vvk_id": 51,
-        "scheme_revision": vvk_scheme["scheme_revision"],
-        "user_query_interval_revision": 0
-    }
-    return return_scheme

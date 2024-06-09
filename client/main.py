@@ -59,7 +59,7 @@ def request_pf(final_result: dict, vvk_id: int) -> bool:
         requests.RequestException: Если произошла ошибка при выполнении запроса.
     """
     # url = f'{PC_AF_PROTOCOL}://{PC_AF_IP}:{PC_AF_PORT}/params?vvk_id={vvk_id}'
-    url = f'http://localhost:8000/params/hole?vvk_id={vvk_id}'
+    url = f'http://localhost:8000/test/params?vvk_id={vvk_id}'
     headers = {'Content-Type': 'application/json'}
     try:
         response = requests.post(url, json=final_result, headers=headers)
@@ -95,10 +95,10 @@ def request_registration_vvk(vvk_id: int, json_vvk_return: dict):
     """
     if vvk_id:
         # url = f'{PC_AF_PROTOCOL}://{PC_AF_IP}:{PC_AF_PORT}/vvk-scheme?vvk_id={vvk_id}'
-        url = f'http://127.0.0.1:8000/join-scheme/save?vvk_id={vvk_id}'
+        url = f'http://127.0.0.1:8000/test/save?vvk_id={vvk_id}'
     else:
         # url = f'{PC_AF_PROTOCOL}://{PC_AF_IP}:{PC_AF_PORT}/vvk-scheme'
-        url = f'http://127.0.0.1:8000/join-scheme/save'
+        url = f'http://127.0.0.1:8000/test/save'
 
     headers = {'Content-Type': 'application/json'}
     try:
@@ -203,6 +203,7 @@ def registration_vvk() -> bool:
 
         # REG_SCH
         db.reg_sch_update_vvk_id(temp["vvk_id"])
+        db.reg_sch_update_all_user_query_revision(temp["user_query_interval_revision"])
 
         db.reg_sch_block_false()
         return True
@@ -251,8 +252,6 @@ def re_registration_vvk() -> bool:
         db.reg_sch_block_false()
         return False
 
-
-vvk_id = None # Необходима для исколючения
 
 try:
     # регистрация ВВК

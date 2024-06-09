@@ -1,6 +1,27 @@
 from database.database import Database
 
 # !!!
+def if_metric_info(metric_info: dict) -> list:
+    """
+    Возвращает 'metric_info_list' из словаря metric_info, если оно существует.
+
+    Args:
+        metric_info (dict): Словарь, содержащий ключ 'metric_info_list', значение которого будет проверено.
+
+    Returns:
+        list: Список, содержащий значение по ключу 'metric_info_list', или пустой список, если значение отсутствует или некорректно.
+    """
+    if metric_info is None:
+        return []
+
+    metric_info_list = metric_info.get('metric_info_list')
+
+    if not metric_info_list or metric_info_list == [None]:
+        return []
+
+    return metric_info_list
+
+# !!!
 def add_metrics(json_vvk_return_metrics, json_agent_scheme_metrics):
     """
         Добавляет метрики из схемы агента в список метрик схемы VVK, если они отсутствуют.
@@ -172,7 +193,35 @@ def formation_agent_update_join(agent_scheme: dict, join_scheme: dict, vvk_schem
 
     return vvk_scheme
 
+
 # ___________ работа только с БД _________
+
+# !!!
+def delete_metric_info_agent(agent_id: int, metric_info: dict, db: Database):
+    """
+        Удаляет из `metric_info` элементы принадлежащие агенту agent_id.
+
+    Args:
+        agent_id (int): Идентификатор агента.
+        metric_info (dict): Словарь, содержащий информацию о метриках.
+        db (Database): Объект базы данных.
+
+    Returns:
+        dict: Словарь с ключом 'metric_info_list', значение которого является отфильтрованным списком метрик.
+    """
+    metric_info_list = if_metric_info(metric_info)
+    if metric_info_list == []:
+        return metric_info
+    else:
+        _, _, metrics_id, items_id = db.reg_sch_select_metrics_and_items(agent_id)
+        metric_info_list_new = []
+        for item in metric_info_list:
+            if not (item["item_id"] in items_id and item["metric_id"] in metrics_id):
+                metric_info_list_new.append(item)
+        metric_info_list_dict = {
+            "metric_info_list": metric_info_list_new
+        }
+        return metric_info_list_dict
 
 # !!!
 def registration_join_scheme(join_scheme: dict, db: Database) -> dict:
@@ -212,7 +261,10 @@ def registration_join_scheme(join_scheme: dict, db: Database) -> dict:
     agents_reg_id = [item["agent_reg_id"] for item in join_scheme["scheme"]["join_list"]]
     db.gui_insert_join_scheme(vvk_name, agents_reg_id)
     # REG_SCH
-    db.reg_sch_insert_vvk(join_scheme["scheme_revision"], join_scheme["scheme"], vvk_scheme, None)
+    metric_info_list_dict = {
+        "metric_info_list": []
+    }
+    db.reg_sch_insert_vvk(join_scheme["scheme_revision"], join_scheme["scheme"], vvk_scheme, metric_info_list_dict)
     return vvk_scheme
 
 # !!!
@@ -269,7 +321,7 @@ def re_registration_join_scheme(join_scheme_new, user_query_interval_revision,
                     db.gui_update_agent_reg_id_update_error(agent["number_id"], agent["agent_reg_id"],
                                                             agent["scheme_revision"], str(e))
             else:
-                # !?! Необходимо дописать модуль, который будет чистить МетрикИнфо
+                metric_info_list_raw = delete_metric_info_agent(agent["number_id"], metric_info_list_raw, db)
                 db.reg_sch_delete_agent(agent["number_id"])
 
     # GUI

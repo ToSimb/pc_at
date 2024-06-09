@@ -56,6 +56,15 @@
                     {% if vvk["error_value"] is not none %}
                         <p>Ошибка передачи ПФ: {{vvk["error_value"]}}</p>
                     {% endif %}
+                    {% if vvk["time_conn"] is not none %}
+                        {% if vvk["error_conn"] is true %}
+                            <p>Контроль канала связи: Нет соединения</p>
+                            <p>Время последнего успешного контроля связи: {{vvk["time_conn"]}}</p>
+                        {% else %}
+                            <p>Контроль канала связи: OK</p>
+                            <p>Время последнего успешного контроля связи: {{vvk["time_conn"]}}</p>
+                        {% endif %}
+                    {% endif %}
                     <div class="main__block-center flex">
                         <button class="btn reset-btn" onclick="redirectToVvkScheme()">
                             Посмотретреть Vvk Scheme
@@ -101,6 +110,15 @@
                         {% endif %}
                         {% if item["error_value"] is not none %}
                             <p>Ошибка приема ПФ: {{item["error_value"]}}</p>
+                        {% endif %}
+                        {% if item["time_conn"] is not none %}
+                            {% if item["error_conn"] is true %}
+                                <p>Контроль канала связи: нет соединения</p>
+                                <p>Время последнего успешного контроля связи: {{item["time_conn"]}}</p>
+                            {% else %}
+                                <p>Контроль канала связи: OK</p>
+                                <p>Время последнего успешного контроля связи: {{item["time_conn"]}}</p>
+                            {% endif %}
                         {% endif %}
                         {% if item["status_reg"] is true %}
                             <div class="main__block-center flex">

@@ -59,8 +59,3 @@ async def params_data(params: SchemeJson, agent_id: int, db=Depends(get_db_repo)
         error_str = f"Exception: {e}"
         db.gui_update_value(agent_id, error_str, True)
         raise HTTPException(status_code=527, detail={"error_msg": error_str})
-
-@router.post("/hole")
-async def params_hole(params: SchemeJson, vvk_id: int):
-    print("пришли ПФ от ввк:", vvk_id, params.scheme_revision)
-    return ("OK")

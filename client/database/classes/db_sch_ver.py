@@ -251,54 +251,31 @@ class Sch_ver:
             logger.error("DB(sch_ver): sch_ver_update_all_user_query_revision: %s", e)
             raise e
 
-# __ Delete __
+    # !!!
+    def sch_ver_update_all_metric_info(self, metric_info_list: dict) -> bool:
+        """
+            SQL-запрос: Обновляет metric_info_list в таблице SCH_VER для всех записей.
 
-    def sch_ver_delete_vvk_no_reg(self) -> bool:
+        Args:
+            metric_info_list (dict): Новые метрики.
+
+        Returns:
+            bool: Возвращает True, если обновление выполнено успешно.
+
+        Raises:
+            Exception: Если произошла ошибка при выполнении запроса.
+        """
         try:
             cur = self.conn.cursor()
-            sql_delete = (
-                "DELETE FROM sch_ver "
-                "WHERE ctid = (SELECT ctid FROM sch_ver WHERE status_reg = FALSE ORDER BY date_create LIMIT 1);"
-            )
-            cur.execute(sql_delete)
+            sql_update = f"UPDATE sch_ver SET metric_info_list = %s;"
+            cur.execute(sql_update, (json.dumps(metric_info_list),))
             self.conn.commit()
-            logger.info(f"DB(sch_ver): Удалена не удачная версия Vvk Scheme")
+            logger.info("DB(sch_ver): значение metric_info_list успешно изменено")
             return True
         except Exception as e:
             self.conn.rollback()
-            logger.error("DB(sch_ver): sch_ver_delete_vvk_no_reg: %s", e)
+            logger.error("DB(sch_ver): sch_ver_update_all_metric_info: %s", e)
             raise e
 
-
-
-
-
-
-
-
-
-
-
-    def sch_ver_select_vvk_reg_all_json(self) -> dict:
-        try:
-            cur = self.conn.cursor()
-            sql_select = "SELECT vvk_id, scheme_revision, user_query_interval_revision, scheme, metric_info_list FROM sch_ver WHERE status_reg = TRUE ORDER BY id DESC LIMIT 1"
-            cur.execute(sql_select, )
-            self.conn.commit()
-            data = cur.fetchall()
-            result = {
-                "vvk_id": data[0][0],
-                "scheme_revision": data[0][1],
-                "user_query_interval_revision": data[0][2],
-                "scheme": data[0][3],
-                "metric_info_list": data[0][4]
-            }
-            if result:
-                return result
-            else:
-                raise Exception("VvkScheme не зарегистирована!!")
-        except Exception as e:
-            self.conn.rollback()
-            logger.error("DB(reg_sch): sch_ver_select_vvk_reg_all_json: %s", e)
-            raise e
+# __ Delete __
 
