@@ -18,13 +18,10 @@ class Pf:
                     v VARCHAR(100) NOT NULL,
                     etmax BOOLEAN,
                     etmin BOOLEAN,
-                    comment VARCHAR(100),
-                    sent BOOLEAN DEFAULT FALSE
+                    comment VARCHAR(100)
                 );
             """
             cur.execute(sql_create_table)
-            sql_create_index1 = "CREATE INDEX idx_pf_t_not_sent ON pf (t) where not sent;"
-            cur.execute(sql_create_index1)
             sql_create_index2 = "CREATE INDEX idx_pf_t ON pf using BRIN (t);"
             cur.execute(sql_create_index2)
             self.conn.commit()
@@ -38,8 +35,6 @@ class Pf:
     def pf_drop_table(self) -> bool:
         try:
             cur = self.conn.cursor()
-            sql_drop_index1 = "DROP INDEX IF EXISTS idx_pf_t_not_sent;"
-            cur.execute(sql_drop_index1)
             sql_drop_index2 = "DROP INDEX IF EXISTS idx_pf_t;"
             cur.execute(sql_drop_index2)
             sql_drop_table = "DROP TABLE IF EXISTS pf;"
@@ -53,6 +48,7 @@ class Pf:
 
 
 # __ Select  __
+    # !!!
     def pf_select_params_json(self, int_limit: int = 20000) -> list:
         """
             SQL-запрос: Получить ПФ (неотправленные).
@@ -70,7 +66,7 @@ class Pf:
         try:
             cur = self.conn.cursor()
             sql_select_params = (f"SELECT id, item_id, metric_id, t, v, etmax, etmin, comment FROM pf "
-                                 f"WHERE sent = False ORDER BY t LIMIT {int_limit};")
+                                 f"ORDER BY t LIMIT {int_limit};")
             cur.execute(sql_select_params)
             self.conn.commit()
             data = cur.fetchall()
@@ -106,7 +102,7 @@ class Pf:
         try:
             cur = self.conn.cursor()
             sql_select_params = (f"SELECT id, item_id, metric_id, t, v, etmax, etmin, comment FROM pf "
-                                 f"WHERE sent = False AND t < {time_create} ORDER BY t LIMIT {int_limit};")
+                                 f"WHERE t < {time_create} ORDER BY t LIMIT {int_limit};")
             cur.execute(sql_select_params)
             self.conn.commit()
             data = cur.fetchall()
@@ -197,8 +193,31 @@ class Pf:
             logger.error("DB(pf): pf_delete_params: %s", e)
             raise e
 
+    # !!!
+    def pf_delete_records(self, id_list: list) -> int:
+        """
+            SQL-запрос: Удаляет записи из таблицы ПФ на основе списка идентификаторов.
 
+        Args:
+            id_list (list): Список идентификаторов записей, которые нужно удалить.
 
+        Returns:
+            int: Количество удаленных записей.
+
+        Raises:
+            Exception: Если произошла ошибка при выполнении запроса.
+        """
+        try:
+            cur = self.conn.cursor()
+            id_string = ','.join(map(str, id_list))
+            sql_delete_query = f"DELETE FROM pf WHERE id IN ({id_string});"
+            cur.execute(sql_delete_query)
+            deleted_rows = cur.rowcount
+            self.conn.commit()
+            return deleted_rows
+        except Exception as e:
+            logger.error("DB(pf): pf_delete_records: %s", e)
+            raise e
 
 
 

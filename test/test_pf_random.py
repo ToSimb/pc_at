@@ -47,6 +47,14 @@ try:
                 data = []
                 metric_data = {"t": current_timestamp-10, "v": str(random.randint(800, 1100))}
                 data.append(metric_data)
+                metric_data = {"t": current_timestamp-8, "v": str(random.randint(800, 1100))}
+                data.append(metric_data)
+                metric_data = {"t": current_timestamp-6, "v": str(random.randint(800, 1100))}
+                data.append(metric_data)
+                metric_data = {"t": current_timestamp-4, "v": str(random.randint(800, 1100))}
+                data.append(metric_data)
+                metric_data = {"t": current_timestamp-2, "v": str(random.randint(800, 1100))}
+                data.append(metric_data)
                 metric_data = {"t": current_timestamp, "v": str(random.randint(800, 1100)), "comment": "Test"}
                 data.append(metric_data)
                 metric_data = {"t": current_timestamp+2, "v": str(random.randint(800, 1100)), "etmax": True, "etmin": False}
@@ -58,7 +66,7 @@ try:
         execution_time = end_time - start_time
         print("Время отправки и сохранения в БД:", execution_time)
 
-        time.sleep(5)
+        time.sleep(1)
 
 except Exception as e:
     sys.exit(1)

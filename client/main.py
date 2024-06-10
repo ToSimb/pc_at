@@ -283,12 +283,15 @@ try:
     # передача ПФ
     while True:
         t3 = T3
+        logger.info(" ________________________ ")
         start_time = time.time()
         date_create = db.sch_ver_select_date_create_unreg()
         if date_create:
             params = db.pf_select_params_json_unreg(date_create, INT_LIMIT)
         else:
             params = db.pf_select_params_json(INT_LIMIT)
+        start_1_time = time.time()
+        logger.info("Время получение ПФ из БД: %.4f", start_1_time - start_time)
         if len(params) > 0:
             result_id, value = parse_value(params)
             vvk_id, scheme_revision, user_query_interval_revision, t3 = db.sch_ver_select_vvk_details()
@@ -299,15 +302,20 @@ try:
                 "value": value
             }
             start_request_time = time.time()
+            logger.info("Время формирование ПФ: %.4f", start_request_time - start_1_time)
             if request_pf(result, vvk_id):
-                updated_rows = db.pf_update_sent_status(result_id)
+                end_request_time = time.time()
+                logger.info("Время отправки ПФ: %.4f", end_request_time - start_request_time)
+                updated_rows = db.pf_delete_records(result_id)
+                end_1_time = time.time()
+                logger.info("Время удаления ПФ: %.4f", end_1_time - end_request_time)
                 db.gui_update_value(vvk_id, None, False)
-                count_sent_false = db.pf_select_count_sent_false()
+                count_sent_false = db.pf_select_count_all()
+                end_2_time = time.time()
+                logger.info("Время подсчета оставшихся ПФ: %.4f", end_2_time - end_1_time)
                 logger.info("DB(pf): изменено строк (true): %d | ОСТАЛОСЬ в БД: %d", updated_rows, count_sent_false)
                 if count_sent_false > INT_LIMIT:
                     t3 = 0
-            end_request_time = time.time()
-            logger.info("Время формирование ПФ: %.4f | время отправки: %.4f", start_request_time-start_time, end_request_time-start_request_time)
         else:
             if date_create:
                 if db.gui_select_agents_check_status_reg():
