@@ -1,9 +1,8 @@
 from fastapi import APIRouter, Depends, HTTPException
+from fastapi.responses import Response
 from deps import get_db_repo
 
 from logger.logger import logger
-
-from myException import MyException227
 
 router = APIRouter(
     prefix="/check",
@@ -31,13 +30,11 @@ async def get_checks(agent_id: int, user_query_interval_revision: int, db=Depend
         if user_q is not None:
             db.gui_update_check_number_id(agent_id, False)
             if user_query_interval_revision == user_q:
-                return ("Ok")
+                return Response(status_code=200)
             else:
-                raise MyException227
+                return Response(status_code=227)
         else:
             raise Exception(f"Agent_id '{agent_id}' is not registered.")
-    except MyException227:
-        raise HTTPException(status_code=227, detail="OK")
     except Exception as e:
         error_str = f"{e}."
         logger.error(error_str)

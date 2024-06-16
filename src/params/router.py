@@ -1,11 +1,12 @@
 from fastapi import APIRouter, Depends, HTTPException
+from fastapi.responses import Response
 from deps import get_db_repo
 
 from logger.logger import logger
 from .schemas import SchemeJson
-from params.service import add_params
+from params.service import add_params, file_save
 
-from myException import MyException227, MyException427, MyException527
+from myException import MyException427, MyException527, GLOBAL_STATUS_SAVE
 
 
 router = APIRouter(
@@ -25,17 +26,17 @@ async def params_data(params: SchemeJson, agent_id: int, db=Depends(get_db_repo)
                 if scheme_revision != params.scheme_revision:
                     raise MyException427(f"Agent '{agent_id}' - invalid scheme_revision, registered: {scheme_revision}.")
                 add_params(params, agent_id, metrics, items_id, db)
+                if GLOBAL_STATUS_SAVE:
+                    file_save(agent_id, params)
                 if user_query_interval_revision != params.user_query_interval_revision:
-                    raise MyException227
-                return ("OK")
+                    return Response(status_code=227)
+                return Response(status_code=200)
             else:
                 raise MyException527(
                     f"Agent '{agent_id}' - re-registration required.")
         else:
             raise Exception("The latest VVK scheme is not registered")
 
-    except MyException227:
-        raise HTTPException(status_code=227, detail="OK")
     except MyException427 as e:
         error_str = str(e)
         logger.error(error_str)

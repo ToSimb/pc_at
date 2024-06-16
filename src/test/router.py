@@ -1,9 +1,8 @@
 from fastapi import APIRouter, Depends, HTTPException
+from fastapi.responses import Response
 from deps import get_db_repo
 
 from logger.logger import logger
-
-from myException import MyException227
 
 router = APIRouter(
     prefix="/test",
@@ -18,13 +17,11 @@ async def test_get_checks(vvk_id: int, user_query_interval_revision: int, db=Dep
     try:
         if vvk_id == 51:
             if user_query_interval_revision != 2:
-                return ("ok")
+                return Response(status_code=200)
             else:
-                raise MyException227
+                return Response(status_code=227)
         else:
             raise Exception("no vvk_id")
-    except MyException227:
-        raise HTTPException(status_code=227, detail="OK")
     except Exception as e:
         error_str = f"{e}."
         logger.error(error_str)

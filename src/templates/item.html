@@ -19,6 +19,14 @@
         function redirectToAgentScheme(agent_id) {
             window.location.href = `gui/agent_scheme/${agent_id}`;
         }
+
+        function redirectToAgentParams(agent_id) {
+            window.location.href = `gui/agent_params/${agent_id}`;
+        }
+
+        function redirectToStatusSave() {
+            window.location.href = `gui/status_save`;
+        }
     </script>
 </head>
 <body>
@@ -67,10 +75,20 @@
                     {% endif %}
                     <div class="main__block-center flex">
                         <button class="btn reset-btn" onclick="redirectToVvkScheme()">
-                            Посмотретреть Vvk Scheme
+                            Посмотреть Vvk Scheme
                         </button>
                         <button class="btn reset-btn" onclick="redirectToUploadVvkScheme()">
                             Обновить Vvk Scheme
+                        </button>
+                    </div>
+                    <p></p>
+                    <div class="main__block-center flex">
+                        <button class="btn--square btn reset-btn" onclick="redirectToStatusSave()">
+                            {% if GLOBAL_STATUS_SAVE is true %}
+                                Выключить сохранение последнего АФ
+                            {% else %}
+                                Включить сохранение последнего АФ
+                            {% endif %}
                         </button>
                     </div>
                 </div>
@@ -106,10 +124,12 @@
                         {% endif %}
                         <p></p>
                         {% if item["time_value"] is not none %}
-                            <p>Время последней успешного приема ПФ: {{item["time_value"]}}</p>
-                        {% endif %}
-                        {% if item["error_value"] is not none %}
-                            <p>Ошибка приема ПФ: {{item["error_value"]}}</p>
+                            {% if item["error_value"] is not none %}
+                                <p>Ошибка приема ПФ: {{item["error_value"]}}</p>
+                                <p>Время ошибки приема ПФ: {{item["time_value"]}}</p>
+                            {% else %}
+                                <p>Время последней успешного приема ПФ: {{item["time_value"]}}</p>
+                            {% endif %}
                         {% endif %}
                         {% if item["time_conn"] is not none %}
                             {% if item["error_conn"] is true %}
@@ -120,13 +140,26 @@
                                 <p>Время последнего успешного контроля связи: {{item["time_conn"]}}</p>
                             {% endif %}
                         {% endif %}
-                        {% if item["status_reg"] is true %}
-                            <div class="main__block-center flex">
-                                <button class="btn reset-btn" onclick="redirectToAgentScheme({{item["number_id"]}})">
-                                Посмотретреть Agent Scheme
-                                </button>
-                            </div>
-                        {% endif %}
+                        <div class="main__block-center flex">
+
+                            {% if item["status_reg"] is true %}
+                                <div class="main__block-center flex">
+                                    <button class="btn reset-btn" onclick="redirectToAgentScheme({{item["number_id"]}})">
+                                    Посмотреть Agent Scheme
+                                    </button>
+                                </div>
+                            {% endif %}
+                            {% if GLOBAL_STATUS_SAVE is true  %}
+                                {% if item["time_value"] is not none %}
+                                    <div class="main__block-center flex">
+                                        <button class="btn reset-btn" onclick="redirectToAgentParams({{item["number_id"]}})">
+                                        Посмотреть последний пакет
+                                        </button>
+                                    </div>
+                                {% endif %}
+                            {% endif %}
+
+                        </div>
                     </div>
                     {% endfor %}
                 </div>

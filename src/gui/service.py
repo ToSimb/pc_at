@@ -1,3 +1,5 @@
+import json
+
 def if_metric_info(metric_info: dict) -> list:
     """
     Возвращает 'metric_info_list' из словаря metric_info, если оно существует.
@@ -17,3 +19,8 @@ def if_metric_info(metric_info: dict) -> list:
         return []
 
     return metric_info_list
+
+def open_json(name_file: str):
+    with open(name_file, 'r', encoding='utf-8') as file:
+        data = file.read()
+    return json.loads(data)

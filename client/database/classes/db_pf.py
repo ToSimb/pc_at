@@ -143,6 +143,19 @@ class Pf:
     def pf_select_count_all(self) -> int:
         try:
             cur = self.conn.cursor()
+            sql_count_rows = """SELECT reltuples::bigint AS estimate 
+                                FROM pg_class 
+                                WHERE relname = 'pf';"""
+            cur.execute(sql_count_rows)
+            remaining_rows = cur.fetchone()[0]
+            return remaining_rows
+        except Exception as e:
+            logger.error("DB(pf): pf_select_count_all: %s", e)
+            raise e
+
+    def pf_select_count_all_pld(self) -> int:
+        try:
+            cur = self.conn.cursor()
             sql_count_rows = "SELECT COUNT(*) FROM pf;"
             cur.execute(sql_count_rows)
             remaining_rows = cur.fetchone()[0]

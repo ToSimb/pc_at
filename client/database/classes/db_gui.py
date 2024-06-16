@@ -1,7 +1,7 @@
 import datetime
 
 from logger.logger import logger
-
+from logger.logger_check import logger_check
 
 class Gui:
 
@@ -221,13 +221,13 @@ class Gui:
             cur.execute(sql_update_gui, (time_conn, error_conn, number_id))
             self.conn.commit()
             if error_conn:
-                logger.info(f"DB(gui): agent_id/VVk '{number_id}' - проверка связи не успешная")
+                logger_check.info(f"DB(gui): VVk '{number_id}' - проверка связи не успешная")
             else:
-                logger.info(f"DB(gui): agent_id/VVk '{number_id}' - проверка связи успешная")
+                logger_check.info(f"DB(gui): VVk '{number_id}' - проверка связи успешная")
             return True
         except Exception as e:
             self.conn.rollback()
-            logger.error("DB(gui): gui_update_check_number_id - %s : %s", number_id, e)
+            logger_check.error("DB(gui): gui_update_check_number_id - %s : %s", number_id, e)
             raise e
 
     # !!!

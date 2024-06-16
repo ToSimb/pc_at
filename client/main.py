@@ -7,6 +7,8 @@ from database.db import Database
 from database.postgres import connect, disconnect
 from logger.logger import logger
 
+from config import PC_AF_PROTOCOL, PC_AF_IP, PC_AF_PORT
+
 def signal_handler(sig, frame):
     logger.info("Принят сигнал завершения работы. Закрытие соединения...")
     disconnect(conn)
@@ -16,7 +18,7 @@ signal.signal(signal.SIGTERM, signal_handler)
 signal.signal(signal.SIGINT, signal_handler)
 
 INT_LIMIT = 30000
-T3 = 5
+T3 = 20
 
 conn = connect()
 db = Database(conn)
@@ -58,8 +60,8 @@ def request_pf(final_result: dict, vvk_id: int) -> bool:
         Exception: Если ответ сервера содержит статус-код, отличный от 200 или 227.
         requests.RequestException: Если произошла ошибка при выполнении запроса.
     """
-    # url = f'{PC_AF_PROTOCOL}://{PC_AF_IP}:{PC_AF_PORT}/params?vvk_id={vvk_id}'
-    url = f'http://localhost:8000/test/params?vvk_id={vvk_id}'
+    url = f'{PC_AF_PROTOCOL}://{PC_AF_IP}:{PC_AF_PORT}/params?vvk_id={vvk_id}'
+    # url = f'http://localhost:8000/test/params?vvk_id={vvk_id}'
     headers = {'Content-Type': 'application/json'}
     try:
         response = requests.post(url, json=final_result, headers=headers)
@@ -94,11 +96,11 @@ def request_registration_vvk(vvk_id: int, json_vvk_return: dict):
         requests.RequestException: Если произошла ошибка при выполнении запроса.
     """
     if vvk_id:
-        # url = f'{PC_AF_PROTOCOL}://{PC_AF_IP}:{PC_AF_PORT}/vvk-scheme?vvk_id={vvk_id}'
-        url = f'http://127.0.0.1:8000/test/save?vvk_id={vvk_id}'
+        url = f'{PC_AF_PROTOCOL}://{PC_AF_IP}:{PC_AF_PORT}/vvk-scheme?vvk_id={vvk_id}'
+        # url = f'http://127.0.0.1:8000/test/save?vvk_id={vvk_id}'
     else:
-        # url = f'{PC_AF_PROTOCOL}://{PC_AF_IP}:{PC_AF_PORT}/vvk-scheme'
-        url = f'http://127.0.0.1:8000/test/save'
+        url = f'{PC_AF_PROTOCOL}://{PC_AF_IP}:{PC_AF_PORT}/vvk-scheme'
+        # url = f'http://127.0.0.1:8000/test/save'
 
     headers = {'Content-Type': 'application/json'}
     try:
@@ -310,11 +312,11 @@ try:
                 end_1_time = time.time()
                 logger.info("Время удаления ПФ: %.4f", end_1_time - end_request_time)
                 db.gui_update_value(vvk_id, None, False)
-                count_sent_false = db.pf_select_count_all()
+                count_pf = db.pf_select_count_all()
                 end_2_time = time.time()
                 logger.info("Время подсчета оставшихся ПФ: %.4f", end_2_time - end_1_time)
-                logger.info("DB(pf): изменено строк (true): %d | ОСТАЛОСЬ в БД: %d", updated_rows, count_sent_false)
-                if count_sent_false > INT_LIMIT:
+                logger.info("DB(pf): изменено строк (true): %d | ОСТАЛОСЬ в БД: %d", updated_rows, count_pf)
+                if count_pf > INT_LIMIT:
                     t3 = 0
         else:
             if date_create:

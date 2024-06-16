@@ -1,12 +1,12 @@
 from fastapi import APIRouter, Depends, Request, HTTPException
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from deps import get_db_repo
 
 from logger.logger import logger
-from gui.service import if_metric_info
+from gui.service import if_metric_info, open_json
 
-from myException import MyException427
+from myException import MyException427, GLOBAL_STATUS_SAVE
 
 templates = Jinja2Templates(directory="templates")
 
@@ -31,7 +31,7 @@ async def gui_pages(request: Request, db=Depends(get_db_repo)):
             agents.sort(key=lambda x: x.get("id"))
 
         return templates.TemplateResponse(
-            request=request, name="item.html", context={"vvk": vvk, "agents": agents}
+            request=request, name="item.html", context={"vvk": vvk, "agents": agents, "GLOBAL_STATUS_SAVE": GLOBAL_STATUS_SAVE}
         )
     except Exception as e:
         error_str = f"Exception: {e}."
@@ -46,7 +46,7 @@ async def upload_form_get(request: Request):
     """
     return templates.TemplateResponse("upload_form.html", {"request": request})
 
-@router.get("/vvk_scheme",)
+@router.get("/vvk_scheme")
 async def gui_pages_vvk(db=Depends(get_db_repo)):
     """
         Метод для просмотра VvkScheme
@@ -67,7 +67,7 @@ async def gui_pages_vvk(db=Depends(get_db_repo)):
     except Exception as e:
         return (str(e))
 
-@router.get("/agent_scheme/{agent_id}",)
+@router.get("/agent_scheme/{agent_id}")
 async def gui_pages_agent(agent_id: int, db=Depends(get_db_repo)):
     """
         Метод для просмотра AgentScheme
@@ -87,4 +87,30 @@ async def gui_pages_agent(agent_id: int, db=Depends(get_db_repo)):
     except Exception as e:
         return (str(e))
 
+@router.get("/agent_params/{agent_id}")
+async def gui_params_agent(agent_id: int):
+    """
+        Метод для просмотра последнего принято пакета Agent
+    """
+    try:
+        file_name = f"json/agent_{agent_id}.json"
+        result = open_json(file_name)
+        return result
+    except MyException427 as e:
+        error_str = f"{e}."
+        logger.error(error_str)
+        raise HTTPException(status_code=427, detail={"error_msg": error_str})
+    except Exception as e:
+        return (str(e))
 
+@router.get("/status_save")
+async def gui_status_save():
+    """
+        Метод для Вкл/Выкл статуса для сохранения последнего ПФ
+    """
+    try:
+        global GLOBAL_STATUS_SAVE
+        GLOBAL_STATUS_SAVE = not GLOBAL_STATUS_SAVE
+        return RedirectResponse("/gui")
+    except Exception as e:
+        return (str(e))

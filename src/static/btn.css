@@ -17,3 +17,7 @@
     background-color: var(--color-gray);
     border-color: var(--color-gray);
 }
+
+.btn--square {
+    border-radius: 1px;
+}

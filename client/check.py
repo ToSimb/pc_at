@@ -5,7 +5,9 @@ import sys
 
 from database.db import Database
 from database.postgres import connect, disconnect
-from logger.logger import logger
+from logger.logger_check import logger_check
+
+from config import PC_AF_PROTOCOL, PC_AF_IP, PC_AF_PORT
 
 def signal_handler(sig, frame):
     logger.info("Принят сигнал завершения работы. Закрытие соединения...")
@@ -35,23 +37,23 @@ def request_conn(vvk_id: int, user_query_interval_revision: int) -> bool:
         Exception: Если ответ сервера содержит статус-код, отличный от 200 или 227.
         requests.RequestException: Если произошла ошибка при выполнении запроса.
     """
-    # url = f'{PC_AF_PROTOCOL}://{PC_AF_IP}:{PC_AF_PORT}/check'
-    url = f'http://localhost:8000/test/check'
+    url = f'{PC_AF_PROTOCOL}://{PC_AF_IP}:{PC_AF_PORT}/check'
+    # url = f'http://localhost:8000/test/check'
     params = {'vvk_id': vvk_id, 'user_query_interval_revision': user_query_interval_revision}
     headers = {'Content-Type': 'application/json'}
     try:
         response = requests.get(url, params=params, headers=headers)
         if response.status_code == 200:
-            logger.info("Канал связи в порядке.")
+            logger_check.info("Канал связи в порядке.")
             return False
         elif response.status_code == 227:
-            logger.info("Канал связи в порядке, но ошибка 227")
+            logger_check.info("Канал связи в порядке, но ошибка 227")
             return True
         else:
-            logger.info("Нет соединения с АФ")
+            logger_check.info("Нет соединения с АФ")
             return None
     except requests.RequestException as e:
-        logger.error(f"Произошла ошибка при проверки состояния связи: {e}")
+        logger_check.error(f"Произошла ошибка при проверки состояния связи: {e}")
         return False
 
 # !!!
@@ -69,7 +71,8 @@ def request_metric(vvk_id: int) -> dict:
         Exception: Если ответ сервера содержит статус-код, отличный от 200.
         requests.RequestException: Если произошла ошибка при выполнении запроса.
     """
-    url = f'http://localhost:8000/test/metric-info-list'
+    url = f'{PC_AF_PROTOCOL}://{PC_AF_IP}:{PC_AF_PORT}/metric-info-list'
+    # url = f'http://localhost:8000/test/metric-info-list'
     params = {'vvk_id': vvk_id}
     headers = {'Content-Type': 'application/json'}
 
@@ -78,14 +81,14 @@ def request_metric(vvk_id: int) -> dict:
 
         if response.status_code == 200:
             result = response.json()
-            logger.info("Метрика от АФ получена.")
+            logger_check.info("Метрика от АФ получена.")
             return result
         else:
-            logger.info("Ошибка получения метрик")
+            logger_check.info("Ошибка получения метрик")
             raise Exception(f"Unexpected status code: {response.status_code}")
 
     except requests.RequestException as e:
-        logger.error(f"Произошла ошибка при получении метрик: {e}")
+        logger_check.error(f"Произошла ошибка при получении метрик: {e}")
         raise
 
 # !!!

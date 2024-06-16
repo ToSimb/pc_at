@@ -57,8 +57,6 @@ try:
                 data.append(metric_data)
                 metric_data = {"t": current_timestamp, "v": str(random.randint(800, 1100)), "comment": "Test"}
                 data.append(metric_data)
-                metric_data = {"t": current_timestamp+2, "v": str(random.randint(800, 1100)), "etmax": True, "etmin": False}
-                data.append(metric_data)
                 final_result["value"].append({"item_id": item_id, "metric_id": metric_id, "data": data})
         start_time = time.time()
         requestjson(final_result, 1)
