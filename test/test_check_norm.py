@@ -1,6 +1,5 @@
 import requests
 import time
-import signal
 import sys
 import os
 
@@ -131,7 +130,6 @@ if vvk_id:
         db.gui_update_check_number_id(vvk_id, False)
         if if227:
             get_metric_info(vvk_id)
-    time.sleep(5)
 else:
     print("Нет зарегистрированной VVK")
 

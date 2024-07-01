@@ -3,9 +3,10 @@ import time
 import signal
 import sys
 
+from logger.logger_clear import logger_clear
+
 from database.db import Database
 from database.postgres import connect, disconnect
-from logger.logger_clear import logger_clear
 
 
 def signal_handler(sig, frame):
@@ -28,13 +29,13 @@ try:
         one_day_ago_timestamp = int(one_day_ago_datetime.timestamp())
         logger_clear.info("Время ровно сутки назад - int: %s", one_day_ago_timestamp)
 
-        deleted_rows = db.pf_delete_params(one_day_ago_timestamp)
+        deleted_rows = db.pf_delete_params_by_time(one_day_ago_timestamp)
+        delete_time = time.time()
         count_all_rows = db.pf_select_count_all()
 
-
-        end_time = time.time()
-        time_clear = end_time - start_time
-        logger_clear.info(f"DB(pf): Удалено строк: {deleted_rows}, Осталось строк: {count_all_rows}, Затраченное время: {time_clear}")
+        clear_time = time.time()
+        logger_clear.info(f"DB(pf): Удалено строк: {deleted_rows}, Осталось строк: {count_all_rows}, \n"
+                          f"Затраченное время: {clear_time - start_time}: удаление - {delete_time - start_time} подсчет - {clear_time - delete_time}")
 
         time.sleep(3600)
 

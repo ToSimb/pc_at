@@ -49,7 +49,6 @@ class Sch_ver:
             raise e
 
 # __ Select __
-    # !!!
     def sch_ver_select_vvk_details(self) -> tuple:
         """
             SQL-запрос: Получения деталей по зарегистрированной схему ВВК.
@@ -76,10 +75,9 @@ class Sch_ver:
             logger.error("DB(sch_ver): sch_ver_select_vvk_scheme: %s", e)
             raise e
 
-    # !!!
     def sch_ver_select_date_create_unreg(self) -> int:
         """
-            SQL-запрос: Получить время регистрации последней успешной зарегистрированной схемы ВВК.
+            SQL-запрос: Получить время не зарегистрированной схемы ВВК.
 
         Returns:
             int: Значение date_create для первой найденной записи.

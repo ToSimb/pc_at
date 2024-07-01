@@ -1,8 +1,11 @@
+import time
+
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import Response
 from deps import get_db_repo
 
 from logger.logger import logger
+
 
 router = APIRouter(
     prefix="/test",
@@ -10,7 +13,7 @@ router = APIRouter(
 )
 
 @router.get("/check")
-async def test_get_checks(vvk_id: int, user_query_interval_revision: int, db=Depends(get_db_repo)):
+async def test_get_checks(vvk_id: int, user_query_interval_revision: int):
     """
         Метод для тестовой проверки контроля связи
     """
@@ -27,13 +30,12 @@ async def test_get_checks(vvk_id: int, user_query_interval_revision: int, db=Dep
         logger.error(error_str)
         raise HTTPException(status_code=527, detail={"error_msg": error_str})
 
-
 @router.post("/save")
 async def test_return_scheme(vvk_scheme: dict):
     """
     Метод для тестовой регистрации VvkScheme
     """
-    print(vvk_scheme)
+    print(f"metric_info_list: {vvk_scheme['metric_info_list']}")
     return_scheme = {
         "vvk_id": 51,
         "scheme_revision": vvk_scheme["scheme_revision"],
@@ -50,7 +52,7 @@ async def test_select_metric_info(vvk_id: int):
     result = {
         "metric_info_list": [
             {
-                "item_id": 12,
+                "item_id": 13,
                 "metric_id": 'cpu.user.time',
                 "user_query_interval": 2
             },
@@ -71,10 +73,11 @@ async def test_select_metric_info(vvk_id: int):
     return result
 
 @router.post("/params")
-async def params_hole(params: dict, vvk_id: int):
+async def test_params_hole(params: dict, vvk_id: int):
     """
         Метод для тестового получения ПФ.
 
     """
     print("пришли ПФ от ввк:", vvk_id, params["scheme_revision"])
+    time.sleep(1)
     return ("OK")

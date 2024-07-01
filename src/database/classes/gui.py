@@ -7,7 +7,6 @@ class Gui:
 
     # ______________ GUI _______________
     # __ Select __
-    # !!!
     def gui_select_agents_reg(self) -> tuple:
         """
             SQL-запрос на получение идентификаторов и регистрационных идентификаторов агентов.
@@ -33,7 +32,6 @@ class Gui:
             logger.error("DB(gui): gui_select_agents_reg: %s", e)
             raise e
 
-    # !!!
     def gui_select_check_agent_reg_id(self, agent_reg_id: str) -> int:
         """
             SQL-запрос для получения 'number_id' агента.
@@ -65,7 +63,6 @@ class Gui:
             logger.error("DB(gui): gui_select_check_agent_reg_id: %s", e)
             raise e
 
-    # !!!
     def gui_select_check_agent_status_reg(self, number_id: int) -> bool:
         """
             SQL-запрос на проверку регистрации агента.
@@ -96,8 +93,6 @@ class Gui:
 
 
     # __ Insert __
-
-    # !!!
     def gui_insert_join_scheme(self, vvk_name: str, agents_reg_id: list):
         """
             SQL-запросы для вставки имени ВВК и идентификаторов агентов.
@@ -126,7 +121,6 @@ class Gui:
             logger.error("DB(gui): gui_insert_join_scheme: %s", e)
             raise e
 
-    # !!!
     def gui_insert_agents(self, agents_reg_id: list):
         """
             SQL-запросы для вставки идентификаторов агентов.
@@ -152,7 +146,6 @@ class Gui:
             raise e
 
     # __ Update _
-    # !!!
     def gui_update_agent_reg_id_error(self, agent_reg_id: str, error_reg: str) -> bool:
         """
             SQL-запрос: Обновляет информацию об ошибке регистрации агента.
@@ -211,7 +204,6 @@ class Gui:
             logger.error("DB(gui): gui_update_agent_reg_id_error - agent_reg_id %s : %s", agent_reg_id, e)
             raise e
 
-    # !!!
     def gui_update_agent_id_error(self, agent_id: int, error_reg: str) -> bool:
         """
             SQL-запрос: Обновляет информацию об ошибке регистрации агента.
@@ -239,7 +231,6 @@ class Gui:
             logger.error("DB(gui): gui_update_agent_id_error - agent_id %s : %s", agent_id, e)
             raise e
 
-    # !!!
     def gui_update_agent_reg_id_reg_true(self, agent_id: int, agent_reg_id: str, scheme_revision: int) -> bool:
         """
             SQL-запрос на обновление статуса успешной регистрации агента.
@@ -270,7 +261,6 @@ class Gui:
             logger.error("DB(gui): gui_update_agent_reg_id_reg_true - agent_reg_id %s : %s", agent_reg_id, e)
             raise e
 
-    # !!!
     def gui_update_agent_id_reg_true(self, agent_id: int, scheme_revision: int) -> bool:
         """
             SQL-запрос на обновление статуса успешной перерегистрации агента.
@@ -298,7 +288,6 @@ class Gui:
             logger.error("DB(gui): gui_update_agent_id_reg_true - agent_id %s : %s", agent_id, e)
             raise e
 
-    # !!!
     def gui_update_check_number_id(self, number_id: int, error_conn: bool) -> bool:
         """
             SQL-запрос на обновление последней проверки соединения агента/ВВК.
@@ -326,7 +315,6 @@ class Gui:
             logger.error("DB(gui): gui_update_check_number_id - %s : %s", number_id, e)
             raise e
 
-    # !!!
     def gui_update_vvk_reg_none(self, scheme_revision: int, user_query_interval_revision: int) -> bool:
         """
             SQL-запрос на обновление статуса регистрации ВВК (NULL), то есть 'Необходима перерегистрация'.
@@ -354,7 +342,6 @@ class Gui:
             logger.error("DB(gui): gui_update_vvk_reg_none: %s", e)
             raise e
 
-    # !!!
     def gui_update_value(self, agent_id: int, error_value: str, type_id: bool) -> bool:
         """
             SQL-запрос на обновление статуса передачи ПФ.
@@ -391,7 +378,6 @@ class Gui:
             raise e
 
     # __ Delete __
-    # !!!
     def gui_delete_agents(self) -> bool:
         """
             SQL-запрос удаления из таблицы 'gui' всех агентов.

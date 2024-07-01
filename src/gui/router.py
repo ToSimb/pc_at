@@ -6,7 +6,7 @@ from deps import get_db_repo
 from logger.logger import logger
 from gui.service import if_metric_info, open_json
 
-from myException import MyException427, GLOBAL_STATUS_SAVE
+from myException import MyException427
 
 templates = Jinja2Templates(directory="templates")
 
@@ -21,7 +21,7 @@ async def gui_pages(request: Request, db=Depends(get_db_repo)):
         GUI
     """
     try:
-        dump = db.select_last_agents_reg("gui", 50)
+        dump = db.select_last_agents_reg("gui")
         vvk = None
         agents = None
         if dump:
@@ -31,7 +31,7 @@ async def gui_pages(request: Request, db=Depends(get_db_repo)):
             agents.sort(key=lambda x: x.get("id"))
 
         return templates.TemplateResponse(
-            request=request, name="item.html", context={"vvk": vvk, "agents": agents, "GLOBAL_STATUS_SAVE": GLOBAL_STATUS_SAVE}
+            request=request, name="item.html", context={"vvk": vvk, "agents": agents, "GLOBAL_STATUS_SAVE": db.flag_select()}
         )
     except Exception as e:
         error_str = f"Exception: {e}."
@@ -52,7 +52,7 @@ async def gui_pages_vvk(db=Depends(get_db_repo)):
         Метод для просмотра VvkScheme
     """
     try:
-        scheme_revision_vvk, user_query_interval_revision, _, vvk_scheme, metric_info_list = db.reg_sch_select_vvk_all()
+        scheme_revision_vvk, user_query_interval_revision, _, vvk_scheme, _, metric_info_list = db.reg_sch_select_vvk_all()
         result = {
             "scheme_revision_vvk": scheme_revision_vvk,
             "user_query_interval_revision": user_query_interval_revision,
@@ -104,13 +104,13 @@ async def gui_params_agent(agent_id: int):
         return (str(e))
 
 @router.get("/status_save")
-async def gui_status_save():
+async def gui_status_save(db=Depends(get_db_repo)):
     """
         Метод для Вкл/Выкл статуса для сохранения последнего ПФ
     """
     try:
-        global GLOBAL_STATUS_SAVE
-        GLOBAL_STATUS_SAVE = not GLOBAL_STATUS_SAVE
+        logger.info("Произведена замена статуса флага")
+        db.flag_update()
         return RedirectResponse("/gui")
     except Exception as e:
         return (str(e))

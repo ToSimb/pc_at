@@ -1,6 +1,5 @@
 import requests
 import time
-import signal
 import sys
 import os
 
@@ -12,7 +11,8 @@ from client.database.postgres import connect, disconnect
 conn = connect()
 db = Database(conn)
 
-# !!!
+
+
 def request_conn(vvk_id: int, user_query_interval_revision: int) -> bool:
     """
         Функция отправляет запрос для подтверждения контроля связи.
@@ -32,9 +32,8 @@ def request_conn(vvk_id: int, user_query_interval_revision: int) -> bool:
     # url = f'{PC_AF_PROTOCOL}://{PC_AF_IP}:{PC_AF_PORT}/check'
     url = f'http://localhost:8000/test/check'
     params = {'vvk_id': vvk_id, 'user_query_interval_revision': user_query_interval_revision}
-    headers = {'Content-Type': 'application/json'}
     try:
-        response = requests.get(url, params=params, headers=headers)
+        response = requests.get(url, params=params)
         if response.status_code == 200:
             print("Канал связи в порядке.")
             return False
@@ -48,7 +47,6 @@ def request_conn(vvk_id: int, user_query_interval_revision: int) -> bool:
         print(f"Произошла ошибка при проверки состояния связи: {e}")
         return False
 
-# !!!
 def request_metric(vvk_id: int) -> dict:
     """
         Функция отправляет запрос для получения метрикинфо.
@@ -63,16 +61,14 @@ def request_metric(vvk_id: int) -> dict:
         Exception: Если ответ сервера содержит статус-код, отличный от 200.
         requests.RequestException: Если произошла ошибка при выполнении запроса.
     """
+    # url = f'{PC_AF_PROTOCOL}://{PC_AF_IP}:{PC_AF_PORT}/metric-info-list'
     url = f'http://localhost:8000/test/metric-info-list'
     params = {'vvk_id': vvk_id}
-    headers = {'Content-Type': 'application/json'}
-
     try:
-        response = requests.get(url, params=params, headers=headers)
-
+        response = requests.get(url, params=params)
         if response.status_code == 200:
             result = response.json()
-            print("Метрика от АФ получена.")
+            print("Метрики от АФ получена.")
             return result
         else:
             print("Ошибка получения метрик")
@@ -82,7 +78,6 @@ def request_metric(vvk_id: int) -> dict:
         print(f"Произошла ошибка при получении метрик: {e}")
         raise
 
-# !!!
 def get_metric_info(vvk_id: int) -> bool:
     """
         При ошибке 227 запрашивает актуальные метрики и их обновляет.
@@ -131,7 +126,6 @@ if vvk_id:
         db.gui_update_check_number_id(vvk_id, False)
         if if227:
             get_metric_info(vvk_id)
-    time.sleep(5)
 else:
     print("Нет зарегистрированной VVK")
 

@@ -7,10 +7,10 @@ from database.db import Database
 from database.postgres import connect, disconnect
 from logger.logger_check import logger_check
 
-from config import PC_AF_PROTOCOL, PC_AF_IP, PC_AF_PORT
+from config import PC_AF_PROTOCOL, PC_AF_IP, PC_AF_PORT, T3
 
 def signal_handler(sig, frame):
-    logger.info("Принят сигнал завершения работы. Закрытие соединения...")
+    logger_check.info("Принят сигнал завершения работы. Закрытие соединения...")
     disconnect(conn)
     sys.exit(0)
 
@@ -20,7 +20,7 @@ signal.signal(signal.SIGINT, signal_handler)
 conn = connect()
 db = Database(conn)
 
-# !!!
+
 def request_conn(vvk_id: int, user_query_interval_revision: int) -> bool:
     """
         Функция отправляет запрос для подтверждения контроля связи.
@@ -38,11 +38,9 @@ def request_conn(vvk_id: int, user_query_interval_revision: int) -> bool:
         requests.RequestException: Если произошла ошибка при выполнении запроса.
     """
     url = f'{PC_AF_PROTOCOL}://{PC_AF_IP}:{PC_AF_PORT}/check'
-    # url = f'http://localhost:8000/test/check'
     params = {'vvk_id': vvk_id, 'user_query_interval_revision': user_query_interval_revision}
-    headers = {'Content-Type': 'application/json'}
     try:
-        response = requests.get(url, params=params, headers=headers)
+        response = requests.get(url, params=params)
         if response.status_code == 200:
             logger_check.info("Канал связи в порядке.")
             return False
@@ -56,7 +54,6 @@ def request_conn(vvk_id: int, user_query_interval_revision: int) -> bool:
         logger_check.error(f"Произошла ошибка при проверки состояния связи: {e}")
         return False
 
-# !!!
 def request_metric(vvk_id: int) -> dict:
     """
         Функция отправляет запрос для получения метрикинфо.
@@ -72,16 +69,12 @@ def request_metric(vvk_id: int) -> dict:
         requests.RequestException: Если произошла ошибка при выполнении запроса.
     """
     url = f'{PC_AF_PROTOCOL}://{PC_AF_IP}:{PC_AF_PORT}/metric-info-list'
-    # url = f'http://localhost:8000/test/metric-info-list'
     params = {'vvk_id': vvk_id}
-    headers = {'Content-Type': 'application/json'}
-
     try:
-        response = requests.get(url, params=params, headers=headers)
-
+        response = requests.get(url, params=params)
         if response.status_code == 200:
             result = response.json()
-            logger_check.info("Метрика от АФ получена.")
+            logger_check.info("Метрики от АФ получена.")
             return result
         else:
             logger_check.info("Ошибка получения метрик")
@@ -91,7 +84,6 @@ def request_metric(vvk_id: int) -> dict:
         logger_check.error(f"Произошла ошибка при получении метрик: {e}")
         raise
 
-# !!!
 def get_metric_info(vvk_id: int) -> bool:
     """
         При ошибке 227 запрашивает актуальные метрики и их обновляет.
@@ -131,10 +123,6 @@ try:
     while True:
         vvk_id, _, user_query_interval_revision, t3 = db.sch_ver_select_vvk_details()
 
-        # test
-        # vvk_id = 51
-        # user_query_interval_revision = 0
-
         if vvk_id:
             if227 = request_conn(vvk_id, user_query_interval_revision)
             if if227 is None:
@@ -143,7 +131,7 @@ try:
                 db.gui_update_check_number_id(vvk_id, False)
                 if if227:
                     get_metric_info(vvk_id)
-            time.sleep(5)
+            time.sleep(T3)
         else:
             print("Нет зарегистрированной VVK")
             time.sleep(60)

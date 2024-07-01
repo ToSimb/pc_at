@@ -2,12 +2,12 @@ from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import Response
 from deps import get_db_repo
 
+
 from logger.logger import logger
 from .schemas import SchemeJson
-from params.service import add_params, file_save
+from .service import add_params, save_to_json
 
-from myException import MyException427, MyException527, GLOBAL_STATUS_SAVE
-
+from myException import MyException427, MyException428, MyException527
 
 router = APIRouter(
     prefix="/params",
@@ -24,20 +24,25 @@ async def params_data(params: SchemeJson, agent_id: int, db=Depends(get_db_repo)
             if db.gui_select_check_agent_status_reg(agent_id):
                 scheme_revision, user_query_interval_revision, metrics, items_id = db.reg_sch_select_metrics_and_items(agent_id)
                 if scheme_revision != params.scheme_revision:
-                    raise MyException427(f"Agent '{agent_id}' - invalid scheme_revision, registered: {scheme_revision}.")
+                    raise MyException428(f"Agent '{agent_id}' - invalid scheme_revision, registered: {scheme_revision}.")
                 add_params(params, agent_id, metrics, items_id, db)
-                if GLOBAL_STATUS_SAVE:
-                    file_save(agent_id, params)
+                if db.flag_select():
+                    save_to_json(params, agent_id)
                 if user_query_interval_revision != params.user_query_interval_revision:
                     return Response(status_code=227)
                 return Response(status_code=200)
             else:
-                raise MyException527(
+                raise MyException427(
                     f"Agent '{agent_id}' - re-registration required.")
         else:
-            raise Exception("The latest VVK scheme is not registered")
+            raise MyException527("The latest VVK scheme is not registered")
 
     except MyException427 as e:
+        error_str = str(e)
+        logger.error(error_str)
+        db.gui_update_value(agent_id, error_str, True)
+        raise HTTPException(status_code=427, detail={"error_msg": error_str})
+    except MyException428 as e:
         error_str = str(e)
         logger.error(error_str)
         db.gui_update_value(agent_id, error_str, True)

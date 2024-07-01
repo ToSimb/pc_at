@@ -9,14 +9,13 @@ class Reg_sch:
 
     # __ Select __
     # __ VVK __
-    # !!!
     def reg_sch_select_vvk_all(self) -> tuple:
         """
             SQL-запрос на получение всей информации о ВВК.
 
         Возвращает:
             tuple: Кортеж, содержащий значения полей 'scheme_revision', 'user_query_interval_revision',
-                   'original_scheme', 'scheme' и 'metric_info_list'.
+                   'original_scheme', 'scheme', 'max_index,' и 'metric_info_list'.
 
         Raises:
             MyException427: Если не загружена join scheme
@@ -25,7 +24,7 @@ class Reg_sch:
         try:
             cur = self.conn.cursor()
             sql_select = """
-                SELECT scheme_revision, user_query_interval_revision, original_scheme, scheme, metric_info_list
+                SELECT scheme_revision, user_query_interval_revision, original_scheme, scheme, max_index, metric_info_list
                 FROM reg_sch
                 WHERE type_id = FALSE
             """
@@ -41,7 +40,6 @@ class Reg_sch:
             logger.error("DB(reg_sch): reg_sch_select_vvk_all: %s", e)
             raise e
 
-    # !!!
     def reg_sch_select_check_vvk(self) -> bool:
         """
             SQL-запрос на наличие схемы ВВК в таблице 'reg_sch'.
@@ -64,7 +62,6 @@ class Reg_sch:
             logger.error("DB(reg_sch): reg_sch_select_check_vvk: %s", e)
             raise e
 
-    # !!!
     def reg_sch_select_vvk_metric_info_list(self) -> dict:
         """
         SQL-запрос для получения 'metric_info_list' схему ВВК.
@@ -91,7 +88,6 @@ class Reg_sch:
             raise e
 
     # __ AGENTS __
-    # !!!
     def reg_sch_select_count_agents(self) -> int:
         """
             SQL-запрос: количество зарегистрированных агентов.
@@ -116,7 +112,6 @@ class Reg_sch:
             logger.error("DB(reg_sch): reg_sch_select_count_agents: %s", e)
             raise
 
-    # !!!
     def reg_sch_select_agents_all_json(self) -> list:
         """
             SQL-запрос на извлечение все записи агента, а именно:
@@ -146,7 +141,6 @@ class Reg_sch:
             logger.error("DB(reg_sch): reg_sch_select_agents_all: %s", e)
             raise e
 
-    # !!!
     def reg_sch_select_metrics_and_items(self, agent_id: int) -> tuple:
         """
             SQL-запрос для получения metric_id и item_id для заданного агента.
@@ -185,7 +179,6 @@ class Reg_sch:
             logger.error("DB(reg_sch): reg_sch_select_metrics_and_items: %s", e)
             raise e
 
-    # !!!
     def reg_sch_select_agent_scheme(self, agent_id: int) -> tuple:
         """
             SQL-запрос на получение всей информации о агенте.
@@ -215,7 +208,6 @@ class Reg_sch:
             logger.error("DB(reg_sch): reg_sch_select_agent_scheme: %s", e)
             raise e
 
-    # !!!
     def reg_sch_select_agent_details(self, agent_id: int) -> tuple:
         """
             SQL-запрос для получения 'scheme_revision' и 'user_query_interval_revision' агента.
@@ -245,7 +237,6 @@ class Reg_sch:
             logger.error("DB(reg_sch): reg_sch_select_agent_details: %s", e)
             raise e
 
-    # !!!
     def reg_sch_select_agent_details2(self, agent_id: int) -> tuple:
         """
             SQL-запрос для получения 'agent_reg_id' и 'scheme_revision' агента.
@@ -276,7 +267,6 @@ class Reg_sch:
             logger.error("DB(reg_sch): reg_sch_select_agent_details2: %s", e)
             raise e
 
-    # !!!
     def reg_sch_select_agent_user_q(self, agent_id: int) -> int:
         """
             SQL-запрос для получения 'user_query_interval_revision' агента.
@@ -304,7 +294,6 @@ class Reg_sch:
             logger.error("DB(reg_sch): reg_sch_select_agent_details: %s", e)
             raise e
 
-    # !!!
     def reg_sch_select_templates_excluding_agent(self, agent_id: int) -> list:
         """
             SQL-запрос для выбора уникальных template_id, исключая шаблоны указанного агента.
@@ -336,7 +325,6 @@ class Reg_sch:
             logger.error("DB(reg_sch): reg_sch_select_templates_excluding_agent: %s", e)
             raise e
 
-    # !!!
     def reg_sch_select_metrics_excluding_agent(self, agent_id: int) -> list:
         """
             SQL-запрос для выбора уникальных metric_id, исключая метрики указанного агента.
@@ -367,7 +355,6 @@ class Reg_sch:
             logger.error("DB(reg_sch): reg_sch_select_metrics_excluding_agent: %s", e)
             raise e
 
-    # !!!
     def reg_sch_select_agent_item_id_list(self, agent_id: int) -> list:
         """
         SQL-запрос для получения 'item_id_list' агента.
@@ -403,7 +390,7 @@ class Reg_sch:
 
     # __ Insert __
     # !!!
-    def reg_sch_insert_vvk(self, scheme_revision: int, original_scheme: dict, scheme: dict, metric_info_list: dict) -> bool:
+    def reg_sch_insert_vvk(self, scheme_revision: int, original_scheme: dict, scheme: dict, max_index: int, metric_info_list: dict) -> bool:
         """
             SQL-запрос для вставки информации о схеме ВВК, включая ревизию схемы,
         оригинальную схему, текущую схему и список метрик инфо.
@@ -423,9 +410,9 @@ class Reg_sch:
         try:
             cur = self.conn.cursor()
             sql_insert_scheme = (
-                "INSERT INTO reg_sch (type_id, number_id, scheme_revision, user_query_interval_revision, original_scheme, scheme, metric_info_list) "
-                "VALUES (FALSE, 0, %s, %s, %s, %s, %s);")
-            cur.execute(sql_insert_scheme, (scheme_revision, 0, json.dumps(original_scheme), json.dumps(scheme), json.dumps(metric_info_list)))
+                "INSERT INTO reg_sch (type_id, number_id, scheme_revision, user_query_interval_revision, original_scheme, scheme, max_index, metric_info_list) "
+                "VALUES (FALSE, 0, %s, %s, %s, %s, %s, %s);")
+            cur.execute(sql_insert_scheme, (scheme_revision, 0, json.dumps(original_scheme), json.dumps(scheme), max_index, json.dumps(metric_info_list)))
             self.conn.commit()
             logger.info("DB(reg_sch): VvkScheme зарегистрирована")
             return True
@@ -472,14 +459,15 @@ class Reg_sch:
 
     # __ Update __
     # !!!
-    def reg_sch_update_vvk_scheme(self, scheme_revision: int, scheme: dict, metric_info_list: dict) -> bool:
+    def reg_sch_update_vvk_scheme(self, scheme_revision: int, scheme: dict, max_index: int, metric_info_list: dict) -> bool:
         """
             SQL-запрос: Обновляет схему VVK в таблице.
 
         Args:
             scheme_revision (int): Номер ревизии схемы.
             scheme (dict): Схема VVK в формате словаря.
-            metric_info_list (dict):n Метрики.
+            max_index (int): Максимальный индекс для item_id.
+            metric_info_list (dict): Метрики.
 
         Returns:
             bool: Возвращает True, если обновление схемы выполнено успешно.
@@ -489,9 +477,9 @@ class Reg_sch:
         """
         try:
             cur = self.conn.cursor()
-            sql_update_scheme = ("UPDATE reg_sch SET scheme_revision = %s, scheme = %s, metric_info_list = %s "
+            sql_update_scheme = ("UPDATE reg_sch SET scheme_revision = %s, scheme = %s, max_index = %s, metric_info_list = %s "
                                  "WHERE type_id = FALSE;")
-            cur.execute(sql_update_scheme, (scheme_revision, json.dumps(scheme), json.dumps(metric_info_list),))
+            cur.execute(sql_update_scheme, (scheme_revision, json.dumps(scheme), max_index, json.dumps(metric_info_list),))
             logger.info("DB(reg_sch): VvkScheme-scheme изменена")
             self.conn.commit()
             return True
@@ -500,8 +488,8 @@ class Reg_sch:
             logger.error("DB(reg_sch): reg_sch_update_vvk_scheme: %s", e)
             raise e
 
-    # !!!
-    def reg_sch_update_vvk_scheme_all(self, scheme_revision: int, original_scheme: dict, scheme: dict) -> bool:
+    def reg_sch_update_vvk_scheme_all(self, scheme_revision: int, original_scheme: dict, scheme: dict, max_index: int,
+                                      metric_info_list_raw: dict) -> bool:
         """
             SQL-запрос на обновление 'reg_sch' после перерегистрации новой Join схемы.
 
@@ -509,6 +497,8 @@ class Reg_sch:
             scheme_revision (int): Новая ревизия схемы.
             original_scheme (dict): Новая join схема.
             scheme (dict): Новая схема VVK.
+            max_index (int): Максимальный индекс для item_id.
+            metric_info_list_raw (dict): Метрики.
 
         Returns:
             bool: Возвращает True, если обновление прошло успешно.
@@ -518,8 +508,8 @@ class Reg_sch:
         """
         try:
             cur = self.conn.cursor()
-            sql_update_scheme = "UPDATE reg_sch SET scheme_revision = %s, original_scheme = %s, scheme = %s WHERE type_id = FALSE;"
-            cur.execute(sql_update_scheme, (scheme_revision, json.dumps(original_scheme), json.dumps(scheme),))
+            sql_update_scheme = "UPDATE reg_sch SET scheme_revision = %s, original_scheme = %s, scheme = %s, max_index = %s, metric_info_list = %s WHERE type_id = FALSE;"
+            cur.execute(sql_update_scheme, (scheme_revision, json.dumps(original_scheme), json.dumps(scheme), max_index, json.dumps(metric_info_list_raw),))
             logger.info("DB(reg_sch): VvkScheme-scheme изменена")
             self.conn.commit()
             return True
@@ -528,7 +518,6 @@ class Reg_sch:
             logger.error("DB(reg_sch): reg_sch_update_vvk_scheme: %s", e)
             raise e
 
-    # !!!
     def reg_sch_update_agent_re_reg(self, number_id: int, scheme_revision: int, user_query_interval_revision: int,
                                     original_scheme: dict, scheme: dict) -> bool:
         """

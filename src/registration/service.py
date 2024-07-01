@@ -6,7 +6,7 @@ from myException import MyException427, MyException527
 
 from logger.logger import logger
 
-# !!!
+
 def add_metrics(json_vvk_return_metrics, json_agent_scheme_metrics):
     """
     Добавляет метрики из схемы агента в список метрик схемы VVK, если они отсутствуют.
@@ -34,7 +34,6 @@ def add_metrics(json_vvk_return_metrics, json_agent_scheme_metrics):
             metrics_list.append(item)
     return metrics_list
 
-# !!!
 def add_templates(json_vvk_return_templates, json_agent_scheme_templates):
     """
         Добавляет шаблоны из схемы агента в список шаблонов схемы VVK, если они отсутствуют.
@@ -78,7 +77,6 @@ def delete_item_info_list(vvk_scheme_item_info_list: list, join_scheme_item_info
     item_info_list.extend(item for item in join_scheme_item_info_list if item['full_path'] in full_paths_agent)
     return item_info_list
 
-# !!!
 def if_metric_info(metric_info: dict) -> list:
     """
     Возвращает 'metric_info_list' из словаря metric_info, если оно существует.
@@ -99,31 +97,14 @@ def if_metric_info(metric_info: dict) -> list:
 
     return metric_info_list
 
-def request_registration_vvk(url: str, json_vvk_return: dict):
-    headers = {'Content-Type': 'application/json'}
-    try:
-        logger.info(f"Отправка: {url}")
-        response = requests.post(url, json=json_vvk_return, headers=headers)
-        if response.status_code == 200:
-            logger.info("Успушная регистрация VvkScheme на стороне АФ")
-            return response.json()
-        else:
-            error_str = "(ValueError)Произошла ошибка при регистрации: " + str(response.status_code) + " : " + str(response.text)
-            raise ValueError(error_str)
-    except requests.RequestException as e:
-        logger.error(f"(RequestException)Произошла ошибка при регистрации: {e}")
-        raise ValueError(e)
-
-# !!!
 def check_full_path_exists(item_list, target_path):
     """
         Проверяет, существует ли указанный путь в списке item_list.
     """
     return not any(item['full_path'] == target_path for item in item_list)
 
-# ??? надо добавить метрик инфо!
 def formation_agent_reg_scheme(agent_reg_id: str, agent_scheme: dict, join_scheme: dict, vvk_scheme: dict,
-                               item_id_list_agent: list):
+                               max_index: int, item_id_list_agent: list):
     """
         Формирует схему регистрации агента.
 
@@ -132,12 +113,14 @@ def formation_agent_reg_scheme(agent_reg_id: str, agent_scheme: dict, join_schem
         agent_scheme (dict): Схема агента.
         join_scheme (dict): Схема Join.
         vvk_scheme (dict): Схема VVK.
+        max_index (int): Максимальный индекс.
 
     Returns:
-        tuple: Кортеж, содержащий схему агента, список агентов в JSON формате и схему VVK, а так же item_id(совпадения) для перерегистрированного агента.
+        tuple: Кортеж, содержащий схему агента, список агентов в JSON формате и схему VVK, а так же item_id(совпадения)
+        для перерегистрированного агента + MAX_INDEX.
     """
     json_agent_list = []
-    item_id_list_new = []
+    index = max_index
     for join_list in join_scheme["join_list"]:
         if agent_reg_id == join_list["agent_reg_id"]:
             # если тип подключения jtInclude
@@ -155,13 +138,6 @@ def formation_agent_reg_scheme(agent_reg_id: str, agent_scheme: dict, join_schem
                             raise MyException427(
                                 f"Error registering agent for connection type 'jtInclude': path was not found in Jion: {full_path_item}")
 
-
-                # поиск самого большого item_id
-                if vvk_scheme["item_id_list"]:
-                    index = max(
-                        item['item_id'] for item in vvk_scheme["item_id_list"] if 'item_id' in item)
-                else:
-                    index = 0
                 # Формирование нового item_id_list
                 for a in agent_scheme["scheme"]["item_id_list"]:
                     b = copy.deepcopy(a)
@@ -171,12 +147,11 @@ def formation_agent_reg_scheme(agent_reg_id: str, agent_scheme: dict, join_schem
                         if item['full_path'] == a["full_path"]:
                             a["item_id"] = item["item_id"]
                             b["item_id"] = item["item_id"]
-                            item_id_list_new.append(item["item_id"])
                             break
                     else:
-                        index += 1
                         a["item_id"] = index
                         b["item_id"] = index
+                        index += 1
                     for existing_item in vvk_scheme["item_id_list"]:
                         if existing_item["full_path"] == a["full_path"]:
                             existing_item["item_id"] = a["item_id"]
@@ -213,14 +188,6 @@ def formation_agent_reg_scheme(agent_reg_id: str, agent_scheme: dict, join_schem
                          if join_id_list_scheme["agent_item_join_id"] == join_id_list_agent["join_id"]), None)
                     if join_id_list_agent:
 
-                        # поиск самого большого item_id
-                        if vvk_scheme["item_id_list"]:
-                            index = max(
-                                item['item_id'] for item in vvk_scheme["item_id_list"] if
-                                'item_id' in item)
-                        else:
-                            index = 0
-
                         # формирование списка item_id_list
                         for a in agent_scheme["scheme"]["item_id_list"]:
                             if a["full_path"].split('/')[0] == join_id_list_agent["full_path"]:
@@ -232,12 +199,11 @@ def formation_agent_reg_scheme(agent_reg_id: str, agent_scheme: dict, join_schem
                                     if item['full_path'] == a["full_path"]:
                                         a["item_id"] = item["item_id"]
                                         b["item_id"] = item["item_id"]
-                                        item_id_list_new.append(item["item_id"])
                                         break
                                 else:
-                                    index += 1
                                     a["item_id"] = index
                                     b["item_id"] = index
+                                    index += 1
                                 for existing_item in vvk_scheme["item_id_list"]:
                                     if existing_item["full_path"] == a["full_path"]:
                                         existing_item["item_id"] = a["item_id"]
@@ -263,16 +229,15 @@ def formation_agent_reg_scheme(agent_reg_id: str, agent_scheme: dict, join_schem
 
                     else:
                         raise MyException427(f"No join_id:{join_id_list_scheme['agent_item_join_id']} in join_id_list")
-    return agent_scheme, json_agent_list, vvk_scheme, item_id_list_new
+    return agent_scheme, json_agent_list, vvk_scheme, index
 
-# !!!
-def delete_metric_info(metric_info, remaining_item_id_list, metrics_id_agent):
+def delete_metric_info(metric_info, item_id_agent, metrics_id_agent):
     """
         Удаляет элементы из `metric_info`, которые соответствуют определенным критериям.
 
     Args:
         metric_info (dict): Словарь, содержащий информацию о метриках.
-        remaining_item_id_list (list): Список оставшихся идентификаторов элементов, которых больше нет в новом агенте.
+        item_id_agent (list): Список идентификаторов элементов.
         metrics_id_agent (list): Список идентификаторов метрик агента.
 
     Returns:
@@ -284,13 +249,37 @@ def delete_metric_info(metric_info, remaining_item_id_list, metrics_id_agent):
     else:
         metric_info_list_new = []
         for item in metric_info_list:
-            if not (item["item_id"] in remaining_item_id_list and item["metric_id"] in metrics_id_agent):
+            if not (item["item_id"] in item_id_agent and item["metric_id"] in metrics_id_agent):
                 metric_info_list_new.append(item)
         metric_info_list_dict = {
             "metric_info_list": metric_info_list_new
         }
         return metric_info_list_dict
 
+
+def add_metric_info_list_dict(metric_info, metric_info_agent):
+    """
+        Добавляет новые элементы `metric_info`.
+
+    Args:
+        metric_info (dict): Словарь, содержащий информацию о метриках.
+        metric_info_agent (list): Список метрик инфо агента.
+
+    Returns:
+        dict: Словарь с ключом 'metric_info_list', значение которого является отфильтрованным списком метрик.
+    """
+    metric_info_list = if_metric_info(metric_info)
+    if metric_info_list == []:
+        metric_info_list_dict = {
+            "metric_info_list": metric_info_agent
+        }
+        return metric_info_list_dict
+    else:
+        metric_info_list.extend(metric_info_agent)
+        metric_info_list_dict = {
+            "metric_info_list": metric_info_list
+        }
+        return metric_info_list_dict
 # ___________ работа только с БД _________
 
 # !!!
@@ -314,14 +303,14 @@ def registration_agent_reg_id_scheme(agent_reg_id: str, all_agent_scheme: dict, 
         raise BlockingIOError
     db.reg_sch_block_true()
 
-    scheme_revision_vvk, user_query_interval_revision, join_scheme, vvk_scheme, metric_info_list_raw = db.reg_sch_select_vvk_all()
+    scheme_revision_vvk, user_query_interval_revision, join_scheme, vvk_scheme, max_index, metric_info_list_raw = db.reg_sch_select_vvk_all()
 
-    agent_scheme, json_agent_list, vvk_scheme_new, _ = formation_agent_reg_scheme(agent_reg_id, all_agent_scheme,
-                                                                               join_scheme, vvk_scheme, [])
+    agent_scheme, json_agent_list, vvk_scheme_new, max_index = formation_agent_reg_scheme(agent_reg_id, all_agent_scheme,
+                                                                               join_scheme, vvk_scheme, max_index, [])
 
     db.gui_update_vvk_reg_none(scheme_revision_vvk + 1, user_query_interval_revision)
     # может и не надо +1 - может быть ошибка при регистрации агента, когда схема ВВК зарегистрирована
-    db.reg_sch_update_vvk_scheme(scheme_revision_vvk + 1, vvk_scheme_new, metric_info_list_raw)
+    db.reg_sch_update_vvk_scheme(scheme_revision_vvk + 1, vvk_scheme_new, max_index, metric_info_list_raw)
 
     index = db.reg_sch_select_count_agents() + 1
     json_agent_return = {
@@ -369,10 +358,9 @@ def re_registration_agent_id_scheme(agent_id: int, agent_reg_id: str, all_agent_
         raise BlockingIOError
     db.reg_sch_block_true()
 
-    scheme_revision_vvk, user_query_interval_revision, join_scheme, vvk_scheme, metric_info_list_raw = db.reg_sch_select_vvk_all()
+    scheme_revision_vvk, user_query_interval_revision, join_scheme, vvk_scheme, max_index, metric_info_list_raw = db.reg_sch_select_vvk_all()
 
-
-    # получение данных с помощью которых будет произоводиться очистка
+    # получение данных с помощью которых будет производиться очистка
     metrics_list_excluding_agent = db.reg_sch_select_metrics_excluding_agent(agent_id)
     templates_list_excluding_agent = db.reg_sch_select_templates_excluding_agent(agent_id)
     # !!!!!ИЗМЕНЕНИЯ
@@ -389,7 +377,7 @@ def re_registration_agent_id_scheme(agent_id: int, agent_reg_id: str, all_agent_
     metrics_new = delete_metrics(vvk_scheme["metrics"], metrics_list_excluding_agent)
     item_id_list_new = delete_item_id_list(vvk_scheme["item_id_list"], full_paths_agent)
     item_info_list_new = delete_item_info_list(vvk_scheme['item_info_list'], join_scheme['item_info_list'], full_paths_agent)
-
+    metric_info_list_dict = delete_metric_info(metric_info_list_raw, item_id_agent, metrics_id_agent)
 
     vvk_scheme_after_cleaning = {
         "metrics": metrics_new,
@@ -399,22 +387,18 @@ def re_registration_agent_id_scheme(agent_id: int, agent_reg_id: str, all_agent_
     }
 
     # а потом зарегистрировать заново агент, используя старый метод!
-
-    agent_scheme, json_agent_list, vvk_scheme_new, item_id_list_new_agent = formation_agent_reg_scheme(agent_reg_id, all_agent_scheme,
+    agent_scheme, json_agent_list, vvk_scheme_new, max_index = formation_agent_reg_scheme(agent_reg_id, all_agent_scheme,
                                                                                join_scheme, vvk_scheme_after_cleaning,
-                                                                               item_id_list_agent)
-
-    remaining_item_id_list = [item for item in item_id_agent if item not in item_id_list_new_agent]
-    print(remaining_item_id_list)
-    print(metrics_id_agent)
+                                                                               max_index, item_id_list_agent)
 
 
-    metric_info_list_dict = delete_metric_info(metric_info_list_raw, remaining_item_id_list, metrics_id_agent)
+    if all_agent_scheme["metric_info_list"] is not None:
+        metric_info_list_dict = add_metric_info_list_dict(metric_info_list_dict, all_agent_scheme["metric_info_list"])
 
 
 
     db.gui_update_vvk_reg_none(scheme_revision_vvk + 1, user_query_interval_revision)
-    db.reg_sch_update_vvk_scheme(scheme_revision_vvk + 1, vvk_scheme_new, metric_info_list_dict)
+    db.reg_sch_update_vvk_scheme(scheme_revision_vvk + 1, vvk_scheme_new, max_index, metric_info_list_dict)
 
     json_agent_return = {
         "agent_id": agent_id,

@@ -23,10 +23,10 @@ def join_scheme(join_scheme: dict, db=Depends(get_db_repo)):
     """
     try:
         if db.reg_sch_select_check_vvk():
-            scheme_revision_vvk, user_query_interval_revision, _, _, metric_info_list_raw = db.reg_sch_select_vvk_all()
+            scheme_revision_vvk, user_query_interval_revision, _, vvk_scheme, max_index, metric_info_list_raw = db.reg_sch_select_vvk_all()
             if join_scheme["scheme_revision"] > scheme_revision_vvk:
                 vvk_scheme_new = re_registration_join_scheme(join_scheme, user_query_interval_revision,
-                                            metric_info_list_raw, db)
+                                            metric_info_list_raw, vvk_scheme, max_index, db)
                 return (vvk_scheme_new)
             else:
                 raise MyException427(
@@ -70,10 +70,10 @@ async def upload_json_file(file: UploadFile = File(...), db=Depends(get_db_repo)
             raise MyException427("Not correct JSON")
 
         if db.reg_sch_select_check_vvk():
-            scheme_revision_vvk, user_query_interval_revision, _, _, metric_info_list_raw = db.reg_sch_select_vvk_all()
+            scheme_revision_vvk, user_query_interval_revision, _, vvk_scheme, max_index, metric_info_list_raw = db.reg_sch_select_vvk_all()
             if join_scheme["scheme_revision"] > scheme_revision_vvk:
                 vvk_scheme_new = re_registration_join_scheme(join_scheme, user_query_interval_revision,
-                                            metric_info_list_raw, db)
+                                            metric_info_list_raw, vvk_scheme, max_index, db)
                 return (vvk_scheme_new)
             else:
                 raise MyException427(

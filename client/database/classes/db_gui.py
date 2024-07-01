@@ -53,7 +53,6 @@ class Gui:
             raise e
 
 # __ Select __
-    # !!!
     def gui_select_agents_reg(self) -> tuple:
         """
             SQL-запрос на получение идентификаторов и регистрационных идентификаторов агентов.
@@ -79,7 +78,6 @@ class Gui:
             logger.error("DB(gui): gui_select_agents_reg: %s", e)
             raise e
 
-    # !!!
     def gui_select_agents_check_status_reg(self) -> bool:
         """
             SQL-запрос на проверку значений колонки status_reg для агентов.
@@ -105,7 +103,6 @@ class Gui:
 # __ Insert __
 
 # __ Update __
-    # !!!
     def gui_update_vvk_reg_error(self, error_reg: str) -> bool:
         """
             SQL-запрос: Обновляет таблицу GUI с информацией об ошибке регистрации ВВК.
@@ -162,8 +159,6 @@ class Gui:
             logger.error("DB(gui): gui_update_vvk_reg_true - vvk_id %s : %s", vvk_id, e)
             raise e
 
-
-    # !!!
     def gui_update_value(self, agent_id: int, error_value: str, type_id: bool) -> bool:
         """
             SQL-запрос на обновление статуса передачи ПФ.
@@ -199,7 +194,6 @@ class Gui:
                 logger.error("DB(gui): gui_update_value - vvk_id %s: %s", agent_id, e)
             raise e
 
-    # !!!
     def gui_update_check_number_id(self, number_id: int, error_conn: bool) -> bool:
         """
             SQL-запрос на обновление последней проверки соединения агента/ВВК.
@@ -230,7 +224,6 @@ class Gui:
             logger_check.error("DB(gui): gui_update_check_number_id - %s : %s", number_id, e)
             raise e
 
-    # !!!
     def gui_update_all_user_query_revision(self, user_query_interval_revision: int) -> bool:
         """
             SQL-запрос: Обновляет версию интервала запроса пользователя в таблице gui для всех записей.

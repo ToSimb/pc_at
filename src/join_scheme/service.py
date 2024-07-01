@@ -1,3 +1,5 @@
+import copy
+
 from database.database import Database
 
 # !!!
@@ -216,7 +218,7 @@ def delete_metric_info_agent(agent_id: int, metric_info: dict, db: Database):
         _, _, metrics_id, items_id = db.reg_sch_select_metrics_and_items(agent_id)
         metric_info_list_new = []
         for item in metric_info_list:
-            if not (item["item_id"] in items_id and item["metric_id"] in metrics_id):
+            if not (str(item["item_id"]) in items_id and item["metric_id"] in metrics_id):
                 metric_info_list_new.append(item)
         metric_info_list_dict = {
             "metric_info_list": metric_info_list_new
@@ -264,12 +266,12 @@ def registration_join_scheme(join_scheme: dict, db: Database) -> dict:
     metric_info_list_dict = {
         "metric_info_list": []
     }
-    db.reg_sch_insert_vvk(join_scheme["scheme_revision"], join_scheme["scheme"], vvk_scheme, metric_info_list_dict)
+    db.reg_sch_insert_vvk(join_scheme["scheme_revision"], join_scheme["scheme"], vvk_scheme, index, metric_info_list_dict)
     return vvk_scheme
 
 # !!!
-def re_registration_join_scheme(join_scheme_new, user_query_interval_revision,
-                                            metric_info_list_raw, db: Database) -> dict:
+def re_registration_join_scheme(join_scheme_new, user_query_interval_revision, metric_info_list_raw,
+                                vvk_scheme_old: dict, max_index: int, db: Database) -> dict:
     """
         Перерегистрация схемы VVK.
 
@@ -293,11 +295,24 @@ def re_registration_join_scheme(join_scheme_new, user_query_interval_revision,
         "item_id_list": [],
         "item_info_list": join_scheme_new["scheme"]["item_info_list"]
     }
+
+
+    index = max_index
     item_id_list = []
-    index = 0
+    item_id_list_vvk = vvk_scheme_old['item_id_list']
+    # Формирование нового item_id_list
     for a in join_scheme_new["scheme"]["item_id_list"]:
-        item_id_list.append({"full_path": a["full_path"], "item_id": index})
-        index += 1
+        # изменения - вернуть старые item_id !!
+        for item in item_id_list_vvk:
+            if item['full_path'] == a["full_path"]:
+                a["item_id"] = item["item_id"]
+
+                break
+        else:
+            a["item_id"] = index
+            index += 1
+        item_id_list.append({"full_path": a["full_path"], "item_id": a["item_id"]})
+
     vvk_scheme_new["item_id_list"] = item_id_list
 
     # GUI
@@ -318,17 +333,19 @@ def re_registration_join_scheme(join_scheme_new, user_query_interval_revision,
                     db.gui_update_agent_reg_id_reg_true(agent["number_id"], agent["agent_reg_id"],
                                                         agent["scheme_revision"])
                 except Exception as e:
+                    metric_info_list_raw = delete_metric_info_agent(agent["number_id"], metric_info_list_raw, db)
                     db.gui_update_agent_reg_id_update_error(agent["number_id"], agent["agent_reg_id"],
                                                             agent["scheme_revision"], str(e))
             else:
                 metric_info_list_raw = delete_metric_info_agent(agent["number_id"], metric_info_list_raw, db)
+
                 db.reg_sch_delete_agent(agent["number_id"])
 
     # GUI
     db.gui_update_vvk_reg_none(join_scheme_new["scheme_revision"], user_query_interval_revision)
 
     # REG
-    db.reg_sch_update_vvk_scheme_all(join_scheme_new["scheme_revision"], join_scheme_new["scheme"], vvk_scheme_new)
+    db.reg_sch_update_vvk_scheme_all(join_scheme_new["scheme_revision"], join_scheme_new["scheme"], vvk_scheme_new, index, metric_info_list_raw)
 
     # SCH - случай когда ввк схема зарегистрированна!
     vvk_id = db.sch_ver_select_check_vvk_id()

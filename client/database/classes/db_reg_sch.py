@@ -21,6 +21,7 @@ class Reg_sch:
                     user_query_interval_revision INT,
                     original_scheme JSONB,
                     scheme JSONB,
+                    max_index INT,
                     metric_info_list JSONB,
                     block BOOLEAN DEFAULT FALSE
                 );
@@ -74,36 +75,36 @@ class Reg_sch:
             logger.error("DB(reg_sch): reg_sch_select_vvk_scheme: %s", e)
             raise e
 
-    def reg_sch_select_vvk_all_json(self) -> dict:
+    # __ AGENTS __
+    def reg_sch_select_number_id(self) -> list:
+        """
+            SQL-запрос: Извлекает идентификаторы всех агентов и ввк.
+
+        Returns:
+            list: Список, содержащий number_id.
+
+        Raises:
+            Exception: Если данные схемы VVK не найдены или происходит ошибка при выполнении запроса.
+        """
         try:
             cur = self.conn.cursor()
-            sql_select = "SELECT scheme_revision, user_query_interval_revision, original_scheme, scheme, metric_info_list FROM reg_sch WHERE type_id = FALSE"
-            cur.execute(sql_select, )
-            self.conn.commit()
-            data = cur.fetchall()
-            result = {
-                "scheme_revision": data[0][0],
-                "user_query_interval_revision": data[0][1],
-                "original_scheme": data[0][2],
-                "scheme": data[0][3],
-                "metric_info_list": data[0][4]
-            }
-            if result:
-                return result
-            else:
-                raise Exception("VvkScheme не зарегистирована!!")
+            sql_select = "SELECT number_id FROM reg_sch"
+            cur.execute(sql_select)
+            result = cur.fetchall()
+
+            number_ids = [row[0] for row in result]
+
+            return number_ids
+
         except Exception as e:
             self.conn.rollback()
-            logger.error("DB(reg_sch): reg_sch_select_vvk_full: %s", e)
+            logger.error("DB(reg_sch): reg_sch_select_number_if: %s", e)
             raise e
-
-    # __ AGENTS __
 
 # __ Insert __
 
 
 # __ Update __
-    # !!!
     def reg_sch_update_vvk_id(self, vvk_id: int) -> bool:
         """
             SQL-запрос: Обновляет идентификатор зарегистрированной VVK в таблице reg_sch.
@@ -129,7 +130,6 @@ class Reg_sch:
             logger.error("DB(reg_sch): reg_sch_update_vvk_id: %s", e)
             raise e
 
-    # !!!
     def reg_sch_update_all_user_query_revision(self, user_query_interval_revision: int) -> bool:
         """
             SQL-запрос: Обновляет версию интервала запроса пользователя в таблице reg_sch для всех записей.
@@ -155,7 +155,6 @@ class Reg_sch:
             logger.error("DB(reg_sch): reg_sch_update_all_user_query_revision: %s", e)
             raise e
 
-    # !!!
     def reg_sch_update_vvk_metric_info(self, metric_info_list: dict) -> bool:
         """
         SQL-запрос: Обновляет metric_info_list зарегистрированной VVK в таблице reg_sch.
