@@ -31,9 +31,14 @@ async def request_by_number_id(session, number_id: int):
     try:
         response = await session.get(url, params=params)
         response.raise_for_status()
-        print(f"Received response for number_id: {number_id} - {response.text}")
-    except httpx.HTTPError as e:
-        logger.error(f"Error fetching request for number_id: {number_id}: {e}")
+        logger.info(f" @ Received response for param {number_id}: {response.status_code}")
+    except httpx.HTTPStatusError as e:
+        logger.error(f" @ HTTP error occurred for param {number_id}: {e.response.status_code} - {e.response.text}")
+    except httpx.RequestError as e:
+        logger.error(f" @ Request error occurred for param {number_id}: {e.request.url} - {str(e)}")
+    except Exception as e:
+        logger.error(f" @ An error occurred for param {number_id}: {str(e)}")
+
 
 async def main_requests(number_ids):
     async with httpx.AsyncClient() as session:
@@ -194,7 +199,7 @@ def re_registration_vvk() -> bool:
 try:
     # регистрация ВВК
     while True:
-        t3 = T3
+        t3 = int(T3)
         vvk_id, _, _, _ = db.sch_ver_select_vvk_details()
         if vvk_id:
             logger.info("Есть зарегистрированная VVkScheme")
@@ -220,7 +225,7 @@ try:
 
     # передача ПФ
     while True:
-        t3 = T3
+        t3 = int(T3)
         vvk_id, _, _, t3_table = db.sch_ver_select_vvk_details()
         logger.info(" ________________________ ")
         start_time = time.time()
@@ -232,6 +237,9 @@ try:
 
             end_requests_time = time.time()
             logger.info(f"Для number_ids: {number_ids} общее время отправки - {end_requests_time - start_time}")
+            time_1 = time.time()
+            all_count_pf = db.pf_select_count_all()
+            logger.info(f"Осталось данных в БД: {all_count_pf}, время запроса в БД - {time.time() - time_1}")
 
         else:
             # пока оставим данный момент, НО если не пригодится, то время надо будет удалить!
@@ -252,8 +260,8 @@ try:
 
         end_time = time.time()
         time_transfer = end_time - start_time
+        print(f"______ВРЕМЯ 1 ЦИКЛА__________   {time_transfer}")
         time_transfer = t3 if time_transfer > t3 else time_transfer
-
         time.sleep(t3 - time_transfer)
 
 except Exception as e:

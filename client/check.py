@@ -7,7 +7,7 @@ from database.db import Database
 from database.postgres import connect, disconnect
 from logger.logger_check import logger_check
 
-from config import PC_AF_PROTOCOL, PC_AF_IP, PC_AF_PORT, T3
+from config import PC_AF_PROTOCOL, PC_AF_IP, PC_AF_PORT, T3, DEBUG
 
 def signal_handler(sig, frame):
     logger_check.info("Принят сигнал завершения работы. Закрытие соединения...")
@@ -38,6 +38,8 @@ def request_conn(vvk_id: int, user_query_interval_revision: int) -> bool:
         requests.RequestException: Если произошла ошибка при выполнении запроса.
     """
     url = f'{PC_AF_PROTOCOL}://{PC_AF_IP}:{PC_AF_PORT}/check'
+    if DEBUG:
+        url = f'http://localhost:8000/test/check'
     params = {'vvk_id': vvk_id, 'user_query_interval_revision': user_query_interval_revision}
     try:
         response = requests.get(url, params=params)
@@ -131,7 +133,7 @@ try:
                 db.gui_update_check_number_id(vvk_id, False)
                 if if227:
                     get_metric_info(vvk_id)
-            time.sleep(T3)
+            time.sleep(int(T3))
         else:
             print("Нет зарегистрированной VVK")
             time.sleep(60)

@@ -2,6 +2,15 @@ import os
 
 from dotenv import load_dotenv
 
+
+def str_to_bool(value):
+    if value.lower() in ('true', '1', 't', 'y', 'yes'):
+        return True
+    elif value.lower() in ('false', '0', 'f', 'n', 'no'):
+        return False
+    else:
+        raise ValueError(f"Invalid truth value: {value}")
+
 load_dotenv()
 
 MY_PORT = os.environ.get('MY_PORT')
@@ -18,4 +27,4 @@ DB_PASS = os.environ.get("DB_PASS")
 
 PF_LIMIT = os.environ.get("PF_LIMIT")
 T3 = os.environ.get("T3")
-DEBUG = os.environ.get("DEBUG")
+DEBUG = str_to_bool(os.environ.get("DEBUG", "false"))

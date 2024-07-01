@@ -1,19 +1,52 @@
 import httpx
+import requests
 
 from config import PF_LIMIT, DEBUG, PC_AF_PROTOCOL, PC_AF_IP, PC_AF_PORT
+
+from logger.logger_send import logger_send
 
 from database.database import Database
 
 
+
+# !!! Надо переделатеть !!!
 async def send_value_to_url(vvk_id, packet: dict):
     async with httpx.AsyncClient() as client:
         url = f'{PC_AF_PROTOCOL}://{PC_AF_IP}:{PC_AF_PORT}/params?vvk_id={vvk_id}'
+        headers = {'Content-Type': 'application/json'}
         if DEBUG:
             url = f'http://localhost:8000/test/params?vvk_id={vvk_id}'
-        response = await client.post(url, json=packet)
-        if response.status_code not in {200, 227}:
-            response.raise_for_status()
-        return response.status_code
+        try:
+            response = await client.post(url, json=packet, headers=headers)
+            print(response.status_code)
+            return response.status_code
+        except Exception as e:
+            logger_send.error(f"An error occurred: {e}")
+
+
+def requestjson_1(vvk_id, packet: dict, db):
+    url = f'{PC_AF_PROTOCOL}://{PC_AF_IP}:{PC_AF_PORT}/params?vvk_id={vvk_id}'
+    headers = {'Content-Type': 'application/json'}
+    if DEBUG:
+        url = f'http://localhost:8000/test/params?vvk_id={vvk_id}'
+    try:
+        response = requests.post(url, json=packet, headers=headers)
+        if response.status_code == 200:
+            print("Данные успешно отправлены.")
+            return True
+        elif response.status_code == 227:
+            print("Данные отправлены, но ошибка 227")
+            return True
+        else:
+            error_str = str(response.status_code) + " : " + str(response.text)
+            db.gui_update_value(vvk_id, error_str, False)
+            raise Exception(error_str)
+    except requests.RequestException as e:
+        error_str = str(e)
+        db.gui_update_value(vvk_id, error_str, False)
+        print(f"Произошла ошибка при отправке запроса: {e}")
+        return False
+
 
 def get_params_from_db_by_number_id(number_id: int, db: Database) -> tuple:
     result_id = []
@@ -35,7 +68,7 @@ def get_params_from_db_by_number_id(number_id: int, db: Database) -> tuple:
             break
         result_id.append(ans[0])
         params += ans[2]
-    return result_id, params
+    return result_id, params, len_pf
 
 def parse_value(params: list) -> list:
     """

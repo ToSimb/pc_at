@@ -49,7 +49,7 @@ def add_params(params: SchemeJson, agent_id: int, metrics_id: list, items_id: li
                       'сompboard.voltage',
                       'сompboard.power',
                       'сompboard.state']
-        items_id_no_str = list(range(13, 18))
+        items_id_no_str = list(range(12, 18))
         items_id = [str(item) for item in items_id_no_str]
     for value in params.value:
         if value.metric_id in metrics_id:
