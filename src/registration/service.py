@@ -194,7 +194,7 @@ def formation_agent_reg_scheme(agent_reg_id: str, agent_scheme: dict, join_schem
                                 b = copy.deepcopy(a)
                                 a["full_path"] = join_id_list_scheme["join_item_full_path"] + a[
                                     "full_path"].replace(
-                                    a["full_path"].split('/')[0], "")
+                                    a["full_path"].split('/')[0], "",1)
                                 for item in item_id_list_agent:
                                     if item['full_path'] == a["full_path"]:
                                         a["item_id"] = item["item_id"]
@@ -217,7 +217,7 @@ def formation_agent_reg_scheme(agent_reg_id: str, agent_scheme: dict, join_schem
                             if a["full_path"] == join_id_list_agent["full_path"]:
                                 a["full_path"] = join_id_list_scheme["join_item_full_path"] + a[
                                     "full_path"].replace(
-                                    a["full_path"].split('/')[0], "")
+                                    a["full_path"].split('/')[0], "", 1)
                                 b = next(
                                     (b for b in vvk_scheme["item_info_list"] if
                                      b["full_path"] == a["full_path"]),

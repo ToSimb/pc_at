@@ -79,5 +79,5 @@ async def test_params_hole(params: dict, vvk_id: int):
 
     """
     print("пришли ПФ от ввк:", vvk_id, params["scheme_revision"])
-    time.sleep(1)
+    time.sleep(2)
     return ("OK")

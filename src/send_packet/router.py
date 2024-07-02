@@ -9,8 +9,7 @@ from logger.logger_send import logger_send
 from .service import (get_params_from_db_by_number_id,
                       parse_value,
                       forming_packet,
-                      send_value_to_url,
-                      requestjson_1)
+                      send_value_to_url,)
 
 router = APIRouter(
     prefix="/send-packet",
@@ -31,11 +30,10 @@ async def send_packet(number_id: int, db=Depends(get_db_repo)):
         value = parse_value(params)
         pars_time = time.time()
         vvk_id, result = forming_packet(value, db)
-        # response_code = await send_value_to_url(vvk_id, result)
-        response_code = requestjson_1(vvk_id, result, db)
+        response_code = await send_value_to_url(vvk_id, result, db)
         response_time = time.time()
         if response_code:
-            db.pf_delete_records(result_id)
+            deleted_rows = db.pf_delete_records(result_id)
             delete_time = time.time()
             db.gui_update_value(vvk_id, None, False)
             logger_send.info("________________" + "\n"
@@ -45,7 +43,7 @@ async def send_packet(number_id: int, db=Depends(get_db_repo)):
                     + "Время формирование ПФ:     " + str(pars_time - get_time) + "\n"
                     + "Время отправки ПФ:         " + str(response_time - pars_time) + "\n"
                     + "Время удаления ПФ:         " + str(delete_time - response_time) + "\n"
-                    + "Id удаленные из БД:        " + str(result_id))
+                    + "Id удаленные из БД:        " + str(result_id) + " - " + str(deleted_rows))
             return Response(status_code=200)
         else:
             raise Exception(f"Что-то пришло другое")

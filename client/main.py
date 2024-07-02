@@ -32,16 +32,14 @@ async def request_by_number_id(session, number_id: int):
         response = await session.get(url, params=params)
         response.raise_for_status()
         logger.info(f" @ Received response for param {number_id}: {response.status_code}")
-    except httpx.HTTPStatusError as e:
-        logger.error(f" @ HTTP error occurred for param {number_id}: {e.response.status_code} - {e.response.text}")
-    except httpx.RequestError as e:
-        logger.error(f" @ Request error occurred for param {number_id}: {e.request.url} - {str(e)}")
+    except httpx.HTTPError as e:
+        logger.error(f" @ Request error occurred for param {number_id}: {str(e)}")
     except Exception as e:
-        logger.error(f" @ An error occurred for param {number_id}: {str(e)}")
+        logger.error(f" @ Exception param {number_id}: {str(e)}")
 
 
 async def main_requests(number_ids):
-    async with httpx.AsyncClient() as session:
+    async with httpx.AsyncClient(timeout=httpx.Timeout(15.0, connect=15.0))as session:
         tasks = [request_by_number_id(session, number_id) for number_id in number_ids]
         await asyncio.gather(*tasks)
 
