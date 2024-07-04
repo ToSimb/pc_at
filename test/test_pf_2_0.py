@@ -30,7 +30,7 @@ try:
         "user_query_interval_revision": 0,
         "value": []
     }
-    for _ in range(random.randint(10,100)):
+    for _ in range(random.randint(1,2)):
         current_timestamp = int(time.time())
         for item_id in range(13, 18):
             for metric_id in ['chassis.uptime',

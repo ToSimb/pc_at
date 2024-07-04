@@ -105,6 +105,33 @@ class Sch_ver:
             logger.error("DB(sch_ver): sch_ver_select_date_create: %s", e)
             raise e
 
+    def sch_ver_select_latest_status(self) -> bool:
+        """
+            SQL-запрос для получения статуса последней версии схемы.
+
+        Returns:
+            bool: Если последний статус версии схемы 'True' возвращает True, иначе False.
+
+        Raises:
+            Exception: Если произошла ошибка при выполнении запроса к базе данных.
+        """
+        try:
+            cur = self.conn.cursor()
+            sql_select = (
+                "SELECT status_reg FROM sch_ver "
+                "ORDER BY id DESC "
+                "LIMIT 1"
+            )
+            cur.execute(sql_select)
+            result = cur.fetchone()
+            if result:
+                return result[0]
+            else:
+                return False
+        except Exception as e:
+            self.conn.rollback()
+            logger.error("DB(sch_ver): get_latest_status: %s", e)
+            raise e
 
     # возжно приходится !?!
     def sch_ver_select_date_create_unreg_old(self) -> int:

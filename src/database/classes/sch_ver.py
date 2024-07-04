@@ -8,7 +8,6 @@ class Sch_ver:
     # ____________ SCH_VER _____________
 
     # __ Select __
-    # !!!
     def sch_ver_select_check_vvk_id(self) -> int:
         """
             SQL-запрос, который проверяет наличие идентификатора VVK и возвращает его, если запись найдена.
@@ -34,7 +33,6 @@ class Sch_ver:
             logger.error("DB(sch_ver): get_latest_status: %s", e)
             raise e
 
-    # !!!
     def sch_ver_select_latest_status(self) -> bool:
         """
             SQL-запрос для получения статуса последней версии схемы.
@@ -89,7 +87,6 @@ class Sch_ver:
             logger.error("DB(sch_ver): sch_ver_select_vvk_scheme: %s", e)
             raise e
     # __ Insert __
-    # !!!
     def sch_ver_insert_vvk(self, status_reg: bool, vvk_id: int, scheme_revision: int, user_query_interval_revision: int,
                            scheme: dict, metric_info_list: dict) -> bool:
         """

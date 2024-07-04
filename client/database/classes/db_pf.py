@@ -1,3 +1,6 @@
+import pickle
+import time
+
 from logger.logger import logger
 
 
@@ -82,7 +85,33 @@ class Pf:
             raise e
 
 # __ Insert __
+    def pf_insert_params_of_1_packet(self, number_id: int, len_pf: int, data: list) -> bool:
+        """
+            SQL-запрос на вставку данных в таблицу 'pf'.
 
+        Args:
+            number_id (int): Идентификатор агента/ввк.
+            len_pf (int): Длина ПФ
+            data (list): Список кортежей с данными для вставки.
+
+        Returns:
+            bool: Возвращает True, если вставка данных выполнена успешно.
+
+        Raises:
+            Exception: Если произошла ошибка при выполнении запроса к базе данных.
+        """
+        try:
+            current_time = int(time.time())
+            cur = self.conn.cursor()
+            sql_insert_data = "INSERT INTO pf (number_id, len_pf, pf, date_save)  VALUES (%s,%s,%s,%s);"
+            binary_data = pickle.dumps(data)
+            cur.execute(sql_insert_data, (number_id, len_pf, binary_data, current_time))
+            self.conn.commit()
+            return True
+        except Exception as e:
+            self.conn.rollback()
+            logger.error("DB(pf): pf_insert_params_of_1_packet: %s", e)
+            raise e
 # __ Update __
 
 # __ Delete __

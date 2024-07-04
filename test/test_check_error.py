@@ -29,7 +29,7 @@ def request_conn(vvk_id: int, user_query_interval_revision: int) -> bool:
         requests.RequestException: Если произошла ошибка при выполнении запроса.
     """
     # url = f'{PC_AF_PROTOCOL}://{PC_AF_IP}:{PC_AF_PORT}/check'
-    url = f'http://localhost:8000/test/check'
+    url = f'http://localhost:8000/test1/check'
     params = {'vvk_id': vvk_id, 'user_query_interval_revision': user_query_interval_revision}
     headers = {'Content-Type': 'application/json'}
     try:

@@ -9,6 +9,9 @@ from logger.logger_check import logger_check
 
 from config import PC_AF_PROTOCOL, PC_AF_IP, PC_AF_PORT, T3, DEBUG
 
+TEMPLATES_ID = "agent_connection"
+METRIC_ID = "connection.agent"
+
 def signal_handler(sig, frame):
     logger_check.info("Принят сигнал завершения работы. Закрытие соединения...")
     disconnect(conn)
@@ -20,6 +23,14 @@ signal.signal(signal.SIGINT, signal_handler)
 conn = connect()
 db = Database(conn)
 
+time_counter = 1
+
+def time_change(ans):
+    if ans is None:
+        return 0
+    timestamp_float = ans.timestamp()
+    timestamp_int = int(timestamp_float)
+    return timestamp_int
 
 def request_conn(vvk_id: int, user_query_interval_revision: int) -> bool:
     """
@@ -123,19 +134,78 @@ def get_metric_info(vvk_id: int) -> bool:
 
 try:
     while True:
+        logger_check.info("____________________________")
+        start_time = time.time()
+        logger_check.info(int(start_time))
         vvk_id, _, user_query_interval_revision, t3 = db.sch_ver_select_vvk_details()
 
         if vvk_id:
             if227 = request_conn(vvk_id, user_query_interval_revision)
             if if227 is None:
-                db.gui_update_check_number_id(vvk_id, True)
+                db.gui_update_check_number_id_false(vvk_id)
             else:
-                db.gui_update_check_number_id(vvk_id, False)
+                db.gui_update_check_number_id_tru(vvk_id)
                 if if227:
                     get_metric_info(vvk_id)
-            time.sleep(int(T3))
+
+            time_counter += 1
+
+            if db.sch_ver_select_latest_status():
+                value = []
+                dump = db.gui_select_agents_details()
+                for item in dump:
+                    # Проверка, что агент зарегистрирован
+                    if item[0] is not None:
+                        logger_check.debug(f"Проверка агента: {item[0]}")
+                        late_time = max(time_change(item[1]), time_change(item[2]))
+                        # Проверка, что было выполнялось хоть раз params/check
+                        if late_time > 0:
+                            status = True
+                            # если не было ответа от агента больше 5 секунд - ERROR
+                            if int(start_time) - late_time > 5:
+                                status = False
+                                db.gui_update_check_number_id_false(item[0])
+                            query_interval_all = db.reg_sch_get_query_intervals(item[0], METRIC_ID)
+                            item_ids = db.reg_sch_get_item_ids(item[0], TEMPLATES_ID)
+                            # проверка, что есть пути с контролем связи
+                            if item_ids is not None:
+                                for item_id in item_ids:
+                                    # проверка, что метрика для контроля связи есть
+                                    result = None
+                                    if query_interval_all is not None:
+                                        if time_counter % query_interval_all == 0:
+                                            result = {
+                                                'item_id': item_id,
+                                                'metric_id': METRIC_ID,
+                                            }
+                                            if status:
+                                                data_item = {
+                                                    't': int(start_time),
+                                                    'v': "OK"
+                                                }
+                                            else:
+                                                comment_error = f"Нет связи с Агентом: {item[0]}"
+                                                data_item = {
+                                                    't': int(start_time),
+                                                    'v': "ERROR",
+                                                    'comment': comment_error
+                                                }
+                                            result.update(data_item)
+
+                                    if result is not None:
+                                        value.append(result)
+                print(value)
+                logger_check.debug(f"Len: {len(value)}")
+                if len(value) > 0:
+                    db.pf_insert_params_of_1_packet(0, len(value), value)
+
+            end_time = time.time()
+            total_time = end_time - start_time
+            adjusted_total_time = min(total_time, 1)
+            logger_check.debug(f"Time {adjusted_total_time}")
+            time.sleep(1 - adjusted_total_time)
         else:
-            print("Нет зарегистрированной VVK")
+            logger_check.info("Нет зарегистрированной VVK")
             time.sleep(60)
 
 except Exception as e:

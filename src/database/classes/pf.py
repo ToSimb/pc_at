@@ -32,6 +32,7 @@ class Pf:
             self.conn.commit()
             return True
         except Exception as e:
+            self.conn.rollback()
             logger.error("DB(pf): pf_insert_params_of_1_packet: %s", e)
             raise e
 

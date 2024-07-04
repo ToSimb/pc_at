@@ -33,7 +33,7 @@ try:
     print("Регистрация ВВК схемы")
     subprocess.run(['python', 'test_reg_vvk.py'])
     time.sleep(T3)
-    #
+
     print("___________________")
     print("Проверка контроля связи для всех агентов")
     subprocess.run(['python', 'test_check_agents.py'])

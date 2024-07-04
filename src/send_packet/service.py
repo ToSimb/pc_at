@@ -10,15 +10,15 @@ async def send_value_to_url(vvk_id, packet: dict, db: Database):
         url = f'{PC_AF_PROTOCOL}://{PC_AF_IP}:{PC_AF_PORT}/params?vvk_id={vvk_id}'
         headers = {'Content-Type': 'application/json'}
         if DEBUG:
-            url = f'http://localhost:8000/test1/params?vvk_id={vvk_id}'
+            url = f'http://localhost:8000/test/params?vvk_id={vvk_id}'
         try:
             response = await client.post(url, json=packet, headers=headers)
-            print(response.status_code)
+            # print(response.status_code)
             if response.status_code == 200:
-                print("Данные успешно отправлены.")
+                # print("Данные успешно отправлены.")
                 return True
             elif response.status_code == 227:
-                print("Данные отправлены, но ошибка 227")
+                # print("Данные отправлены, но ошибка 227")
                 return True
             else:
                 error_str = str(response.status_code) + " : " + str(response.text)
@@ -58,6 +58,7 @@ def get_params_from_db_by_number_id(number_id: int, db: Database) -> tuple:
             break
         len_pf += ans[1]
         if len_pf > int(PF_LIMIT):
+            len_pf -= ans[1]
             break
         result_id.append(ans[0])
         params += ans[2]
@@ -75,7 +76,6 @@ def parse_value(params: list) -> list:
     """
     result = {}
     for item in params:
-
         item_id = item['item_id']
         metric_id = item['metric_id']
         t = item['t']
