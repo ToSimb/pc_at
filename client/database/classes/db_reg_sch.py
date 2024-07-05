@@ -101,7 +101,7 @@ class Reg_sch:
             logger.error("DB(reg_sch): reg_sch_select_number_if: %s", e)
             raise e
 
-    def reg_sch_get_item_ids(self, number_id: int, template_id: str) -> list:
+    def reg_sch_select_item_ids(self, number_id: int, template_id: str) -> list:
         """
             SQL-запрос: Получает item_id из поля item_id_list, где full_path содержит 'agent_connection'.
 
@@ -133,12 +133,11 @@ class Reg_sch:
             logger.error("DB(reg_sch): reg_sch_get_item_ids: %s", e)
             raise e
 
-    def reg_sch_get_query_intervals(self, number_id: int, metric_id: str) -> list:
+    def reg_sch_select_query_intervals_all(self, metric_id: str) -> int:
         """
             SQL-запрос: Получает query_interval из поля metrics 'connection.agent'.
 
         Args:
-            number_id (int): Идентификатор агента.
             metric_id (str): Идентификатор метрики для поиска.
 
         Returns:
@@ -152,7 +151,7 @@ class Reg_sch:
             sql_query = (
                     f"SELECT elem->>'query_interval' AS query_interval "
                     f"FROM reg_sch, jsonb_array_elements(scheme->'metrics') AS elem "
-                    f"WHERE number_id = {number_id} "
+                    f"WHERE type_id = FALSE "
                     f"AND elem->>'metric_id' = '{metric_id}'; ")
             cur.execute(sql_query)
             row = cur.fetchone()
@@ -167,6 +166,43 @@ class Reg_sch:
             self.conn.rollback()
             logger.error("DB(reg_sch): reg_sch_get_query_intervals: %s", e)
             raise e
+
+    def reg_sch_select_query_intervals_by_item_id(self, item_id:int,  metric_id: str) -> int:
+        """
+            SQL-запрос: Получает query_interval из поля metrics 'connection.agent'.
+
+        Args:
+            item_id (int): Идентификатор объекта для поиска.
+            metric_id (str): Идентификатор метрики для поиска.
+
+        Returns:
+            int: Значение query_interval или None, если данных нет.
+
+        Raises:
+            Exception: Если произошла ошибка при выполнении запроса.
+        """
+        try:
+            cur = self.conn.cursor()
+            sql_query = (
+                    f"SELECT elem->>'user_query_interval' AS user_query_interval "
+                    f"FROM reg_sch, jsonb_array_elements(metric_info_list->'metric_info_list') AS elem "
+                    f"WHERE type_id = FALSE "
+                    f"AND elem->>'item_id' = '{item_id}' "
+                    f"AND elem->>'metric_id' = '{metric_id}'; ")
+            cur.execute(sql_query)
+            row = cur.fetchone()
+            self.conn.commit()
+
+            if row is None:
+                return None
+
+            query_interval = int(row[0])
+            return query_interval
+        except Exception as e:
+            self.conn.rollback()
+            logger.error("DB(reg_sch): reg_sch_get_query_intervals: %s", e)
+            raise e
+
 
 # __ Insert __
 

@@ -57,6 +57,11 @@ async def test_select_metric_info(vvk_id: int):
                 "user_query_interval": 2
             },
             {
+                "item_id": 14,
+                "metric_id": 'connection.agent',
+                "user_query_interval": 5
+            },
+            {
                 "item_id": 21,
                 "metric_id": 'cpu.user.time',
                 "user_query_interval": 2

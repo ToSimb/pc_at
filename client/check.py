@@ -151,29 +151,36 @@ try:
             time_counter += 1
 
             if db.sch_ver_select_latest_status():
-                value = []
-                dump = db.gui_select_agents_details()
-                for item in dump:
-                    # Проверка, что агент зарегистрирован
-                    if item[0] is not None:
-                        logger_check.debug(f"Проверка агента: {item[0]}")
-                        late_time = max(time_change(item[1]), time_change(item[2]))
-                        # Проверка, что было выполнялось хоть раз params/check
-                        if late_time > 0:
-                            status = True
-                            # если не было ответа от агента больше 5 секунд - ERROR
-                            if int(start_time) - late_time > 5:
-                                status = False
-                                db.gui_update_check_number_id_false(item[0])
-                            query_interval_all = db.reg_sch_get_query_intervals(item[0], METRIC_ID)
-                            item_ids = db.reg_sch_get_item_ids(item[0], TEMPLATES_ID)
-                            # проверка, что есть пути с контролем связи
-                            if item_ids is not None:
-                                for item_id in item_ids:
-                                    # проверка, что метрика для контроля связи есть
-                                    result = None
-                                    if query_interval_all is not None:
-                                        if time_counter % query_interval_all == 0:
+                query_interval_all = db.reg_sch_select_query_intervals_all(METRIC_ID)
+                # проверка, что метрика для контроля связи есть
+                if query_interval_all is not None:
+                    value = []
+                    dump = db.gui_select_agents_details()
+                    for item in dump:
+                        # Проверка, что агент зарегистрирован
+                        if item[0] is not None:
+                            logger_check.debug(f"Проверка агента: {item[0]}")
+                            late_time = max(time_change(item[1]), time_change(item[2]))
+                            # Проверка, что было выполнялось хоть раз params/check
+                            if late_time > 0:
+                                status = True
+                                # если не было ответа от агента больше 5 секунд - ERROR
+                                if int(start_time) - late_time > 5:
+                                    status = False
+                                    db.gui_update_check_number_id_false(item[0])
+                                item_ids = db.reg_sch_select_item_ids(item[0], TEMPLATES_ID)
+                                # проверка, что есть пути с контролем связи
+                                if item_ids is not None:
+                                    for item_id in item_ids:
+                                        # проверка, что метрика для контроля связи есть
+                                        result = None
+                                        # Проверка Метрик Инфо !
+                                        query_interval = query_interval_all
+                                        ans = db.reg_sch_select_query_intervals_by_item_id(item_id, METRIC_ID)
+                                        if ans is not None:
+                                            query_interval = ans
+
+                                        if time_counter % query_interval == 0:
                                             result = {
                                                 'item_id': item_id,
                                                 'metric_id': METRIC_ID,
@@ -191,13 +198,13 @@ try:
                                                     'comment': comment_error
                                                 }
                                             result.update(data_item)
-
-                                    if result is not None:
-                                        value.append(result)
-                print(value)
-                logger_check.debug(f"Len: {len(value)}")
-                if len(value) > 0:
-                    db.pf_insert_params_of_1_packet(0, len(value), value)
+                                        if result is not None:
+                                            value.append(result)
+                    logger_check.debug(f"Len: {len(value)}")
+                    if len(value) > 0:
+                        db.pf_insert_params_of_1_packet(0, len(value), value)
+                else:
+                    logger_check.error(f"Нет метрики: {METRIC_ID}")
 
             end_time = time.time()
             total_time = end_time - start_time
