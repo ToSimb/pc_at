@@ -31,16 +31,18 @@ async def test_get_checks(vvk_id: int, user_query_interval_revision: int):
         raise HTTPException(status_code=527, detail={"error_msg": error_str})
 
 @router.post("/save")
-async def test_return_scheme(vvk_scheme: dict):
+async def test_return_scheme(vvk_scheme: dict, vvk_id: int = None):
     """
     Метод для тестовой регистрации VvkScheme
     """
-    print(f"metric_info_list: {vvk_scheme['metric_info_list']}")
     return_scheme = {
         "vvk_id": 51,
         "scheme_revision": vvk_scheme["scheme_revision"],
-        "user_query_interval_revision":  0
+        "user_query_interval_revision":  1
     }
+    if vvk_id == 51:
+        print(f"metric_info_list: {vvk_scheme['metric_info_list']}")
+        return_scheme["user_query_interval_revision"] = 5
     return return_scheme
 
 @router.get("/metric-info-list")

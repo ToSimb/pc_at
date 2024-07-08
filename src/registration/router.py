@@ -4,7 +4,8 @@ from deps import get_db_repo
 
 from registration.service import (
     registration_agent_reg_id_scheme,
-    re_registration_agent_id_scheme
+    re_registration_agent_id_scheme,
+    getting_old_item_ids
     )
 from registration.schemas import AgentScheme
 
@@ -56,7 +57,15 @@ def agent_scheme(agent_scheme: AgentScheme, agent_id: int = None, agent_reg_id: 
             if agent_reg_id in agents_reg_ids:
                 check_agent = db.gui_select_check_agent_reg_id(agent_reg_id)
                 if check_agent:
-                    raise MyException428(f"This agent_reg_id '{agent_reg_id}' is already registered, under agent_id = '{check_agent}'.")
+                    # новый модуль!
+                    print("_________________________")
+                    scheme_revision_old, _, original_scheme_old, scheme_old = db.reg_sch_select_agent_scheme(
+                        check_agent)
+                    if (all_agent_scheme["scheme"] == original_scheme_old) and (scheme_revision_old == all_agent_scheme["scheme_revision"]):
+                        result = getting_old_item_ids(check_agent, all_agent_scheme["scheme"], scheme_old)
+                        return result
+                    else:
+                        raise MyException428(f"This agent_reg_id '{agent_reg_id}' is already registered under agent_id = '{check_agent}' and has scheme revision = '{scheme_revision_old}'.")
                 else:
                     # Регистрация
                     agent_scheme_return = registration_agent_reg_id_scheme(agent_reg_id, all_agent_scheme, db)

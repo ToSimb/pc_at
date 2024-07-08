@@ -73,10 +73,11 @@ async def gui_pages_agent(agent_id: int, db=Depends(get_db_repo)):
         Метод для просмотра AgentScheme
     """
     try:
-        scheme_revision, user_query_interval_revision, scheme = db.reg_sch_select_agent_scheme(agent_id)
+        scheme_revision, user_query_interval_revision, original_scheme, scheme = db.reg_sch_select_agent_scheme(agent_id)
         result = {
             "scheme_revision": scheme_revision,
             "user_query_interval_revision": user_query_interval_revision,
+            "original_scheme": original_scheme,
             "scheme": scheme
         }
         return result

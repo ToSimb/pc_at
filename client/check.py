@@ -53,7 +53,7 @@ def request_conn(vvk_id: int, user_query_interval_revision: int) -> bool:
         url = f'http://localhost:8000/test/check'
     params = {'vvk_id': vvk_id, 'user_query_interval_revision': user_query_interval_revision}
     try:
-        response = requests.get(url, params=params)
+        response = requests.get(url, params=params, timeout=1)
         if response.status_code == 200:
             logger_check.info("Канал связи в порядке.")
             return False
@@ -65,7 +65,7 @@ def request_conn(vvk_id: int, user_query_interval_revision: int) -> bool:
             return None
     except requests.RequestException as e:
         logger_check.error(f"Произошла ошибка при проверки состояния связи: {e}")
-        return False
+        return None
 
 def request_metric(vvk_id: int) -> dict:
     """
@@ -141,6 +141,7 @@ try:
 
         if vvk_id:
             if227 = request_conn(vvk_id, user_query_interval_revision)
+            print(if227)
             if if227 is None:
                 db.gui_update_check_number_id_false(vvk_id)
             else:

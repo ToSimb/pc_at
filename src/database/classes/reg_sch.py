@@ -195,7 +195,7 @@ class Reg_sch:
         """
         try:
             cur = self.conn.cursor()
-            sql_select = "SELECT scheme_revision, user_query_interval_revision, scheme FROM reg_sch WHERE number_id = %s"
+            sql_select = "SELECT scheme_revision, user_query_interval_revision, original_scheme, scheme FROM reg_sch WHERE number_id = %s"
             cur.execute(sql_select, (agent_id,))
             data = cur.fetchone()
             self.conn.commit()

@@ -46,7 +46,7 @@ async def params_data(params: SchemeJson, agent_id: int, db=Depends(get_db_repo)
         error_str = str(e)
         logger.error(error_str)
         db.gui_update_value(agent_id, error_str, True)
-        raise HTTPException(status_code=427, detail={"error_msg": error_str})
+        raise HTTPException(status_code=428, detail={"error_msg": error_str})
     except MyException527 as e:
         error_str = str(e)
         logger.error(error_str)

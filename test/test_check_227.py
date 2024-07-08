@@ -68,7 +68,7 @@ def request_metric(vvk_id: int) -> dict:
         response = requests.get(url, params=params)
         if response.status_code == 200:
             result = response.json()
-            print("Метрики от АФ получена.")
+            print("Метрики от АФ получена: ", result["metric_info_list"])
             return result
         else:
             print("Ошибка получения метрик")

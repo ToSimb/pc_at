@@ -280,6 +280,23 @@ def add_metric_info_list_dict(metric_info, metric_info_agent):
             "metric_info_list": metric_info_list
         }
         return metric_info_list_dict
+
+def getting_old_item_ids(agent_id: int, scheme: dict, scheme_old: dict) -> dict:
+    # print(scheme["item_id_list"])
+    # print("_____________")
+    # print(scheme_old["item_id_list"])
+    # print("_____________")
+    for item2 in scheme_old["item_id_list"]:
+        for item1 in scheme["item_id_list"]:
+            if item2['full_path'].endswith(item1['full_path']):
+                item1['item_id'] = item2['item_id']
+    json_agent_return = {
+        "agent_id": agent_id,
+        "item_id_list": scheme["item_id_list"]
+    }
+    # print(json_agent_return)
+    return json_agent_return
+
 # ___________ работа только с БД _________
 
 # !!!
@@ -305,7 +322,8 @@ def registration_agent_reg_id_scheme(agent_reg_id: str, all_agent_scheme: dict, 
 
     scheme_revision_vvk, user_query_interval_revision, join_scheme, vvk_scheme, max_index, metric_info_list_raw = db.reg_sch_select_vvk_all()
 
-    agent_scheme, json_agent_list, vvk_scheme_new, max_index = formation_agent_reg_scheme(agent_reg_id, all_agent_scheme,
+    all_agent_scheme_copy = copy.deepcopy(all_agent_scheme)
+    agent_scheme, json_agent_list, vvk_scheme_new, max_index = formation_agent_reg_scheme(agent_reg_id, all_agent_scheme_copy,
                                                                                join_scheme, vvk_scheme, max_index, [])
 
     db.gui_update_vvk_reg_none(scheme_revision_vvk + 1, user_query_interval_revision)
@@ -336,7 +354,6 @@ def registration_agent_reg_id_scheme(agent_reg_id: str, all_agent_scheme: dict, 
     db.reg_sch_block_false()
     return json_agent_return
 
-# !!!
 def re_registration_agent_id_scheme(agent_id: int, agent_reg_id: str, all_agent_scheme: dict, db: Database):
     """
         Перерегистрирует агента.

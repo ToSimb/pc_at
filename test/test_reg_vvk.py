@@ -87,8 +87,7 @@ def registration_vvk() -> bool:
     db.reg_sch_block_true()
     scheme_revision, scheme, metric_info_list_raw = db.reg_sch_select_vvk_scheme()
     metric_info_list = if_metric_info(metric_info_list_raw)
-    print("Извлечение метрик инфо")
-    print(metric_info_list)
+    print("Извлечение метрик инфо: ", metric_info_list)
     data = {
         "scheme_revision": scheme_revision,
         "scheme": scheme,
