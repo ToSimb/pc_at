@@ -12,8 +12,7 @@ class Gui:
             SQL-запрос на получение идентификаторов и регистрационных идентификаторов агентов.
 
         Returns:
-            tuple: Кортеж, содержащий списки идентификаторов агентов и их регистрационных идентификаторов.
-                   Первый элемент кортежа содержит список number_id, второй - список agent_reg_id.
+            tuple: Кортеж, содержащий number_id, agent_reg_id.
 
         Raises:
             Exception: Если произошла ошибка при выполнении запроса к базе данных.
@@ -23,7 +22,7 @@ class Gui:
             sql_select_agent_reg_id = "SELECT number_id, agent_reg_id FROM gui WHERE type_id = TRUE;"
             cur.execute(sql_select_agent_reg_id)
             rows = cur.fetchall()
-            number_id = [row[0] for row in rows if row[0] is not None]
+            number_id = [int(row[0]) for row in rows if row[0] is not None]
             agent_reg_id = [row[1] for row in rows]
             self.conn.commit()
             return number_id, agent_reg_id
@@ -78,7 +77,7 @@ class Gui:
         """
         try:
             cur = self.conn.cursor()
-            sql_select_check = "SELECT status_reg FROM gui WHERE number_id = %s;"
+            sql_select_check = "SELECT status_reg FROM gui WHERE number_id = %s and type_id = TRUE;"
             cur.execute(sql_select_check, (number_id,))
             result = cur.fetchone()
             self.conn.commit()
@@ -221,7 +220,7 @@ class Gui:
         try:
             time_reg = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             cur = self.conn.cursor()
-            sql_update_gui = "UPDATE gui SET time_reg = %s, error_reg = %s WHERE number_id = %s;"
+            sql_update_gui = "UPDATE gui SET time_reg = %s, error_reg = %s WHERE number_id = %s AND type_id = TRUE;"
             cur.execute(sql_update_gui, (time_reg, error_reg, agent_id))
             self.conn.commit()
             logger.error(f"DB(gui): agent_id '{agent_id}' ошибка: {error_reg}")
@@ -261,7 +260,7 @@ class Gui:
             logger.error("DB(gui): gui_update_agent_reg_id_reg_true - agent_reg_id %s : %s", agent_reg_id, e)
             raise e
 
-    def gui_update_agent_id_reg_true(self, agent_id: int, scheme_revision: int) -> bool:
+    def gui_update_agent_id_re_reg_true(self, agent_id: int, scheme_revision: int) -> bool:
         """
             SQL-запрос на обновление статуса успешной перерегистрации агента.
 
@@ -278,7 +277,8 @@ class Gui:
         try:
             time_reg = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             cur = self.conn.cursor()
-            sql_update_gui = "UPDATE gui SET scheme_revision = %s, status_reg = %s, time_reg = %s, error_reg = %s WHERE number_id = %s;"
+            sql_update_gui = ("UPDATE gui SET scheme_revision = %s, status_reg = %s, time_reg = %s, error_reg = %s "
+                              "WHERE number_id = %s AND type_id = TRUE;")
             cur.execute(sql_update_gui, (scheme_revision, True, time_reg, None, agent_id))
             self.conn.commit()
             logger.info(f"DB(gui): agent_id '{agent_id}' успешно перерегистрирован")
@@ -288,9 +288,9 @@ class Gui:
             logger.error("DB(gui): gui_update_agent_id_reg_true - agent_id %s : %s", agent_id, e)
             raise e
 
-    def gui_update_check_number_id_tru(self, number_id: int) -> bool:
+    def gui_update_agent_check_number_id_tru(self, number_id: int) -> bool:
         """
-            SQL-запрос на обновление успешной последней проверки соединения агента/ВВК.
+            SQL-запрос на обновление успешной последней проверки соединения агента.
 
         Args:
             number_id (int): Идентификатор агента.
@@ -304,14 +304,14 @@ class Gui:
         try:
             time_conn = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             cur = self.conn.cursor()
-            sql_update_gui = "UPDATE gui SET time_conn = %s, error_conn = %s WHERE number_id = %s;"
+            sql_update_gui = "UPDATE gui SET time_conn = %s, error_conn = %s WHERE number_id = %s and type_id = TRUE;"
             cur.execute(sql_update_gui, (time_conn, False, number_id))
             self.conn.commit()
-            logger.info(f"DB(gui): agent_id/VVk '{number_id}' - проверка связи успешная")
+            logger.info(f"DB(gui): agent_id '{number_id}' - проверка связи успешная")
             return True
         except Exception as e:
             self.conn.rollback()
-            logger.error("DB(gui): gui_update_check_number_id_tru - %s : %s", number_id, e)
+            logger.error("DB(gui): gui_update_agent_check_number_id_tru - %s : %s", number_id, e)
             raise e
 
     def gui_update_vvk_reg_none(self, scheme_revision: int, user_query_interval_revision: int) -> bool:
@@ -389,7 +389,7 @@ class Gui:
         """
         try:
             cur = self.conn.cursor()
-            sql_delete = "DELETE FROM gui WHERE type_id = TRUE;"
+            sql_delete = "DELETE FROM gui WHERE type_id = TRUE; "
             cur.execute(sql_delete)
             self.conn.commit()
             logger.info("DB(gui): таблица очищена для строк с type_id = TRUE")

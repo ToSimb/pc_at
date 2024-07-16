@@ -1,11 +1,52 @@
 import requests
 import copy
+import json
 
 from database.database import Database
-from myException import MyException427, MyException527
+from myException import MyException427, MyException527, MyException528
 
 from logger.logger import logger
 
+
+def save_to_json(agent_id, suffix, data):
+    filename = f"files/agent_{agent_id}_{suffix}.json"
+    logger.info(f"Агент {agent_id} сохранен в файл {filename}")
+    with open(filename, 'w', encoding='utf-8') as file:
+        json.dump(data, file, ensure_ascii=False)
+
+def get_to_json(agent_id: int) -> dict:
+    try:
+        filename = f"files/agent_{agent_id}_list.json"
+        with open(filename, 'r', encoding='utf-8') as file:
+            data = file.read()
+        return json.loads(data)
+    except FileNotFoundError:
+        raise MyException528("File with item_id not found")
+
+def save_item_ids(index_agent, json_agent_return, json_agent_scheme):
+    save_to_json(index_agent, "list", json_agent_return)
+
+    # потом лучше удалить
+    save_to_json(index_agent, "scheme", json_agent_scheme)
+
+    item_ids_list = []
+    item_ids_sch = []
+    for item in json_agent_return["item_id_list"]:
+        item_ids_list.append(item["item_id"])
+    for item in json_agent_scheme:
+        item_ids_sch.append(item["item_id"])
+
+    logger.debug(f"Агент {index_agent} имеет следующие item_id: {item_ids_list}")
+    logger.debug(f"Агент {index_agent} имеет следующие item_id: {item_ids_sch}")
+
+    try:
+        if item_ids_list.sort() == item_ids_sch.sort():
+            logger.debug("Списки содержат одинаковые элементы")
+        else:
+            logger.debug("Списки содержат разные элементы")
+    except Exception as e:
+        str_error = "Error when issuing item_id :" + str(e)
+        raise MyException528(str_error)
 
 def add_metrics(json_vvk_return_metrics, json_agent_scheme_metrics):
     """
@@ -21,10 +62,11 @@ def add_metrics(json_vvk_return_metrics, json_agent_scheme_metrics):
     Raises:
         ValueError: Если метрика с таким идентификатором уже существует, но имеет различные параметры.
     """
-    metrics_list = json_vvk_return_metrics[:]
+    # metrics_list = json_vvk_return_metrics[:]
+    metrics_list = copy.deepcopy(json_vvk_return_metrics)
     for item in json_agent_scheme_metrics:
         existing_metric = next(
-            (metric for metric in json_vvk_return_metrics if metric["metric_id"] == item["metric_id"]),
+            (metric for metric in metrics_list if metric["metric_id"] == item["metric_id"]),
             None)
         if existing_metric:
             if existing_metric != item:
@@ -48,9 +90,10 @@ def add_templates(json_vvk_return_templates, json_agent_scheme_templates):
     Raises:
         ValueError: Если шаблон с таким идентификатором уже существует, но имеет различные параметры.
     """
-    templates_list = json_vvk_return_templates[:]
+    # templates_list = json_vvk_return_templates[:]
+    templates_list = copy.deepcopy(json_vvk_return_templates)
     for item in json_agent_scheme_templates:
-        existing_template = next((template for template in json_vvk_return_templates if
+        existing_template = next((template for template in templates_list if
                                   template["template_id"] == item["template_id"]), None)
         if existing_template:
             if existing_template != item:
@@ -114,6 +157,7 @@ def formation_agent_reg_scheme(agent_reg_id: str, agent_scheme: dict, join_schem
         join_scheme (dict): Схема Join.
         vvk_scheme (dict): Схема VVK.
         max_index (int): Максимальный индекс.
+        item_id_list_agent (list): Старые item_id агента.
 
     Returns:
         tuple: Кортеж, содержащий схему агента, список агентов в JSON формате и схему VVK, а так же item_id(совпадения)
@@ -131,8 +175,10 @@ def formation_agent_reg_scheme(agent_reg_id: str, agent_scheme: dict, join_schem
                 # проверка и добавление templates
                 vvk_scheme['templates'] = add_templates(vvk_scheme['templates'], agent_scheme['scheme']['templates'])
 
+                full_path_for_join_id_list = []
                 if agent_scheme["scheme"]["join_id_list"] is not None:
                     for item in agent_scheme["scheme"]["join_id_list"]:
+                        full_path_for_join_id_list.append(item['full_path'])
                         full_path_item = join_list["join_item_full_path"] + '/' + item["full_path"]
                         if check_full_path_exists(join_scheme["item_id_list"], full_path_item):
                             raise MyException427(
@@ -140,39 +186,45 @@ def formation_agent_reg_scheme(agent_reg_id: str, agent_scheme: dict, join_schem
 
                 # Формирование нового item_id_list
                 for a in agent_scheme["scheme"]["item_id_list"]:
-                    b = copy.deepcopy(a)
-                    a["full_path"] = join_list["join_item_full_path"] + '/' + a["full_path"]
-                    # изменения - вернуть старые item_id !!
-                    for item in item_id_list_agent:
-                        if item['full_path'] == a["full_path"]:
-                            a["item_id"] = item["item_id"]
-                            b["item_id"] = item["item_id"]
-                            break
+                    # проверка на корректность путей в item_id_list
+                    if a["full_path"].split('/')[0] in full_path_for_join_id_list:
+                        b = copy.deepcopy(a)
+                        a["full_path"] = join_list["join_item_full_path"] + '/' + a["full_path"]
+                        # изменения - вернуть старые item_id !!
+                        for item in item_id_list_agent:
+                            if item['full_path'] == a["full_path"]:
+                                a["item_id"] = item["item_id"]
+                                b["item_id"] = item["item_id"]
+                                break
+                        else:
+                            a["item_id"] = index
+                            b["item_id"] = index
+                            index += 1
+                        for existing_item in vvk_scheme["item_id_list"]:
+                            if existing_item["full_path"] == a["full_path"]:
+                                existing_item["item_id"] = a["item_id"]
+                                break
+                        else:
+                            vvk_scheme["item_id_list"].append(a)
+                        json_agent_list.append(b)
                     else:
-                        a["item_id"] = index
-                        b["item_id"] = index
-                        index += 1
-                    for existing_item in vvk_scheme["item_id_list"]:
-                        if existing_item["full_path"] == a["full_path"]:
-                            existing_item["item_id"] = a["item_id"]
-                            break
-                    else:
-                        vvk_scheme["item_id_list"].append(a)
-                    json_agent_list.append(b)
+                        raise MyException427(f"This element '{a['full_path']}' is not in agent_scheme[scheme][join_id_list].")
                 # Формирование нового item_info_list
                 for a in agent_scheme["scheme"]["item_info_list"]:
-                    a["full_path"] = join_list["join_item_full_path"] + '/' + a["full_path"]
-                    b = next(
-                        (b for b in vvk_scheme["item_info_list"] if
-                         b["full_path"] == a["full_path"]),
-                        None)
-                    if b:
-                        b.update(a)
+                    # проверка на корректность путей в item_info_list
+                    if a["full_path"].split('/')[0] in full_path_for_join_id_list:
+                        a["full_path"] = join_list["join_item_full_path"] + '/' + a["full_path"]
+                        for b in vvk_scheme["item_info_list"]:
+                            if a["full_path"] == b["full_path"]:
+                                b.update(a)
+                                break
+                        else:
+                            vvk_scheme["item_info_list"].append(a)
                     else:
-                        vvk_scheme["item_info_list"].append(a)
-
-            # если тип подключения jtExclude
+                        raise MyException427(f"This element '{a['full_path']}' is not in agent_scheme[scheme][item_info_list].")
+            # если тип подключения jtAssign
             if join_list["join_type"] == "jtAssign":
+                full_path_for_join_id_list = []
                 # проверка и добавление metrics
                 vvk_scheme['metrics'] = add_metrics(vvk_scheme['metrics'], agent_scheme['scheme']['metrics'])
                 # проверка и добавление templates
@@ -181,16 +233,33 @@ def formation_agent_reg_scheme(agent_reg_id: str, agent_scheme: dict, join_schem
                 if len(join_list["joins"]) != len(agent_scheme["scheme"]["join_id_list"]):
                     raise MyException427("Error registering agent for connection type 'jtAssign': different number of join_id_list.")
 
-                # проходимся по join_id_list в json_agent_scheme
+                # формируем full_path_for_join_id_list для проверки корректности путей
                 for join_id_list_scheme in join_list["joins"]:
-                    join_id_list_agent = next(
+                    item_join_id_list_agent = next(
                         (join_id_list_agent for join_id_list_agent in agent_scheme["scheme"]["join_id_list"]
                          if join_id_list_scheme["agent_item_join_id"] == join_id_list_agent["join_id"]), None)
-                    if join_id_list_agent:
+                    full_path_for_join_id_list.append(item_join_id_list_agent["full_path"])
 
-                        # формирование списка item_id_list
+                # проверка на корректность путей в item_id_list
+                agent_scheme_copy_item_id_list = copy.deepcopy(agent_scheme["scheme"]["item_id_list"])
+                for a in agent_scheme_copy_item_id_list:
+                    if a["full_path"].split('/')[0] not in full_path_for_join_id_list:
+                        raise MyException427(f"This element '{a['full_path']}' is not in agent_scheme[scheme][join_id_list].")
+
+                # проверка на корректность путей в item_info_list
+                agent_scheme_copy_item_info_list = copy.deepcopy(agent_scheme["scheme"]["item_info_list"])
+                for a in agent_scheme_copy_item_info_list:
+                    if a["full_path"].split('/')[0] not in full_path_for_join_id_list:
+                        raise MyException427(f"This element '{a['full_path']}' is not in agent_scheme[scheme][item_info_list].")
+
+                # проходимся по join_id_list в json_agent_scheme
+                for join_id_list_scheme in join_list["joins"]:
+                    item_join_id_list_agent = next(
+                        (join_id_list_agent for join_id_list_agent in agent_scheme["scheme"]["join_id_list"]
+                         if join_id_list_scheme["agent_item_join_id"] == join_id_list_agent["join_id"]), None)
+                    if item_join_id_list_agent:
                         for a in agent_scheme["scheme"]["item_id_list"]:
-                            if a["full_path"].split('/')[0] == join_id_list_agent["full_path"]:
+                            if a["full_path"].split('/')[0] == item_join_id_list_agent["full_path"]:
                                 b = copy.deepcopy(a)
                                 a["full_path"] = join_id_list_scheme["join_item_full_path"] + a[
                                     "full_path"].replace(
@@ -214,21 +283,19 @@ def formation_agent_reg_scheme(agent_reg_id: str, agent_scheme: dict, join_schem
 
                         # формирование списка item_info_list
                         for a in agent_scheme["scheme"]["item_info_list"]:
-                            if a["full_path"] == join_id_list_agent["full_path"]:
+                            if a["full_path"].split('/')[0] == item_join_id_list_agent["full_path"]:
                                 a["full_path"] = join_id_list_scheme["join_item_full_path"] + a[
                                     "full_path"].replace(
                                     a["full_path"].split('/')[0], "", 1)
-                                b = next(
-                                    (b for b in vvk_scheme["item_info_list"] if
-                                     b["full_path"] == a["full_path"]),
-                                    None)
-                                if b:
-                                    b.update(a)
+                                for b in vvk_scheme["item_info_list"]:
+                                    if a["full_path"] == b["full_path"]:
+                                        b.update(a)
+                                        break
                                 else:
                                     vvk_scheme["item_info_list"].append(a)
 
                     else:
-                        raise MyException427(f"No join_id:{join_id_list_scheme['agent_item_join_id']} in join_id_list")
+                        raise MyException427(f"No join_id:{join_id_list_scheme['agent_item_join_id']} in join_id_list in Agent")
     return agent_scheme, json_agent_list, vvk_scheme, index
 
 def delete_metric_info(metric_info, item_id_agent, metrics_id_agent):
@@ -281,25 +348,7 @@ def add_metric_info_list_dict(metric_info, metric_info_agent):
         }
         return metric_info_list_dict
 
-def getting_old_item_ids(agent_id: int, scheme: dict, scheme_old: dict) -> dict:
-    # print(scheme["item_id_list"])
-    # print("_____________")
-    # print(scheme_old["item_id_list"])
-    # print("_____________")
-    for item2 in scheme_old["item_id_list"]:
-        for item1 in scheme["item_id_list"]:
-            if item2['full_path'].endswith(item1['full_path']):
-                item1['item_id'] = item2['item_id']
-    json_agent_return = {
-        "agent_id": agent_id,
-        "item_id_list": scheme["item_id_list"]
-    }
-    # print(json_agent_return)
-    return json_agent_return
-
 # ___________ работа только с БД _________
-
-# !!!
 def registration_agent_reg_id_scheme(agent_reg_id: str, all_agent_scheme: dict, db: Database):
     """
         Регистрирует агента.
@@ -326,30 +375,30 @@ def registration_agent_reg_id_scheme(agent_reg_id: str, all_agent_scheme: dict, 
     agent_scheme, json_agent_list, vvk_scheme_new, max_index = formation_agent_reg_scheme(agent_reg_id, all_agent_scheme_copy,
                                                                                join_scheme, vvk_scheme, max_index, [])
 
-    db.gui_update_vvk_reg_none(scheme_revision_vvk + 1, user_query_interval_revision)
-    # может и не надо +1 - может быть ошибка при регистрации агента, когда схема ВВК зарегистрирована
-    db.reg_sch_update_vvk_scheme(scheme_revision_vvk + 1, vvk_scheme_new, max_index, metric_info_list_raw)
+    db.gui_update_vvk_reg_none(scheme_revision_vvk, user_query_interval_revision)
+    db.reg_sch_update_vvk_scheme(scheme_revision_vvk, vvk_scheme_new, max_index, metric_info_list_raw)
 
-    index = db.reg_sch_select_count_agents() + 1
+    index_agent = db.reg_sch_select_max_index_agents() + 1
     json_agent_return = {
-        "agent_id": index,
+        "agent_id": index_agent,
         "item_id_list": json_agent_list
     }
 
-    db.gui_update_agent_reg_id_reg_true(index, agent_reg_id, all_agent_scheme["scheme_revision"])
-    db.reg_sch_insert_agent(index, agent_reg_id, all_agent_scheme["scheme_revision"], user_query_interval_revision, all_agent_scheme["scheme"], agent_scheme["scheme"])
+    save_item_ids(index_agent, json_agent_return, agent_scheme["scheme"]["item_id_list"])
+
+    db.gui_update_agent_reg_id_reg_true(index_agent, agent_reg_id, all_agent_scheme["scheme_revision"])
+    db.reg_sch_insert_agent(index_agent, agent_reg_id, all_agent_scheme["scheme_revision"], user_query_interval_revision, all_agent_scheme["scheme"], agent_scheme["scheme"])
 
     # SCH - случай когда ввк схема зарегистрированна!
     vvk_id = db.sch_ver_select_check_vvk_id()
 
     if vvk_id:
         if db.sch_ver_select_latest_status():
-            db.sch_ver_insert_vvk(False, vvk_id, scheme_revision_vvk + 1, user_query_interval_revision,
+            db.sch_ver_insert_vvk(False, vvk_id, scheme_revision_vvk, user_query_interval_revision,
                                   vvk_scheme_new, metric_info_list_raw)
         else:
-            db.sch_ver_update_vvk_if_false(scheme_revision_vvk + 1, user_query_interval_revision,
+            db.sch_ver_update_vvk_if_false(scheme_revision_vvk, user_query_interval_revision,
                                   vvk_scheme_new, metric_info_list_raw)
-            print("RERERERERERER")
 
     db.reg_sch_block_false()
     return json_agent_return
@@ -379,15 +428,18 @@ def re_registration_agent_id_scheme(agent_id: int, agent_reg_id: str, all_agent_
 
     # получение данных с помощью которых будет производиться очистка
     metrics_list_excluding_agent = db.reg_sch_select_metrics_excluding_agent(agent_id)
+
     templates_list_excluding_agent = db.reg_sch_select_templates_excluding_agent(agent_id)
-    # !!!!!ИЗМЕНЕНИЯ
+    templates_list_JoinScheme = db.reg_sch_select_vvk_templates()
+    templates_list_excluding_agent.extend(templates_list_JoinScheme)
+
     item_id_list_agent = db.reg_sch_select_agent_item_id_list(agent_id)
     full_paths_agent = []
     item_id_agent = []
     for item in item_id_list_agent:
         full_paths_agent.append(item["full_path"])
         item_id_agent.append(item["item_id"])
-    _, _, metrics_id_agent, _ = db.reg_sch_select_metrics_and_items(agent_id)
+    _, _, metrics_id_agent, _ = db.reg_sch_select_metrics_and_items_for_agent(agent_id)
 
     # очистка схемы ВВК от агента !
     templates_new = delete_templates(vvk_scheme["templates"], templates_list_excluding_agent)
@@ -403,8 +455,11 @@ def re_registration_agent_id_scheme(agent_id: int, agent_reg_id: str, all_agent_
         "item_info_list": item_info_list_new,
     }
 
+    save_to_json(51, "clear", vvk_scheme_after_cleaning)
+
     # а потом зарегистрировать заново агент, используя старый метод!
-    agent_scheme, json_agent_list, vvk_scheme_new, max_index = formation_agent_reg_scheme(agent_reg_id, all_agent_scheme,
+    all_agent_scheme_copy = copy.deepcopy(all_agent_scheme)
+    agent_scheme, json_agent_list, vvk_scheme_new, max_index = formation_agent_reg_scheme(agent_reg_id, all_agent_scheme_copy,
                                                                                join_scheme, vvk_scheme_after_cleaning,
                                                                                max_index, item_id_list_agent)
 
@@ -422,7 +477,9 @@ def re_registration_agent_id_scheme(agent_id: int, agent_reg_id: str, all_agent_
         "item_id_list": json_agent_list
     }
 
-    db.gui_update_agent_id_reg_true(agent_id, all_agent_scheme["scheme_revision"])
+    save_item_ids(agent_id, json_agent_return, agent_scheme["scheme"]["item_id_list"])
+
+    db.gui_update_agent_id_re_reg_true(agent_id, all_agent_scheme["scheme_revision"])
     db.reg_sch_update_agent_re_reg(agent_id, all_agent_scheme["scheme_revision"], user_query_interval_revision,
                                    all_agent_scheme["scheme"], agent_scheme["scheme"])
 
@@ -436,7 +493,6 @@ def re_registration_agent_id_scheme(agent_id: int, agent_reg_id: str, all_agent_
         else:
             db.sch_ver_update_vvk_if_false(scheme_revision_vvk + 1, user_query_interval_revision,
                                   vvk_scheme_new, metric_info_list_dict)
-            print("RERERERERERER")
 
     db.reg_sch_block_false()
     return json_agent_return

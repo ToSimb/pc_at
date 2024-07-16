@@ -87,10 +87,41 @@ class Reg_sch:
             logger.error("DB(reg_sch): reg_sch_select_vvk_full: %s", e)
             raise e
 
-    # __ AGENTS __
-    def reg_sch_select_count_agents(self) -> int:
+    def reg_sch_select_vvk_templates(self) -> list:
         """
-            SQL-запрос: количество зарегистрированных агентов.
+            SQL-запрос для выбора уникальных template_id JoinScheme.
+
+        Args:
+            agent_id (int): Идентификатор агента, template_id которого исключаются.
+
+        Returns:
+            list: Список уникальных template_id, за исключением шаблонов указанного агента.
+
+        Raises:
+            Exception: Если произошла ошибка при выполнении запроса к базе данных.
+        """
+        try:
+            cur = self.conn.cursor()
+            sql_select = """
+                    SELECT DISTINCT jsonb_array_elements(original_scheme->'templates')->>'template_id' AS template_id
+                    FROM reg_sch
+                    WHERE type_id = False;
+                """
+            cur.execute(sql_select, )
+            result = cur.fetchall()
+            if result:
+                return [row[0] for row in result]
+            else:
+                return []
+        except Exception as e:
+            self.conn.rollback()
+            logger.error("DB(reg_sch): reg_sch_select_vvk_templates: %s", e)
+            raise e
+
+    # __ AGENTS __
+    def reg_sch_select_max_index_agents(self) -> int:
+        """
+            SQL-запрос: на получение максимального зарегистрированного индекса среди агентов.
 
         Returns:
             int: Количество зарегистрированных агентов в базе данных.
@@ -141,7 +172,7 @@ class Reg_sch:
             logger.error("DB(reg_sch): reg_sch_select_agents_all: %s", e)
             raise e
 
-    def reg_sch_select_metrics_and_items(self, agent_id: int) -> tuple:
+    def reg_sch_select_metrics_and_items_for_agent(self, agent_id: int) -> tuple:
         """
             SQL-запрос для получения metric_id и item_id для заданного агента.
 
@@ -162,15 +193,13 @@ class Reg_sch:
                          f"jsonb_array_elements(scheme->'metrics')->>'metric_id' AS metric_id, "
                          f"jsonb_array_elements(scheme->'item_id_list')->>'item_id' AS item_id "
                          f"FROM reg_sch "
-                         f"WHERE number_id = {agent_id};")
+                         f"WHERE number_id = {agent_id} AND type_id = TRUE; ")
             cur.execute(sql_query)
             result = cur.fetchall()
             self.conn.commit()
             if result:
                 scheme_revision = result[0][0]
                 user_query_interval_revisions = result[0][1]
-                # metrics_id = [row[2] for row in result]
-                # items_id = [row[3] for row in result]
                 metrics_id = [row[2] for row in result if row[2] is not None]
                 items_id = [row[3] for row in result if row[3] is not None]
                 return scheme_revision, user_query_interval_revisions, metrics_id, items_id
@@ -181,7 +210,7 @@ class Reg_sch:
 
     def reg_sch_select_agent_scheme(self, agent_id: int) -> tuple:
         """
-            SQL-запрос на получение всей информации о агенте.
+            SQL-запрос на получение всей информации об агенте.
 
         Args:
             agent_id (int): Идентификатор агента, для которого необходимо извлечь данные.
@@ -195,7 +224,8 @@ class Reg_sch:
         """
         try:
             cur = self.conn.cursor()
-            sql_select = "SELECT scheme_revision, user_query_interval_revision, original_scheme, scheme FROM reg_sch WHERE number_id = %s"
+            sql_select = ("SELECT scheme_revision, user_query_interval_revision, original_scheme, scheme FROM reg_sch "
+                          "WHERE number_id = %s AND type_id = True; ")
             cur.execute(sql_select, (agent_id,))
             data = cur.fetchone()
             self.conn.commit()
@@ -225,7 +255,8 @@ class Reg_sch:
         """
         try:
             cur = self.conn.cursor()
-            sql_select = f"SELECT scheme_revision, user_query_interval_revision FROM reg_sch WHERE number_id = {agent_id}"
+            sql_select = (f"SELECT scheme_revision, user_query_interval_revision FROM reg_sch "
+                          f"WHERE number_id = {agent_id} AND type_id = True; ")
             cur.execute(sql_select, )
             data = cur.fetchone()
             self.conn.commit()
@@ -254,7 +285,8 @@ class Reg_sch:
         """
         try:
             cur = self.conn.cursor()
-            sql_select = f"SELECT agent_reg_id, scheme_revision FROM reg_sch WHERE number_id = {agent_id}"
+            sql_select = (f"SELECT agent_reg_id, scheme_revision FROM reg_sch "
+                          f"WHERE number_id = {agent_id} AND type_id = True; ")
             cur.execute(sql_select, )
             result = cur.fetchone()
             self.conn.commit()
@@ -282,7 +314,8 @@ class Reg_sch:
         """
         try:
             cur = self.conn.cursor()
-            sql_select = f"SELECT user_query_interval_revision FROM reg_sch WHERE number_id = {agent_id}"
+            sql_select = (f"SELECT user_query_interval_revision FROM reg_sch "
+                          f"WHERE number_id = {agent_id} AND type_id = True; ")
             cur.execute(sql_select)
             data = cur.fetchone()
             self.conn.commit()
@@ -291,9 +324,10 @@ class Reg_sch:
             else:
                 return None
         except Exception as e:
-            logger.error("DB(reg_sch): reg_sch_select_agent_details: %s", e)
+            logger.error("DB(reg_sch): reg_sch_select_agent_user_q: %s", e)
             raise e
 
+    # ТУТ НАДО БЫТЬ ОСТОРОЖНЫМ 14.07
     def reg_sch_select_templates_excluding_agent(self, agent_id: int) -> list:
         """
             SQL-запрос для выбора уникальных template_id, исключая шаблоны указанного агента.
@@ -312,7 +346,7 @@ class Reg_sch:
             sql_select = """
                     SELECT DISTINCT jsonb_array_elements(original_scheme->'templates')->>'template_id' AS template_id
                     FROM reg_sch
-                    WHERE number_id != %s
+                    WHERE number_id != %s AND type_id = True;
                 """
             cur.execute(sql_select, (agent_id,))
             result = cur.fetchall()
@@ -375,7 +409,7 @@ class Reg_sch:
             sql_select = """
                     SELECT jsonb_array_elements(scheme->'item_id_list') AS item_id_list
                     FROM reg_sch
-                    WHERE number_id = %s
+                    WHERE number_id = %s AND type_id = True
                 """
             cur.execute(sql_select, (agent_id,))
             result = cur.fetchall()
@@ -389,7 +423,6 @@ class Reg_sch:
             raise e
 
     # __ Insert __
-    # !!!
     def reg_sch_insert_vvk(self, scheme_revision: int, original_scheme: dict, scheme: dict, max_index: int, metric_info_list: dict) -> bool:
         """
             SQL-запрос для вставки информации о схеме ВВК, включая ревизию схемы,
@@ -399,6 +432,7 @@ class Reg_sch:
             scheme_revision (int): Ревизия схемы.
             original_scheme (dict): Оригинальная схема в виде словаря.
             scheme (dict): Текущая схема в виде словаря.
+            max_index (int): Максимальный индекс для item_id.
             metric_info_list (dict): Список метрик инфо в виде словаря.
 
         Returns:
@@ -410,8 +444,8 @@ class Reg_sch:
         try:
             cur = self.conn.cursor()
             sql_insert_scheme = (
-                "INSERT INTO reg_sch (type_id, number_id, scheme_revision, user_query_interval_revision, original_scheme, scheme, max_index, metric_info_list) "
-                "VALUES (FALSE, 0, %s, %s, %s, %s, %s, %s);")
+                "INSERT INTO reg_sch (type_id, scheme_revision, user_query_interval_revision, original_scheme, scheme, max_index, metric_info_list) "
+                "VALUES (FALSE, %s, %s, %s, %s, %s, %s);")
             cur.execute(sql_insert_scheme, (scheme_revision, 0, json.dumps(original_scheme), json.dumps(scheme), max_index, json.dumps(metric_info_list)))
             self.conn.commit()
             logger.info("DB(reg_sch): VvkScheme зарегистрирована")
@@ -421,7 +455,6 @@ class Reg_sch:
             logger.error("DB(reg_sch): reg_sch_insert_vvk: %s", e)
             raise e
 
-    # !!!
     def reg_sch_insert_agent(self, number_id: int, agent_reg_id: str, scheme_revision: int,
                              user_query_interval_revision: int, original_scheme: dict, scheme: dict) -> bool:
         """
@@ -458,7 +491,6 @@ class Reg_sch:
             raise e
 
     # __ Update __
-    # !!!
     def reg_sch_update_vvk_scheme(self, scheme_revision: int, scheme: dict, max_index: int, metric_info_list: dict) -> bool:
         """
             SQL-запрос: Обновляет схему VVK в таблице.
@@ -508,7 +540,8 @@ class Reg_sch:
         """
         try:
             cur = self.conn.cursor()
-            sql_update_scheme = "UPDATE reg_sch SET scheme_revision = %s, original_scheme = %s, scheme = %s, max_index = %s, metric_info_list = %s WHERE type_id = FALSE;"
+            sql_update_scheme = ("UPDATE reg_sch SET scheme_revision = %s, original_scheme = %s, scheme = %s, max_index = %s, metric_info_list = %s "
+                                 "WHERE type_id = FALSE;")
             cur.execute(sql_update_scheme, (scheme_revision, json.dumps(original_scheme), json.dumps(scheme), max_index, json.dumps(metric_info_list_raw),))
             logger.info("DB(reg_sch): VvkScheme-scheme изменена")
             self.conn.commit()
@@ -539,7 +572,7 @@ class Reg_sch:
         try:
             cur = self.conn.cursor()
             sql_update = (f"UPDATE reg_sch SET scheme_revision = %s, user_query_interval_revision = %s, original_scheme = %s, scheme = %s "
-                          f"WHERE number_id = {number_id}")
+                          f"WHERE number_id = {number_id} AND type_id = True")
             cur.execute(sql_update, (
             scheme_revision, user_query_interval_revision, json.dumps(original_scheme), json.dumps(scheme),))
             self.conn.commit()
@@ -566,7 +599,7 @@ class Reg_sch:
         """
         try:
             cur = self.conn.cursor()
-            sql_delete = f"DELETE FROM reg_sch WHERE number_id = {agent_id};"
+            sql_delete = f"DELETE FROM reg_sch WHERE number_id = {agent_id} AND type_id = True;"
             cur.execute(sql_delete)
             self.conn.commit()
             logger.info(f"DB(reg_sch): удален агент {agent_id}")

@@ -5,11 +5,11 @@ from deps import get_db_repo
 from registration.service import (
     registration_agent_reg_id_scheme,
     re_registration_agent_id_scheme,
-    getting_old_item_ids
+    get_to_json,
     )
 from registration.schemas import AgentScheme
 
-from myException import MyException427, MyException428, MyException429, MyException527
+from myException import MyException427, MyException428, MyException429, MyException527, MyException528
 
 from logger.logger import logger
 
@@ -44,8 +44,7 @@ def agent_scheme(agent_scheme: AgentScheme, agent_id: int = None, agent_reg_id: 
                 agent_reg_id_old, scheme_revision_old_agent = db.reg_sch_select_agent_details2(agent_id)
                 if all_agent_scheme["scheme_revision"] > scheme_revision_old_agent:
                     # Перерегистрация
-                    agent_scheme_return = re_registration_agent_id_scheme(agent_id, agent_reg_id_old, all_agent_scheme,
-                                                                          db)
+                    agent_scheme_return = re_registration_agent_id_scheme(agent_id, agent_reg_id_old, all_agent_scheme, db)
                     return agent_scheme_return
                 else:
                     error_str = f"The old version of scheme_revision is specified for the Agent {agent_id}."
@@ -57,12 +56,10 @@ def agent_scheme(agent_scheme: AgentScheme, agent_id: int = None, agent_reg_id: 
             if agent_reg_id in agents_reg_ids:
                 check_agent = db.gui_select_check_agent_reg_id(agent_reg_id)
                 if check_agent:
-                    # новый модуль!
-                    print("_________________________")
-                    scheme_revision_old, _, original_scheme_old, scheme_old = db.reg_sch_select_agent_scheme(
-                        check_agent)
+                    scheme_revision_old, _, original_scheme_old, scheme_old = db.reg_sch_select_agent_scheme(check_agent)
                     if (all_agent_scheme["scheme"] == original_scheme_old) and (scheme_revision_old == all_agent_scheme["scheme_revision"]):
-                        result = getting_old_item_ids(check_agent, all_agent_scheme["scheme"], scheme_old)
+                        result = get_to_json(check_agent)
+                        logger.info(f"Agent {check_agent} successfully returned its 'item_id'")
                         return result
                     else:
                         raise MyException428(f"This agent_reg_id '{agent_reg_id}' is already registered under agent_id = '{check_agent}' and has scheme revision = '{scheme_revision_old}'.")
@@ -74,7 +71,6 @@ def agent_scheme(agent_scheme: AgentScheme, agent_id: int = None, agent_reg_id: 
                 raise MyException429(f"There is no such agent_reg_id '{agent_reg_id}' in JoinScheme.")
         else:
             raise MyException428("The required parameters for registering an agent schema are not specified.")
-
 
     except MyException427 as e:
         error_str = str(e)
@@ -112,6 +108,15 @@ def agent_scheme(agent_scheme: AgentScheme, agent_id: int = None, agent_reg_id: 
             db.gui_update_agent_reg_id_error(agent_reg_id, error_str)
         db.reg_sch_block_false()
         raise HTTPException(status_code=527, detail={"error_msg": error_str})
+    except MyException528 as e:
+        error_str = str(e)
+        logger.error(error_str)
+        if agent_id:
+            db.gui_update_agent_id_error(agent_id, error_str)
+        if agent_reg_id:
+            db.gui_update_agent_reg_id_error(agent_reg_id, error_str)
+        db.reg_sch_block_false()
+        raise HTTPException(status_code=528, detail={"error_msg": error_str})
 
     except KeyError as e:
         error_str = f"KeyError: {e}. Could not find the key in the dictionary."

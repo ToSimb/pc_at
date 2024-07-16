@@ -75,67 +75,9 @@ class Reg_sch:
             logger.error("DB(reg_sch): reg_sch_select_vvk_scheme: %s", e)
             raise e
 
-    # __ AGENTS __
-    def reg_sch_select_number_id(self) -> list:
-        """
-            SQL-запрос: Извлекает идентификаторы всех агентов и ввк.
-
-        Returns:
-            list: Список, содержащий number_id.
-
-        Raises:
-            Exception: Если данные схемы VVK не найдены или происходит ошибка при выполнении запроса.
-        """
-        try:
-            cur = self.conn.cursor()
-            sql_select = "SELECT number_id FROM reg_sch"
-            cur.execute(sql_select)
-            result = cur.fetchall()
-
-            number_ids = [row[0] for row in result]
-
-            return number_ids
-
-        except Exception as e:
-            self.conn.rollback()
-            logger.error("DB(reg_sch): reg_sch_select_number_if: %s", e)
-            raise e
-
-    def reg_sch_select_item_ids(self, number_id: int, template_id: str) -> list:
-        """
-            SQL-запрос: Получает item_id из поля item_id_list, где full_path содержит 'agent_connection'.
-
-        Args:
-            number_id (int): Идентификатор агента.
-            template_id (str): Идентификатор шаблона для поиска.
-
-        Returns:
-            list: Список item_id или None, если данных нет.
-
-        Raises:
-            Exception: Если произошла ошибка при выполнении запроса.
-        """
-        try:
-            cur = self.conn.cursor()
-            sql_query = (f"SELECT elem->>'item_id' AS item_id "
-                         f"FROM reg_sch, jsonb_array_elements(scheme->'item_id_list') AS elem "
-                         f"WHERE number_id = {number_id} "
-                         f"AND elem->>'full_path' LIKE '%{template_id}%'; ")
-            cur.execute(sql_query)
-            rows = cur.fetchall()
-            self.conn.commit()
-            if not rows:
-                return None
-            item_ids = [int(row[0]) for row in rows]
-            return item_ids
-        except Exception as e:
-            self.conn.rollback()
-            logger.error("DB(reg_sch): reg_sch_get_item_ids: %s", e)
-            raise e
-
     def reg_sch_select_query_intervals_all(self, metric_id: str) -> int:
         """
-            SQL-запрос: Получает query_interval из поля metrics 'connection.agent'.
+            SQL-запрос: Получает query_interval из поля metrics - 'connection.agent'.
 
         Args:
             metric_id (str): Идентификатор метрики для поиска.
@@ -167,9 +109,9 @@ class Reg_sch:
             logger.error("DB(reg_sch): reg_sch_get_query_intervals: %s", e)
             raise e
 
-    def reg_sch_select_query_intervals_by_item_id(self, item_id:int,  metric_id: str) -> int:
+    def reg_sch_select_user_query_intervals_by_item_id(self, item_id: int, metric_id: str) -> int:
         """
-            SQL-запрос: Получает query_interval из поля metrics 'connection.agent'.
+            SQL-запрос: Получает user_query_interval из поля metric_info_list - 'connection.agent'.
 
         Args:
             item_id (int): Идентификатор объекта для поиска.
@@ -201,6 +143,40 @@ class Reg_sch:
         except Exception as e:
             self.conn.rollback()
             logger.error("DB(reg_sch): reg_sch_get_query_intervals: %s", e)
+            raise e
+
+    # __ AGENTS __
+    def reg_sch_select_item_ids(self, number_id: int, template_id: str) -> list:
+        """
+            SQL-запрос: Получает item_id из поля item_id_list, где full_path содержит 'agent_connection'.
+
+        Args:
+            number_id (int): Идентификатор агента.
+            template_id (str): Идентификатор шаблона для поиска.
+
+        Returns:
+            list: Список item_id или None, если данных нет.
+
+        Raises:
+            Exception: Если произошла ошибка при выполнении запроса.
+        """
+        try:
+            cur = self.conn.cursor()
+            sql_query = (f"SELECT elem->>'item_id' AS item_id "
+                         f"FROM reg_sch, jsonb_array_elements(scheme->'item_id_list') AS elem "
+                         f"WHERE number_id = {number_id} "
+                         f"AND type_id = TRUE "
+                         f"AND elem->>'full_path' LIKE '%{template_id}%'; ")
+            cur.execute(sql_query)
+            rows = cur.fetchall()
+            self.conn.commit()
+            if not rows:
+                return None
+            item_ids = [int(row[0]) for row in rows]
+            return item_ids
+        except Exception as e:
+            self.conn.rollback()
+            logger.error("DB(reg_sch): reg_sch_get_item_ids: %s", e)
             raise e
 
 
@@ -251,7 +227,7 @@ class Reg_sch:
             sql_update = f"UPDATE reg_sch SET user_query_interval_revision = {user_query_interval_revision};"
             cur.execute(sql_update)
             self.conn.commit()
-            logger.info("DB(reg_sch): значение user_query_interval_revision успешно изменено")
+            logger.info(f"DB(reg_sch): значение user_query_interval_revision на {user_query_interval_revision} успешно изменено")
             return True
         except Exception as e:
             self.conn.rollback()

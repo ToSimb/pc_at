@@ -121,9 +121,9 @@ user_query_interval_revision = 2
 if vvk_id:
     if227 = request_conn(vvk_id, user_query_interval_revision)
     if if227 is None:
-        db.gui_update_check_number_id_false(vvk_id)
+        db.gui_update_vvk_check_number_id_false(vvk_id)
     else:
-        db.gui_update_check_number_id_tru(vvk_id)
+        db.gui_update_vvk_check_number_id_tru(vvk_id)
         if if227:
             get_metric_info(vvk_id)
 else:

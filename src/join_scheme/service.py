@@ -2,7 +2,6 @@ import copy
 
 from database.database import Database
 
-# !!!
 def if_metric_info(metric_info: dict) -> list:
     """
     Возвращает 'metric_info_list' из словаря metric_info, если оно существует.
@@ -23,7 +22,6 @@ def if_metric_info(metric_info: dict) -> list:
 
     return metric_info_list
 
-# !!!
 def add_metrics(json_vvk_return_metrics, json_agent_scheme_metrics):
     """
         Добавляет метрики из схемы агента в список метрик схемы VVK, если они отсутствуют.
@@ -38,21 +36,19 @@ def add_metrics(json_vvk_return_metrics, json_agent_scheme_metrics):
     Raises:
         ValueError: Если метрика с таким идентификатором уже существует, но имеет различные параметры.
     """
-    metrics_list = json_vvk_return_metrics[:]
+    # metrics_list = json_vvk_return_metrics[:]
+    metrics_list = copy.deepcopy(json_vvk_return_metrics)
     for item in json_agent_scheme_metrics:
         existing_metric = next(
-            (metric for metric in json_vvk_return_metrics if metric["metric_id"] == item["metric_id"]),
+            (metric for metric in metrics_list if metric["metric_id"] == item["metric_id"]),
             None)
         if existing_metric:
             if existing_metric != item:
-                raise ValueError(
-                    "Ошибка: Метрика с идентификатором '{}' уже существует, но имеет различные параметры".format(
-                        item["metric_id"]))
+                raise ValueError(f"Metric_id: {item['metric_id']} already exists, but has different parameters.")
         else:
             metrics_list.append(item)
     return metrics_list
 
-# !!!
 def add_templates(json_vvk_return_templates, json_agent_scheme_templates):
     """
         Добавляет шаблоны из схемы агента в список шаблонов схемы VVK, если они отсутствуют.
@@ -67,20 +63,18 @@ def add_templates(json_vvk_return_templates, json_agent_scheme_templates):
     Raises:
         ValueError: Если шаблон с таким идентификатором уже существует, но имеет различные параметры.
     """
-    templates_list = json_vvk_return_templates[:]
+    # templates_list = json_vvk_return_templates[:]
+    templates_list = copy.deepcopy(json_vvk_return_templates)
     for item in json_agent_scheme_templates:
-        existing_template = next((template for template in json_vvk_return_templates if
+        existing_template = next((template for template in templates_list if
                                   template["template_id"] == item["template_id"]), None)
         if existing_template:
             if existing_template != item:
-                raise ValueError(
-                    "Ошибка: Шаблон с идентификатором '{}' уже существует, но имеет различные параметры".format(
-                        item["template_id"]))
+                raise ValueError(f"Template_id: {item['template_id']} already exists, but has different parameters.")
         else:
             templates_list.append(item)
     return templates_list
 
-# !!!
 def check_full_path_exists(item_list, target_path):
     """
         Проверяет, существует ли указанный путь в списке 'item_id_list' join схемы.
@@ -98,7 +92,6 @@ def check_full_path_exists(item_list, target_path):
             return False
     return True
 
-# !!!
 def formation_agent_update_join(agent_scheme: dict, join_scheme: dict, vvk_scheme: dict):
     """
         Обновляет схему VVK на основе схемы агента и join схемы.
@@ -131,7 +124,7 @@ def formation_agent_update_join(agent_scheme: dict, join_scheme: dict, vvk_schem
                         full_path_item = join_list["join_item_full_path"] + '/' + item["full_path"]
                         if check_full_path_exists(join_scheme["item_id_list"], full_path_item):
                             raise ValueError(
-                                f"При попытки регистрации агента по типу соединения 'jtInclude' не был найден путь в Jion: {full_path_item}")
+                                f"Error registering agent for connection type 'jtInclude': path was not found in Jion: {full_path_item}")
 
                 # Формирование нового item_id_list
                 for a in agent_scheme["scheme"]["item_id_list"]:
@@ -153,7 +146,7 @@ def formation_agent_update_join(agent_scheme: dict, join_scheme: dict, vvk_schem
                     else:
                         vvk_scheme["item_info_list"].append(a)
 
-            # если тип подключения jtExclude
+            # если тип подключения jtAssign
             if join_list["join_type"] == "jtAssign":
                 # проверка и добавление metrics
                 vvk_scheme['metrics'] = add_metrics(vvk_scheme['metrics'], agent_scheme['scheme']['metrics'])
@@ -161,7 +154,7 @@ def formation_agent_update_join(agent_scheme: dict, join_scheme: dict, vvk_schem
                 vvk_scheme['templates'] = add_templates(vvk_scheme['templates'], agent_scheme['scheme']['templates'])
 
                 if len(join_list["joins"]) != len(agent_scheme["scheme"]["join_id_list"]):
-                    raise ValueError("Разное количество join_id_list с JoinSheme")
+                    raise ValueError("Error registering agent for connection type 'jtAssign': different number of join_id_list.")
 
                 # проходимся по join_id_list в json_agent_scheme
                 for join_id_list_scheme in join_list["joins"]:
@@ -190,7 +183,7 @@ def formation_agent_update_join(agent_scheme: dict, join_scheme: dict, vvk_schem
                                 vvk_scheme["item_info_list"].append(a)
 
                     else:
-                        raise ValueError("Нет '{}' в join_id_list".format(
+                        raise ValueError("No join_id '{}' in join_id_list in Agent".format(
                             join_id_list_scheme["agent_item_join_id"]))
 
     return vvk_scheme
@@ -198,7 +191,6 @@ def formation_agent_update_join(agent_scheme: dict, join_scheme: dict, vvk_schem
 
 # ___________ работа только с БД _________
 
-# !!!
 def delete_metric_info_agent(agent_id: int, metric_info: dict, db: Database):
     """
         Удаляет из `metric_info` элементы принадлежащие агенту agent_id.
@@ -215,7 +207,7 @@ def delete_metric_info_agent(agent_id: int, metric_info: dict, db: Database):
     if metric_info_list == []:
         return metric_info
     else:
-        _, _, metrics_id, items_id = db.reg_sch_select_metrics_and_items(agent_id)
+        _, _, metrics_id, items_id = db.reg_sch_select_metrics_and_items_for_agent(agent_id)
         metric_info_list_new = []
         for item in metric_info_list:
             if not (str(item["item_id"]) in items_id and item["metric_id"] in metrics_id):
@@ -225,7 +217,6 @@ def delete_metric_info_agent(agent_id: int, metric_info: dict, db: Database):
         }
         return metric_info_list_dict
 
-# !!!
 def registration_join_scheme(join_scheme: dict, db: Database) -> dict:
     """
         Регистрирует схему ВВК в базе данных и возвращает ее структуру в словаре.
@@ -256,20 +247,21 @@ def registration_join_scheme(join_scheme: dict, db: Database) -> dict:
         item_id_list.append({"full_path": a["full_path"], "item_id": index})
         index += 1
     vvk_scheme["item_id_list"] = item_id_list
+
     # GUI
     vvk_puth = join_scheme["scheme"]["item_id_list"][0]["full_path"].split("/")[0]
-    vvk_name = [item for item in join_scheme["scheme"]["templates"] if item.get('template_id') == vvk_puth][0][
-        "name"]
+    vvk_name = [item for item in join_scheme["scheme"]["templates"] if item.get('template_id') == vvk_puth][0]["name"]
     agents_reg_id = [item["agent_reg_id"] for item in join_scheme["scheme"]["join_list"]]
+
     db.gui_insert_join_scheme(vvk_name, agents_reg_id)
     # REG_SCH
     metric_info_list_dict = {
         "metric_info_list": []
     }
+
     db.reg_sch_insert_vvk(join_scheme["scheme_revision"], join_scheme["scheme"], vvk_scheme, index, metric_info_list_dict)
     return vvk_scheme
 
-# !!!
 def re_registration_join_scheme(join_scheme_new, user_query_interval_revision, metric_info_list_raw,
                                 vvk_scheme_old: dict, max_index: int, db: Database) -> dict:
     """
@@ -296,17 +288,17 @@ def re_registration_join_scheme(join_scheme_new, user_query_interval_revision, m
         "item_info_list": join_scheme_new["scheme"]["item_info_list"]
     }
 
-
     index = max_index
     item_id_list = []
     item_id_list_vvk = vvk_scheme_old['item_id_list']
+
     # Формирование нового item_id_list
-    for a in join_scheme_new["scheme"]["item_id_list"]:
+    join_scheme_new_copy = copy.deepcopy(join_scheme_new)
+    for a in join_scheme_new_copy["scheme"]["item_id_list"]:
         # изменения - вернуть старые item_id !!
         for item in item_id_list_vvk:
             if item['full_path'] == a["full_path"]:
                 a["item_id"] = item["item_id"]
-
                 break
         else:
             a["item_id"] = index
@@ -329,7 +321,8 @@ def re_registration_join_scheme(join_scheme_new, user_query_interval_revision, m
         for agent in agents_all_list:
             if agent["agent_reg_id"] in agent_reg_id_new:
                 try:
-                    vvk_scheme_new = formation_agent_update_join(agent, join_scheme_new["scheme"], vvk_scheme_new)
+                    vvk_scheme_new_copy = copy.deepcopy(vvk_scheme_new)
+                    vvk_scheme_new = formation_agent_update_join(agent, join_scheme_new_copy["scheme"], vvk_scheme_new_copy)
                     db.gui_update_agent_reg_id_reg_true(agent["number_id"], agent["agent_reg_id"],
                                                         agent["scheme_revision"])
                 except Exception as e:
@@ -338,7 +331,6 @@ def re_registration_join_scheme(join_scheme_new, user_query_interval_revision, m
                                                             agent["scheme_revision"], str(e))
             else:
                 metric_info_list_raw = delete_metric_info_agent(agent["number_id"], metric_info_list_raw, db)
-
                 db.reg_sch_delete_agent(agent["number_id"])
 
     # GUI
@@ -356,7 +348,6 @@ def re_registration_join_scheme(join_scheme_new, user_query_interval_revision, m
         else:
             db.sch_ver_update_vvk_if_false(join_scheme_new["scheme_revision"], user_query_interval_revision,
                                   vvk_scheme_new, metric_info_list_raw)
-            print("RERERERERERER")
 
     db.reg_sch_block_false()
     return vvk_scheme_new

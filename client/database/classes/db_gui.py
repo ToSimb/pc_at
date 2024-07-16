@@ -17,14 +17,14 @@ class Gui:
                     vvk_name VARCHAR(50),
                     type_id BOOLEAN DEFAULT TRUE,
                     number_id INT,
-                    agent_reg_id VARCHAR(30),
+                    agent_reg_id VARCHAR(50),
                     scheme_revision INT,
                     user_query_interval_revision INT,
                     status_reg BOOLEAN,
                     time_reg TIMESTAMP,
-                    error_reg VARCHAR(250),
+                    error_reg VARCHAR(500),
                     time_value TIMESTAMP,
-                    error_value VARCHAR(250),
+                    error_value VARCHAR(500),
                     time_conn TIMESTAMP,
                     error_conn BOOLEAN DEFAULT FALSE
                 );
@@ -112,6 +112,7 @@ class Gui:
             self.conn.commit()
             return result
         except Exception as e:
+            self.conn.rollback()
             logger.error("DB(gui): gui_select_agents_details : %s", e)
             raise e
 # __ Insert __
@@ -208,9 +209,9 @@ class Gui:
                 logger.error("DB(gui): gui_update_value - vvk_id %s: %s", agent_id, e)
             raise e
 
-    def gui_update_check_number_id_tru(self, number_id: int) -> bool:
+    def gui_update_agent_check_number_id_tru(self, number_id: int) -> bool:
         """
-            SQL-запрос на обновление успешной последней проверки соединения агента/ВВК.
+            SQL-запрос на обновление успешной последней проверки соединения агента.
 
         Args:
             number_id (int): Идентификатор агента.
@@ -224,19 +225,47 @@ class Gui:
         try:
             time_conn = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             cur = self.conn.cursor()
-            sql_update_gui = "UPDATE gui SET time_conn = %s, error_conn = %s WHERE number_id = %s;"
+            sql_update_gui = ("UPDATE gui SET time_conn = %s, error_conn = %s "
+                              "WHERE number_id = %s and type_id = TRUE;")
             cur.execute(sql_update_gui, (time_conn, False, number_id))
             self.conn.commit()
-            logger.info(f"DB(gui): agent_id/VVk '{number_id}' - проверка связи успешная")
+            logger_check.info(f"DB(gui): agent_id '{number_id}' - проверка связи успешная")
             return True
         except Exception as e:
             self.conn.rollback()
-            logger.error("DB(gui): gui_update_check_number_id_tru - %s : %s", number_id, e)
+            logger_check.error("DB(gui): gui_update_agent_check_number_id_tru - %s : %s", number_id, e)
             raise e
 
-    def gui_update_check_number_id_false(self, number_id: int) -> bool:
+    def gui_update_vvk_check_number_id_tru(self, number_id: int) -> bool:
         """
-            SQL-запрос на обновление не успешной последней проверки соединения агента/ВВК.
+            SQL-запрос на обновление успешной последней проверки соединения ВВК.
+
+        Args:
+            number_id (int): Идентификатор агента.
+
+        Returns:
+            bool: Возвращает True, если обновление прошло успешно.
+
+        Raises:
+            Exception: Если произошла ошибка при выполнении запроса к базе данных.
+        """
+        try:
+            time_conn = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            cur = self.conn.cursor()
+            sql_update_gui = ("UPDATE gui SET time_conn = %s, error_conn = %s "
+                              "WHERE number_id = %s and type_id = FALSE;")
+            cur.execute(sql_update_gui, (time_conn, False, number_id))
+            self.conn.commit()
+            logger_check.info(f"DB(gui): VVk '{number_id}' - проверка связи успешная")
+            return True
+        except Exception as e:
+            self.conn.rollback()
+            logger_check.error("DB(gui): gui_update_vvk_check_number_id_tru - %s : %s", number_id, e)
+            raise e
+
+    def gui_update_agent_check_number_id_false(self, number_id: int) -> bool:
+        """
+            SQL-запрос на обновление не успешной последней проверки соединения агента.
 
         Args:
             number_id (int): Идентификатор агента.
@@ -249,14 +278,39 @@ class Gui:
         """
         try:
             cur = self.conn.cursor()
-            sql_update_gui = "UPDATE gui SET error_conn = %s WHERE number_id = %s;"
+            sql_update_gui = "UPDATE gui SET error_conn = %s WHERE number_id = %s and type_id = TRUE;"
             cur.execute(sql_update_gui, (True, number_id))
             self.conn.commit()
-            logger.info(f"DB(gui): agent_id/VVk '{number_id}' - нет связи!")
+            logger.info(f"DB(gui): agent_id '{number_id}' - нет связи!")
             return True
         except Exception as e:
             self.conn.rollback()
-            logger.error("DB(gui): gui_update_check_number_id_false - %s : %s", number_id, e)
+            logger.error("DB(gui): gui_update_agent_check_number_id_false - %s : %s", number_id, e)
+            raise e
+
+    def gui_update_vvk_check_number_id_false(self, number_id: int) -> bool:
+        """
+            SQL-запрос на обновление не успешной последней проверки соединения ВВК.
+
+        Args:
+            number_id (int): Идентификатор агента.
+
+        Returns:
+            bool: Возвращает True, если обновление прошло успешно.
+
+        Raises:
+            Exception: Если произошла ошибка при выполнении запроса к базе данных.
+        """
+        try:
+            cur = self.conn.cursor()
+            sql_update_gui = "UPDATE gui SET error_conn = %s WHERE number_id = %s and type_id = FALSE;"
+            cur.execute(sql_update_gui, (True, number_id))
+            self.conn.commit()
+            logger.info(f"DB(gui): VVK '{number_id}' - нет связи!")
+            return True
+        except Exception as e:
+            self.conn.rollback()
+            logger.error("DB(gui): gui_update_vvk_check_number_id_false - %s : %s", number_id, e)
             raise e
 
     def gui_update_all_user_query_revision(self, user_query_interval_revision: int) -> bool:
@@ -277,7 +331,7 @@ class Gui:
             sql_update = f"UPDATE gui SET user_query_interval_revision = {user_query_interval_revision};"
             cur.execute(sql_update)
             self.conn.commit()
-            logger.info("DB(gui): значение user_query_interval_revision успешно изменено")
+            logger.info(f"DB(gui): значение user_query_interval_revision успешно изменено на {user_query_interval_revision}")
             return True
         except Exception as e:
             self.conn.rollback()

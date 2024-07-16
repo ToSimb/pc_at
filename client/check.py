@@ -143,9 +143,9 @@ try:
             if227 = request_conn(vvk_id, user_query_interval_revision)
             print(if227)
             if if227 is None:
-                db.gui_update_check_number_id_false(vvk_id)
+                db.gui_update_vvk_check_number_id_false(vvk_id)
             else:
-                db.gui_update_check_number_id_tru(vvk_id)
+                db.gui_update_vvk_check_number_id_tru(vvk_id)
                 if if227:
                     get_metric_info(vvk_id)
 
@@ -168,7 +168,7 @@ try:
                                 # если не было ответа от агента больше 5 секунд - ERROR
                                 if int(start_time) - late_time > 5:
                                     status = False
-                                    db.gui_update_check_number_id_false(item[0])
+                                    db.gui_update_agent_check_number_id_false(item[0])
                                 item_ids = db.reg_sch_select_item_ids(item[0], TEMPLATES_ID)
                                 # проверка, что есть пути с контролем связи
                                 if item_ids is not None:
@@ -177,7 +177,7 @@ try:
                                         result = None
                                         # Проверка Метрик Инфо !
                                         query_interval = query_interval_all
-                                        ans = db.reg_sch_select_query_intervals_by_item_id(item_id, METRIC_ID)
+                                        ans = db.reg_sch_select_user_query_intervals_by_item_id(item_id, METRIC_ID)
                                         if ans is not None:
                                             query_interval = ans
 

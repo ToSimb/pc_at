@@ -1,4 +1,3 @@
-# !!!
 def if_metric_info(metric_info: dict) -> list:
     """
     Возвращает 'metric_info_list' из словаря metric_info, если оно существует.

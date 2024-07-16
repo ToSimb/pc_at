@@ -22,7 +22,7 @@ async def params_data(params: SchemeJson, agent_id: int, db=Depends(get_db_repo)
     try:
         if db.sch_ver_select_latest_status():
             if db.gui_select_check_agent_status_reg(agent_id):
-                scheme_revision, user_query_interval_revision, metrics, items_id = db.reg_sch_select_metrics_and_items(agent_id)
+                scheme_revision, user_query_interval_revision, metrics, items_id = db.reg_sch_select_metrics_and_items_for_agent(agent_id)
                 if scheme_revision != params.scheme_revision:
                     raise MyException428(f"Agent '{agent_id}' - invalid scheme_revision, registered: {scheme_revision}.")
                 add_params(params, agent_id, metrics, items_id, db)

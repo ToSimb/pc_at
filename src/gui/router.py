@@ -52,10 +52,11 @@ async def gui_pages_vvk(db=Depends(get_db_repo)):
         Метод для просмотра VvkScheme
     """
     try:
-        scheme_revision_vvk, user_query_interval_revision, _, vvk_scheme, _, metric_info_list = db.reg_sch_select_vvk_all()
+        scheme_revision_vvk, user_query_interval_revision, original_scheme, vvk_scheme, _, metric_info_list = db.reg_sch_select_vvk_all()
         result = {
             "scheme_revision_vvk": scheme_revision_vvk,
             "user_query_interval_revision": user_query_interval_revision,
+            "original_scheme": original_scheme,
             "scheme": vvk_scheme,
             "metric_info_list": if_metric_info(metric_info_list)
         }
@@ -113,5 +114,67 @@ async def gui_status_save(db=Depends(get_db_repo)):
         logger.info("Произведена замена статуса флага")
         db.flag_update()
         return RedirectResponse("/gui")
+    except Exception as e:
+        return (str(e))
+
+
+# _________________
+
+@router.get("/validation", response_class=HTMLResponse)
+async def gui_pages_validation(request: Request, db=Depends(get_db_repo)):
+    """
+        GUI validation
+    """
+    try:
+        return templates.TemplateResponse( request=request, name="validation.html" )
+    except Exception as e:
+        error_str = f"Exception: {e}."
+        logger.error(error_str)
+        db.reg_sch_block_false()
+        raise HTTPException(status_code=527, detail={"error_msg": error_str})
+
+@router.get("/vvk_scheme_true")
+async def gui_pages_vvk_sch_ver_true(db=Depends(get_db_repo)):
+    """
+        Метод для просмотра последней успешной зарегистрированной VvkScheme
+    """
+    try:
+        vvk_id, scheme_revision, user_query_interval_revision, status_reg, scheme, metric_info_list = db.sch_ver_select_all_vvk_if_tru()
+        result = {
+            "vvk_id": vvk_id,
+            "scheme_revision": scheme_revision,
+            "user_query_interval_revision": user_query_interval_revision,
+            "status_reg": status_reg,
+            "scheme": scheme,
+            "metric_info_list": if_metric_info(metric_info_list)
+        }
+        return result
+    except MyException427 as e:
+        error_str = f"{e}."
+        logger.error(error_str)
+        raise HTTPException(status_code=427, detail={"error_msg": error_str})
+    except Exception as e:
+        return (str(e))
+
+@router.get("/vvk_scheme_false")
+async def gui_pages_vvk_sch_ver_false(db=Depends(get_db_repo)):
+    """
+        Метод для просмотра последней успешной зарегистрированной VvkScheme
+    """
+    try:
+        vvk_id, scheme_revision, user_query_interval_revision, status_reg, scheme, metric_info_list = db.sch_ver_select_all_vvk_if_false()
+        result = {
+            "vvk_id": vvk_id,
+            "scheme_revision": scheme_revision,
+            "user_query_interval_revision": user_query_interval_revision,
+            "status_reg": status_reg,
+            "scheme": scheme,
+            "metric_info_list": if_metric_info(metric_info_list)
+        }
+        return result
+    except MyException427 as e:
+        error_str = f"{e}."
+        logger.error(error_str)
+        raise HTTPException(status_code=427, detail={"error_msg": error_str})
     except Exception as e:
         return (str(e))

@@ -27,6 +27,11 @@
         function redirectToStatusSave() {
             window.location.href = `gui/status_save`;
         }
+
+        function redirectToValidation() {
+            window.location.href = `gui/validation`;
+        }
+
     </script>
 </head>
 <body>
@@ -89,6 +94,12 @@
                             {% else %}
                                 Включить сохранение последнего АФ
                             {% endif %}
+                        </button>
+                    </div>
+                    <p></p>
+                    <div class="main__block-center flex">
+                        <button class="btn reset-btn" onclick="redirectToValidation()">
+                            Просмотр схем ВВК на стороне АФ
                         </button>
                     </div>
                 </div>

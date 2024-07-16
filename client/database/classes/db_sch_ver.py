@@ -133,27 +133,7 @@ class Sch_ver:
             logger.error("DB(sch_ver): get_latest_status: %s", e)
             raise e
 
-    # возжно приходится !?!
-    def sch_ver_select_date_create_unreg_old(self) -> int:
-        try:
-            cur = self.conn.cursor()
-            sql_select = (
-                "SELECT scheme_revision, date_create FROM sch_ver "
-                "WHERE status_reg = FALSE "
-                "ORDER BY date_create "
-                "LIMIT 1"
-            )
-            cur.execute(sql_select)
-            result = cur.fetchone()
-            if result:
-                return result[0], result[1]
-            else:
-                return None, None
-        except Exception as e:
-            self.conn.rollback()
-            logger.error("DB(sch_ver): sch_ver_select_date_create: %s", e)
-            raise e
-
+    # !!! Тут нужно подтверждение, что больше 1 незарегистрированной схемы быть не может
     def sch_ver_select_vvk_details_unreg(self) -> tuple:
         """
             SQL-запрос: Извлекает детали незарегистрированной VVK.
@@ -184,7 +164,7 @@ class Sch_ver:
 
 
 # __ Insert __
-    # !!!
+# __ Insert __
     def sch_ver_insert_vvk(self, status_reg: bool, vvk_id: int, scheme_revision: int, user_query_interval_revision: int,
                            scheme: dict, metric_info_list: dict) -> bool:
         """
@@ -220,7 +200,6 @@ class Sch_ver:
             raise e
 
 # __ Update __
-    # !!!
     def sch_ver_update_status_reg(self, scheme_revision: int) -> bool:
         """
             SQL-запрос: Обновляет статус регистрации схемы в таблице SCH_VER.
@@ -250,7 +229,6 @@ class Sch_ver:
             logger.error("DB(sch_ver): sch_ver_update_status_reg: ошибка обновления status_reg: %s", e)
             raise e
 
-    # !!!
     def sch_ver_update_all_user_query_revision(self, user_query_interval_revision: int) -> bool:
         """
             SQL-запрос: Обновляет версию интервала запроса пользователя в таблице SCH_VER для всех записей.
@@ -276,7 +254,6 @@ class Sch_ver:
             logger.error("DB(sch_ver): sch_ver_update_all_user_query_revision: %s", e)
             raise e
 
-    # !!!
     def sch_ver_update_all_metric_info(self, metric_info_list: dict) -> bool:
         """
             SQL-запрос: Обновляет metric_info_list в таблице SCH_VER для всех записей.

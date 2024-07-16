@@ -28,7 +28,7 @@ async def get_checks(agent_id: int, user_query_interval_revision: int, db=Depend
     try:
         user_q = db.reg_sch_select_agent_user_q(agent_id)
         if user_q is not None:
-            db.gui_update_check_number_id_tru(agent_id)
+            db.gui_update_agent_check_number_id_tru(agent_id)
             if user_query_interval_revision == user_q:
                 return Response(status_code=200)
             else:

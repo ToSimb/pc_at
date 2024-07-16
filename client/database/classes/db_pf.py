@@ -59,6 +59,7 @@ class Pf:
             remaining_rows = cur.fetchone()[0]
             return remaining_rows
         except Exception as e:
+            self.conn.rollback()
             logger.error("DB(pf): pf_select_count_all: %s", e)
             raise e
 
@@ -70,6 +71,7 @@ class Pf:
             record_exists = cur.fetchone() is not None
             return record_exists
         except Exception as e:
+            self.conn.rollback()
             logger.error("DB(pf): pf_has_records: %s", e)
             raise e
 
@@ -81,6 +83,7 @@ class Pf:
             unique_ids = [row[0] for row in cur.fetchall()]
             return unique_ids
         except Exception as e:
+            self.conn.rollback()
             logger.error("DB(pf): pf_select_unique_number_ids: %s", e)
             raise e
 
@@ -124,6 +127,7 @@ class Pf:
             self.conn.commit()
             return deleted_rows
         except Exception as e:
+            self.conn.rollback()
             logger.error("DB(pf): pf_delete_params: %s", e)
             raise e
 
