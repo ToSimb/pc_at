@@ -31,7 +31,34 @@ class Gui:
             logger.error("DB(gui): gui_select_agents_reg: %s", e)
             raise e
 
-    def gui_select_check_agent_reg_id(self, agent_reg_id: str) -> int:
+    def gui_select_check_agent_reg_id(self, agent_reg_id: str) -> bool:
+        """
+            Проверяет наличие записи с указанным 'agent_reg_id' в базе данных.
+
+        Args:
+            agent_reg_id (str): Идентификатор агента, по которому производится поиск.
+
+        Returns:
+            bool: True, если запись существует, False в противном случае.
+
+        Raises:
+            Exception: Если произошла ошибка при выполнении запроса к базе данных.
+        """
+        try:
+            with self.conn.cursor() as cur:
+                sql_select_check = """
+                    SELECT COUNT(*) FROM gui WHERE type_id = TRUE AND agent_reg_id = %s;
+                """
+                cur.execute(sql_select_check, (agent_reg_id,))
+                result = cur.fetchone()[0]
+                self.conn.commit()
+                return result > 0
+        except Exception as e:
+            self.conn.rollback()
+            logger.error("DB(gui): gui_select_check_agent_reg_id: %s", e)
+            raise e
+
+    def gui_select_agent_id_for_check_agent_reg_id(self, agent_reg_id: str) -> int:
         """
             SQL-запрос для получения 'number_id' агента.
 
@@ -59,7 +86,7 @@ class Gui:
                     return None
         except Exception as e:
             self.conn.rollback()
-            logger.error("DB(gui): gui_select_check_agent_reg_id: %s", e)
+            logger.error("DB(gui): gui_select_agent_id_for_check_agent_reg_id: %s", e)
             raise e
 
     def gui_select_check_agent_status_reg(self, number_id: int) -> bool:
@@ -230,6 +257,32 @@ class Gui:
             logger.error("DB(gui): gui_update_agent_id_error - agent_id %s : %s", agent_id, e)
             raise e
 
+    def gui_update_agent_id_tru(self, agent_id: int) -> bool:
+        """
+            SQL-запрос: Обновляет информацию об ошибке регистрации агента.
+
+        Args:
+            agent_id (int): Идентификатор агента.
+            error_reg (str): Ошибка, связанная с агентом.
+
+        Returns:
+            bool: Возвращает True, если обновление выполнено успешно.
+
+        Raises:
+            Exception: Если произошла ошибка при выполнении запроса к базе данных.
+        """
+        try:
+            time_reg = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            cur = self.conn.cursor()
+            sql_update_gui = "UPDATE gui SET time_reg = %s, error_reg = %s WHERE number_id = %s AND type_id = TRUE;"
+            cur.execute(sql_update_gui, (time_reg, None, agent_id))
+            self.conn.commit()
+            return True
+        except Exception as e:
+            self.conn.rollback()
+            logger.error("DB(gui): gui_update_agent_id_error - agent_id %s : %s", agent_id, e)
+            raise e
+
     def gui_update_agent_reg_id_reg_true(self, agent_id: int, agent_reg_id: str, scheme_revision: int) -> bool:
         """
             SQL-запрос на обновление статуса успешной регистрации агента.
@@ -343,7 +396,7 @@ class Gui:
 
     def gui_update_value(self, agent_id: int, error_value: str, type_id: bool) -> bool:
         """
-            SQL-запрос на обновление статуса передачи ПФ.
+            SQL-запрос на обновление статуса приема ПФ.
 
         Args:
             agent_id (int): Идентификатор агента или VVK.
@@ -374,6 +427,43 @@ class Gui:
                 logger.error("DB(gui): gui_update_value - agent_id %s: %s", agent_id, e)
             else:
                 logger.error("DB(gui): gui_update_value - vvk_id %s: %s", agent_id, e)
+            raise e
+
+    def gui_update_value_out(self, vvk_id: int, agent_id: int, error_value: str) -> bool:
+        """
+            SQL-запрос на обновление статуса отправки ПФ.
+
+        Args:
+            vvk_id (int): Идентификатор VVK.
+            agent_id (int): Идентификатор агента.
+            error_value (str): Значение ошибки, если она есть.
+
+        Returns:
+            bool: Возвращает True, если обновление успешно выполнено.
+
+        Raises:
+            Exception: Если произошла ошибка при выполнении запроса к базе данных.
+        """
+        try:
+            time_reg = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            cur = self.conn.cursor()
+            type_id = True
+            number_id = agent_id
+            if agent_id == 0:
+                type_id = False
+                number_id = vvk_id
+            sql_update_gui = "UPDATE gui SET time_value_out = %s, error_value_out = %s WHERE number_id = %s AND type_id = %s;"
+            cur.execute(sql_update_gui, (time_reg, error_value, number_id, type_id))
+            self.conn.commit()
+            if error_value:
+                if type_id:
+                    logger.error(f"DB(gui): ошибка отправки ПФ agent_id '{agent_id}': {error_value}")
+                else:
+                    logger.error(f"DB(gui): ошибка отправки ПФ vvk_id '{agent_id}': {error_value}")
+            return True
+        except Exception as e:
+            self.conn.rollback()
+            logger.error("DB(gui): gui_update_value_out - vvk_id/agent_id %s/%s: %s", vvk_id, agent_id, e)
             raise e
 
     # __ Delete __

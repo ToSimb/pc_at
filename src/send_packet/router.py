@@ -19,7 +19,7 @@ router = APIRouter(
 @router.get("")
 async def send_packet(number_id: int, db=Depends(get_db_repo)):
     """
-        Метод для отправки пакета в АТ по agent_id/vvk_id.
+        Метод для отправки пакета в АФ по agent_id/vvk_id.
     """
     try:
         start_time = time.time()
@@ -30,12 +30,12 @@ async def send_packet(number_id: int, db=Depends(get_db_repo)):
         value = parse_value(params)
         pars_time = time.time()
         vvk_id, result = forming_packet(value, db)
-        response_code = await send_value_to_url(vvk_id, result, db)
+        response_code = await send_value_to_url(vvk_id, number_id, result, db)
         response_time = time.time()
         if response_code:
             deleted_rows = db.pf_delete_records(result_id)
             delete_time = time.time()
-            db.gui_update_value(vvk_id, None, False)
+            db.gui_update_value_out(vvk_id, number_id, None)
             logger_send.info("________________" + "\n"
                     + "Number_id:                 " + str(number_id) + "\n"
                     + "Количество ПФ:             " + str(len_pf) + "\n"

@@ -128,6 +128,31 @@ class Pf:
             return deleted_rows
         except Exception as e:
             self.conn.rollback()
+            logger.error("DB(pf): pf_delete_params_by_time: %s", e)
+            raise e
+
+    def pf_delete_params(self) -> int:
+        try:
+            cur = self.conn.cursor()
+            sql_delete_params = f"DELETE FROM pf;"
+            cur.execute(sql_delete_params)
+            deleted_rows = cur.rowcount
+            self.conn.commit()
+            return deleted_rows
+        except Exception as e:
+            self.conn.rollback()
             logger.error("DB(pf): pf_delete_params: %s", e)
             raise e
 
+    def pf_delete_params_by_agent(self, number_id: int) -> int:
+        try:
+            cur = self.conn.cursor()
+            sql_delete_params = f"DELETE FROM pf WHERE number_id = {number_id};"
+            cur.execute(sql_delete_params)
+            deleted_rows = cur.rowcount
+            self.conn.commit()
+            return deleted_rows
+        except Exception as e:
+            self.conn.rollback()
+            logger.error("DB(pf): pf_delete_params_by_agent: %s", e)
+            raise e

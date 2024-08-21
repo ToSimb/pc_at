@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>GUI</title>
+    <link href="{{ url_for('static', path='/styles.css') }}" rel="stylesheet">
+
+    <script>
+
+        function redirectToJoinScheme() {
+            window.location.href = `join_scheme`;
+        }
+
+        function redirectToVvkScheme() {
+            window.location.href = `vvk_scheme`;
+        }
+
+        function redirectToAllScheme() {
+            window.location.href = `all_scheme`;
+        }
+
+        function redirectToSchemeVvkTrue() {
+            window.location.href = `vvk_scheme_true`;
+        }
+
+        function redirectToSchemeVvkFalse() {
+            window.location.href = `vvk_scheme_false`;
+        }
+
+        function redirectToDeletePfAll() {
+            window.location.href = `delete_pf`;
+        }
+
+        function redirectToBack() {
+            window.location.href = "{{ url_for('gui_pages') }}";
+        }
+    </script>
+</head>
+<body>
+<main class="main">
+    <div class="container">
+        <div class="main__vvk border">
+            <h1>Дополнительные действия с VvkScheme</h1>
+            <div class="border border-mini">
+                <h2>Schemes</h2>
+                <div class="main__block-center flex">
+                    <button class="btn reset-btn" onclick="redirectToJoinScheme()">
+                        Join Scheme
+                    </button>
+                    <button class="btn reset-btn" onclick="redirectToVvkScheme()">
+                        Vvk Scheme
+                    </button>
+                    <button class="btn reset-btn" onclick="redirectToAllScheme()">
+                        All Scheme
+                    </button>
+                </div>
+            </div>
+            <div class="border border-mini">
+                <h2>Просмотр схем ВВК на стороне АФ</h2>
+                <div class="main__block-center flex">
+                    <button class="btn reset-btn" onclick="redirectToSchemeVvkTrue()">
+                        Посмотреть последнюю зарегистрированную схему ВВК на стороне АФ
+                    </button>
+                </div>
+                <p></p>
+                <div class="main__block-center flex">
+                    <button class="btn reset-btn" onclick="redirectToSchemeVvkFalse()">
+                        Посмотреть не зарегистрированную схему ВВК на стороне АФ
+                    </button>
+                </div>
+                <h2>Удаление ПФ</h2>
+                <div class="main__block-center flex">
+                    <button class="btn reset-btn" onclick="redirectToDeletePfAll()">
+                        Удаление всех имеющихся ПФ
+                    </button>
+                </div>
+            </div>
+            <button class="btn reset-btn" onclick="redirectToBack()">
+                Вернуться обратно
+            </button>
+        </div>
+    </div>
+</main>
+</body>
+</html>

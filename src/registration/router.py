@@ -5,6 +5,7 @@ from deps import get_db_repo
 from registration.service import (
     registration_agent_reg_id_scheme,
     re_registration_agent_id_scheme,
+    save_to_json,
     get_to_json,
     )
 from registration.schemas import AgentScheme
@@ -40,6 +41,7 @@ def agent_scheme(agent_scheme: AgentScheme, agent_id: int = None, agent_reg_id: 
         if len(agents_reg_ids) == 0:
             raise MyException527("JoinScheme not loaded.")
         if agent_id:
+            save_to_json(agent_id, "reg", all_agent_scheme)
             if agent_id in agent_ids:
                 agent_reg_id_old, scheme_revision_old_agent = db.reg_sch_select_agent_details2(agent_id)
                 if all_agent_scheme["scheme_revision"] > scheme_revision_old_agent:
@@ -54,11 +56,13 @@ def agent_scheme(agent_scheme: AgentScheme, agent_id: int = None, agent_reg_id: 
                 raise MyException428(f"Agent_id '{agent_id}' is not registered.")
         elif agent_reg_id:
             if agent_reg_id in agents_reg_ids:
-                check_agent = db.gui_select_check_agent_reg_id(agent_reg_id)
+                save_to_json(agent_reg_id, "reg", all_agent_scheme)
+                check_agent = db.gui_select_agent_id_for_check_agent_reg_id(agent_reg_id)
                 if check_agent:
                     scheme_revision_old, _, original_scheme_old, scheme_old = db.reg_sch_select_agent_scheme(check_agent)
                     if (all_agent_scheme["scheme"] == original_scheme_old) and (scheme_revision_old == all_agent_scheme["scheme_revision"]):
                         result = get_to_json(check_agent)
+                        db.gui_update_agent_id_tru(check_agent)
                         logger.info(f"Agent {check_agent} successfully returned its 'item_id'")
                         return result
                     else:

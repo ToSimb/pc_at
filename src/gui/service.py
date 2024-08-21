@@ -1,5 +1,7 @@
 import json
 
+from myException import MyException528
+
 def if_metric_info(metric_info: dict) -> list:
     """
     Возвращает 'metric_info_list' из словаря metric_info, если оно существует.
@@ -24,3 +26,12 @@ def open_json(name_file: str):
     with open(name_file, 'r', encoding='utf-8') as file:
         data = file.read()
     return json.loads(data)
+
+def get_to_json(agent_id, suffix) -> dict:
+    try:
+        filename = f"files/{suffix}/agent_{agent_id}.json"
+        with open(filename, 'r', encoding='utf-8') as file:
+            data = file.read()
+        return json.loads(data)
+    except FileNotFoundError:
+        raise MyException528("File with item_id not found")

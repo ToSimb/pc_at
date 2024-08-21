@@ -25,6 +25,8 @@ class Gui:
                     error_reg VARCHAR(500),
                     time_value TIMESTAMP,
                     error_value VARCHAR(500),
+                    time_value_out TIMESTAMP,
+                    error_value_out VARCHAR(500),
                     time_conn TIMESTAMP,
                     error_conn BOOLEAN DEFAULT FALSE
                 );

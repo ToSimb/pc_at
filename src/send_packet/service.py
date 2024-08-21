@@ -5,7 +5,7 @@ from config import PF_LIMIT, DEBUG, PC_AF_PROTOCOL, PC_AF_IP, PC_AF_PORT
 from database.database import Database
 
 
-async def send_value_to_url(vvk_id, packet: dict, db: Database):
+async def send_value_to_url(vvk_id, number_id, packet: dict, db: Database):
     async with httpx.AsyncClient(timeout=httpx.Timeout(12.0, connect=12.0)) as client:
         url = f'{PC_AF_PROTOCOL}://{PC_AF_IP}:{PC_AF_PORT}/params?vvk_id={vvk_id}'
         headers = {'Content-Type': 'application/json'}
@@ -22,23 +22,23 @@ async def send_value_to_url(vvk_id, packet: dict, db: Database):
                 return True
             else:
                 error_str = str(response.status_code) + " : " + str(response.text)
-                db.gui_update_value(vvk_id, error_str, False)
+                db.gui_update_value_out(vvk_id, number_id, error_str)
                 raise Exception(error_str)
         except httpx.HTTPStatusError as e:
             error_str = f"HTTP status error: {e.request} {str(e)}"
-            db.gui_update_value(vvk_id, error_str, False)
+            db.gui_update_value_out(vvk_id, number_id, error_str)
             raise Exception(error_str)
         except httpx.TimeoutException as e:
             error_str = f"A timeout error occurred: {e.request} {str(e)}"
-            db.gui_update_value(vvk_id, error_str, False)
+            db.gui_update_value_out(vvk_id, number_id, error_str)
             raise Exception(error_str)
         except httpx.RequestError as e:
             error_str = f"HTTP request error occurred: {e.request} {str(e)}"
-            db.gui_update_value(vvk_id, error_str, False)
+            db.gui_update_value_out(vvk_id, number_id, error_str)
             raise Exception(error_str)
         except httpx.HTTPError as e:
             error_str = f"HTTP Exception for: {e.request} {str(e)}"
-            db.gui_update_value(vvk_id, error_str, False)
+            db.gui_update_value_out(vvk_id, number_id, error_str)
             raise Exception(error_str)
 
 def get_params_from_db_by_number_id(number_id: int, db: Database) -> tuple:

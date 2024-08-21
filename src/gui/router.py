@@ -4,9 +4,9 @@ from fastapi.templating import Jinja2Templates
 from deps import get_db_repo
 
 from logger.logger import logger
-from gui.service import if_metric_info, open_json
+from gui.service import if_metric_info, open_json, get_to_json
 
-from myException import MyException427
+from myException import MyException427, MyException528
 
 templates = Jinja2Templates(directory="templates")
 
@@ -52,34 +52,12 @@ async def gui_pages_vvk(db=Depends(get_db_repo)):
         Метод для просмотра VvkScheme
     """
     try:
-        scheme_revision_vvk, user_query_interval_revision, original_scheme, vvk_scheme, _, metric_info_list = db.reg_sch_select_vvk_all()
+        scheme_revision_vvk, user_query_interval_revision, _, vvk_scheme, _, metric_info_list = db.reg_sch_select_vvk_all()
         result = {
-            "scheme_revision_vvk": scheme_revision_vvk,
+            "scheme_revision": scheme_revision_vvk,
             "user_query_interval_revision": user_query_interval_revision,
-            "original_scheme": original_scheme,
             "scheme": vvk_scheme,
             "metric_info_list": if_metric_info(metric_info_list)
-        }
-        return result
-    except MyException427 as e:
-        error_str = f"{e}."
-        logger.error(error_str)
-        raise HTTPException(status_code=427, detail={"error_msg": error_str})
-    except Exception as e:
-        return (str(e))
-
-@router.get("/agent_scheme/{agent_id}")
-async def gui_pages_agent(agent_id: int, db=Depends(get_db_repo)):
-    """
-        Метод для просмотра AgentScheme
-    """
-    try:
-        scheme_revision, user_query_interval_revision, original_scheme, scheme = db.reg_sch_select_agent_scheme(agent_id)
-        result = {
-            "scheme_revision": scheme_revision,
-            "user_query_interval_revision": user_query_interval_revision,
-            "original_scheme": original_scheme,
-            "scheme": scheme
         }
         return result
     except MyException427 as e:
@@ -117,21 +95,187 @@ async def gui_status_save(db=Depends(get_db_repo)):
     except Exception as e:
         return (str(e))
 
+# _________________ Детали Агента
 
-# _________________
-
-@router.get("/validation", response_class=HTMLResponse)
-async def gui_pages_validation(request: Request, db=Depends(get_db_repo)):
+@router.get("/agent_details/{agent_reg_id}")
+async def gui_pages_agent_details(request: Request, agent_reg_id: str, db=Depends(get_db_repo)):
     """
-        GUI validation
+        Метод для просмотра Agent Details
     """
     try:
-        return templates.TemplateResponse( request=request, name="validation.html" )
+        if db.gui_select_check_agent_reg_id(agent_reg_id):
+            check_agent = db.gui_select_agent_id_for_check_agent_reg_id(agent_reg_id)
+            return templates.TemplateResponse(request=request, name="agent_details.html", context={"agent_reg_id": agent_reg_id, "agent_id": check_agent} )
+        else:
+            return ("Такого агента нет")
+    except MyException427 as e:
+        error_str = f"{e}."
+        logger.error(error_str)
+        raise HTTPException(status_code=427, detail={"error_msg": error_str})
+    except Exception as e:
+        return (str(e))
+
+@router.get("/agent_scheme_all/{agent_id}")
+async def gui_pages_agent_all(agent_id: int, db=Depends(get_db_repo)):
+    """
+        Метод для просмотра Agent All Scheme
+    """
+    try:
+        scheme_revision, user_query_interval_revision, original_scheme, scheme = db.reg_sch_select_agent_scheme(agent_id)
+        result = {
+            "scheme_revision": scheme_revision,
+            "user_query_interval_revision": user_query_interval_revision,
+            "original_scheme": original_scheme,
+            "scheme": scheme
+        }
+        return result
+    except MyException427 as e:
+        error_str = f"{e}."
+        logger.error(error_str)
+        raise HTTPException(status_code=427, detail={"error_msg": error_str})
+    except Exception as e:
+        return (str(e))
+
+@router.get("/agent_scheme/{agent_id}")
+async def gui_pages_agent_scheme(agent_id: int, db=Depends(get_db_repo)):
+    """
+        Метод для просмотра Agent Scheme
+    """
+    try:
+        scheme_revision, _, _, scheme = db.reg_sch_select_agent_scheme(agent_id)
+        result = {
+            "scheme_revision": scheme_revision,
+            "scheme": scheme
+        }
+        return result
+    except MyException427 as e:
+        error_str = f"{e}."
+        logger.error(error_str)
+        raise HTTPException(status_code=427, detail={"error_msg": error_str})
+    except Exception as e:
+        return (str(e))
+
+@router.get("/agent_reg_scheme/{agent_id}")
+async def gui_pages_agent_reg_scheme(agent_id: int, db=Depends(get_db_repo)):
+    """
+        Метод для просмотра Agent Reg Scheme
+    """
+    try:
+        scheme_revision, _, original_scheme, _ = db.reg_sch_select_agent_scheme(agent_id)
+        result = {
+            "scheme_revision": scheme_revision,
+            "scheme": original_scheme
+        }
+        return result
+    except MyException427 as e:
+        error_str = f"{e}."
+        logger.error(error_str)
+        raise HTTPException(status_code=427, detail={"error_msg": error_str})
+    except Exception as e:
+        return (str(e))
+
+@router.get("/agent_save_file/{agent_id}")
+async def gui_pages_agent_save_file(agent_id: int, db=Depends(get_db_repo)):
+    """
+        Метод для просмотра Agent Reg Scheme (то есть - ответ на регистрацию/перерегистрацию)
+    """
+    try:
+        result = get_to_json(agent_id, "list")
+        return result
+    except MyException427 as e:
+        error_str = f"{e}."
+        logger.error(error_str)
+        raise HTTPException(status_code=427, detail={"error_msg": error_str})
+    except Exception as e:
+        return (str(e))
+
+@router.get("/agent_id_file/{agent_id}")
+async def gui_pages_agent_id_file(agent_id: int, db=Depends(get_db_repo)):
+    """
+        Метод для просмотра последнего отправленного Agent Scheme при перерегистрации
+    """
+    try:
+        result = get_to_json(agent_id, "reg")
+        return result
+    except MyException427 as e:
+        error_str = f"{e}."
+        logger.error(error_str)
+        raise HTTPException(status_code=427, detail={"error_msg": error_str})
+    except Exception as e:
+        return (str(e))
+
+@router.get("/agent_reg_id_file/{agent_reg_id}")
+async def gui_pages_agent_reg_id_file(agent_reg_id: str, db=Depends(get_db_repo)):
+    """
+        Метод для просмотра последнего отправленного Agent Scheme при регистрации
+    """
+    try:
+        result = get_to_json(agent_reg_id, "reg")
+        return result
+    except MyException427 as e:
+        error_str = f"{e}."
+        logger.error(error_str)
+        raise HTTPException(status_code=427, detail={"error_msg": error_str})
+    except Exception as e:
+        return (str(e))
+
+
+
+# _________________ Отображение схем ВВК
+
+@router.get("/details", response_class=HTMLResponse)
+async def gui_pages_validation(request: Request, db=Depends(get_db_repo)):
+    """
+        GUI details
+    """
+    try:
+        return templates.TemplateResponse( request=request, name="details.html" )
     except Exception as e:
         error_str = f"Exception: {e}."
         logger.error(error_str)
         db.reg_sch_block_false()
         raise HTTPException(status_code=527, detail={"error_msg": error_str})
+
+@router.get("/join_scheme")
+async def gui_pages_join(db=Depends(get_db_repo)):
+    """
+        Метод для просмотра Join Scheme
+    """
+    try:
+        scheme_revision_vvk, _, original_scheme, _, _, _ = db.reg_sch_select_vvk_all()
+        result = {
+            "scheme_revision": scheme_revision_vvk,
+            "scheme": original_scheme,
+        }
+        return result
+    except MyException427 as e:
+        error_str = f"{e}."
+        logger.error(error_str)
+        raise HTTPException(status_code=427, detail={"error_msg": error_str})
+    except Exception as e:
+        return (str(e))
+
+@router.get("/all_scheme")
+async def gui_pages_all_scheme(db=Depends(get_db_repo)):
+    """
+        Метод для просмотра AllScheme
+    """
+    try:
+        scheme_revision_vvk, user_query_interval_revision, original_scheme, vvk_scheme, _, metric_info_list = db.reg_sch_select_vvk_all()
+        result = {
+            "scheme_revision": scheme_revision_vvk,
+            "user_query_interval_revision": user_query_interval_revision,
+            "join_scheme": original_scheme,
+            "scheme": vvk_scheme,
+            "metric_info_list": if_metric_info(metric_info_list)
+        }
+        return result
+    except MyException427 as e:
+        error_str = f"{e}."
+        logger.error(error_str)
+        raise HTTPException(status_code=427, detail={"error_msg": error_str})
+    except Exception as e:
+        return (str(e))
 
 @router.get("/vvk_scheme_true")
 async def gui_pages_vvk_sch_ver_true(db=Depends(get_db_repo)):
@@ -176,5 +320,20 @@ async def gui_pages_vvk_sch_ver_false(db=Depends(get_db_repo)):
         error_str = f"{e}."
         logger.error(error_str)
         raise HTTPException(status_code=427, detail={"error_msg": error_str})
+    except Exception as e:
+        return (str(e))
+
+
+# __________________ Удаление ПФ
+
+@router.get("/delete_pf")
+async def gui_delete_pf_all(db=Depends(get_db_repo)):
+    """
+        Метод для удаления всех ПФ из БД
+    """
+    try:
+        db.pf_delete_params()
+        logger.info("ИЗ БД УДАЛЕНЫ ВСЕ ПФ")
+        return RedirectResponse("/gui")
     except Exception as e:
         return (str(e))

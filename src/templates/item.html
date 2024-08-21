@@ -16,8 +16,8 @@
             window.location.href = "{{ url_for('upload_form_get') }}";
         }
 
-        function redirectToAgentScheme(agent_id) {
-            window.location.href = `gui/agent_scheme/${agent_id}`;
+        function redirectToAgentDetails(agent_reg_id) {
+            window.location.href = `gui/agent_details/${agent_reg_id}`;
         }
 
         function redirectToAgentParams(agent_id) {
@@ -29,7 +29,7 @@
         }
 
         function redirectToValidation() {
-            window.location.href = `gui/validation`;
+            window.location.href = `gui/details`;
         }
 
     </script>
@@ -63,11 +63,11 @@
                         <p>Ошибка регистрации: {{vvk["error_reg"]}}</p>
                     {% endif %}
                         <p></p>
-                    {% if vvk["time_value"] is not none %}
-                        <p>Время последней успешной передачи ПФ: {{vvk["time_value"]}}</p>
+                    {% if vvk["time_value_out"] is not none %}
+                        <p>Время последней успешной передачи ПФ (состояние агентов): {{vvk["time_value_out"]}}</p>
                     {% endif %}
-                    {% if vvk["error_value"] is not none %}
-                        <p>Ошибка передачи ПФ: {{vvk["error_value"]}}</p>
+                    {% if vvk["error_value_out"] is not none %}
+                        <p>Ошибка передачи ПФ: {{vvk["error_value_out"]}}</p>
                     {% endif %}
                     {% if vvk["time_conn"] is not none %}
                         {% if vvk["error_conn"] is true %}
@@ -90,16 +90,16 @@
                     <div class="main__block-center flex">
                         <button class="btn--square btn reset-btn" onclick="redirectToStatusSave()">
                             {% if GLOBAL_STATUS_SAVE is true %}
-                                Выключить сохранение последнего АФ
+                                Выключить сохранение последнего ПФ
                             {% else %}
-                                Включить сохранение последнего АФ
+                                Включить сохранение последнего ПФ
                             {% endif %}
                         </button>
                     </div>
                     <p></p>
                     <div class="main__block-center flex">
                         <button class="btn reset-btn" onclick="redirectToValidation()">
-                            Просмотр схем ВВК на стороне АФ
+                            Дополнительные действия
                         </button>
                     </div>
                 </div>
@@ -142,6 +142,12 @@
                                 <p>Время последней успешного приема ПФ: {{item["time_value"]}}</p>
                             {% endif %}
                         {% endif %}
+                        {% if item["time_value_out"] is not none %}
+                            <p>Время последней успешной передачи ПФ в сторону АФ: {{item["time_value_out"]}}</p>
+                        {% endif %}
+                        {% if item["error_value_out"] is not none %}
+                            <p>Ошибка передачи ПФ: {{item["error_value_out"]}}</p>
+                        {% endif %}
                         {% if item["time_conn"] is not none %}
                             {% if item["error_conn"] is true %}
                                 <p>Контроль канала связи: нет соединения</p>
@@ -152,24 +158,20 @@
                             {% endif %}
                         {% endif %}
                         <div class="main__block-center flex">
-
-                            {% if item["status_reg"] is true %}
-                                <div class="main__block-center flex">
-                                    <button class="btn reset-btn" onclick="redirectToAgentScheme({{item["number_id"]}})">
-                                    Посмотреть Agent Scheme
-                                    </button>
-                                </div>
-                            {% endif %}
                             {% if GLOBAL_STATUS_SAVE is true  %}
                                 {% if item["time_value"] is not none %}
                                     <div class="main__block-center flex">
-                                        <button class="btn reset-btn" onclick="redirectToAgentParams({{item["number_id"]}})">
+                                        <button class="btn reset-btn" onclick="redirectToAgentParams({{item['number_id']}})">
                                         Посмотреть последний пакет
                                         </button>
                                     </div>
                                 {% endif %}
                             {% endif %}
-
+                            <div class="main__block-center flex">
+                                <button class="btn reset-btn" onclick="redirectToAgentDetails('{{item['agent_reg_id']}}')">
+                                Подробнее
+                                </button>
+                            </div>
                         </div>
                     </div>
                     {% endfor %}

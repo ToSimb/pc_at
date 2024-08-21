@@ -9,14 +9,14 @@ from logger.logger import logger
 
 
 def save_to_json(agent_id, suffix, data):
-    filename = f"files/agent_{agent_id}_{suffix}.json"
+    filename = f"files/{suffix}/agent_{agent_id}.json"
     logger.info(f"Агент {agent_id} сохранен в файл {filename}")
     with open(filename, 'w', encoding='utf-8') as file:
         json.dump(data, file, ensure_ascii=False)
 
 def get_to_json(agent_id: int) -> dict:
     try:
-        filename = f"files/agent_{agent_id}_list.json"
+        filename = f"files/list/agent_{agent_id}.json"
         with open(filename, 'r', encoding='utf-8') as file:
             data = file.read()
         return json.loads(data)
@@ -238,7 +238,10 @@ def formation_agent_reg_scheme(agent_reg_id: str, agent_scheme: dict, join_schem
                     item_join_id_list_agent = next(
                         (join_id_list_agent for join_id_list_agent in agent_scheme["scheme"]["join_id_list"]
                          if join_id_list_scheme["agent_item_join_id"] == join_id_list_agent["join_id"]), None)
-                    full_path_for_join_id_list.append(item_join_id_list_agent["full_path"])
+                    if item_join_id_list_agent:
+                        full_path_for_join_id_list.append(item_join_id_list_agent["full_path"])
+                    else:
+                        raise MyException427(f"Ошибка Assign - {join_id_list_scheme['agent_item_join_id']}")
 
                 # проверка на корректность путей в item_id_list
                 agent_scheme_copy_item_id_list = copy.deepcopy(agent_scheme["scheme"]["item_id_list"])
@@ -455,7 +458,7 @@ def re_registration_agent_id_scheme(agent_id: int, agent_reg_id: str, all_agent_
         "item_info_list": item_info_list_new,
     }
 
-    save_to_json(51, "clear", vvk_scheme_after_cleaning)
+    save_to_json(0, "clear", vvk_scheme_after_cleaning)
 
     # а потом зарегистрировать заново агент, используя старый метод!
     all_agent_scheme_copy = copy.deepcopy(all_agent_scheme)

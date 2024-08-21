@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>GUI</title>
+    <link href="{{ url_for('static', path='/styles.css') }}" rel="stylesheet">
+
+    <script>
+
+        function redirectToAgentSchemeAll(agent_id) {
+            window.location.href = `/gui/agent_scheme_all/${agent_id}`;
+        }
+
+        function redirectToAgentScheme(agent_id) {
+            window.location.href = `/gui/agent_scheme/${agent_id}`;
+        }
+
+        function redirectToAgentRegScheme(agent_id) {
+            window.location.href = `/gui/agent_reg_scheme/${agent_id}`;
+        }
+
+        function redirectToFileAgentRegScheme(agent_id) {
+            window.location.href = `/gui/agent_save_file/${agent_id}`;
+        }
+
+        function redirectToFileAgentRegId(agent_reg_id) {
+            window.location.href = `/gui/agent_reg_id_file/${agent_reg_id}`;
+        }
+
+        function redirectToFileAgentId(agent_id) {
+            window.location.href = `/gui/agent_id_file/${agent_id}`;
+        }
+
+        function redirectToBack() {
+            window.location.href = "{{ url_for('gui_pages') }}";
+        }
+    </script>
+</head>
+<body>
+<main class="main">
+    <div class="container">
+        <div class="main__vvk border">
+            <h1>Агент {{agent_reg_id}} - {{agent_id}}</h1>
+
+            {% if agent_id is not none %}
+            <div class="border border-mini">
+                <h2>Schemes</h2>
+                <div class="main__block-center flex">
+                    <button class="btn reset-btn" onclick="redirectToAgentRegScheme({{agent_id}})">
+                        Reg Scheme
+                    </button>
+                    <button class="btn reset-btn" onclick="redirectToAgentScheme({{agent_id}})">
+                        Agent Scheme
+                    </button>
+                    <button class="btn reset-btn" onclick="redirectToAgentSchemeAll({{agent_id}})">
+                        All Scheme
+                    </button>
+                </div>
+            </div>
+            {% endif %}
+            <div class="border border-mini">
+                <h2>Files</h2>
+                <div class="main__block-center flex">
+                    <button class="btn reset-btn" onclick="redirectToFileAgentRegScheme({{agent_id}})">
+                        Посмотреть последний ответ Agent Reg Scheme
+                    </button>
+                </div>
+                <p></p>
+                <div class="main__block-center flex">
+                    <button class="btn reset-btn" onclick="redirectToFileAgentRegId('{{agent_reg_id}}')">
+                        Посмотреть последнюю Agent Scheme, которая пришла по agent_reg_id
+                    </button>
+                </div>
+                <p></p>
+                <div class="main__block-center flex">
+                    <button class="btn reset-btn" onclick="redirectToFileAgentId({{agent_id}})">
+                        Посмотреть последнюю Agent Scheme, которая пришла по agent_id
+                    </button>
+                </div>
+            </div>
+            <button class="btn reset-btn" onclick="redirectToBack()">
+                Вернуться обратно
+            </button>
+        </div>
+    </div>
+</main>
+</body>
+</html>
