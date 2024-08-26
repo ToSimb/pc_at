@@ -340,7 +340,7 @@ async def gui_pages_vvk_sch_ver_false(db=Depends(get_db_repo)):
         return (str(e))
 
 
-# __________________ Удаление ПФ
+# __________________ Дополнительный функционал для VvkScheme
 
 @router.get("/delete_pf")
 async def gui_delete_pf_all(db=Depends(get_db_repo)):
@@ -350,6 +350,19 @@ async def gui_delete_pf_all(db=Depends(get_db_repo)):
     try:
         db.pf_delete_params()
         logger.info("ИЗ БД УДАЛЕНЫ ВСЕ ПФ")
+        return RedirectResponse("/gui")
+    except Exception as e:
+        return (str(e))
+
+
+@router.get("/block-false")
+async def gui_block_false(db=Depends(get_db_repo)):
+    """
+        Метод для разблокировки процесса роботы с VvkScheme
+    """
+    try:
+        db.reg_sch_block_false()
+        logger.info("ПРОЦЕСС РАЗБЛОКИРОВАН")
         return RedirectResponse("/gui")
     except Exception as e:
         return (str(e))

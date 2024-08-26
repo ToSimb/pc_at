@@ -33,6 +33,10 @@
             window.location.href = `delete_pf`;
         }
 
+        function redirectToBlockFalse() {
+            window.location.href = `block-false`;
+        }
+
         function redirectToBack() {
             window.location.href = "{{ url_for('gui_pages') }}";
         }
@@ -62,6 +66,12 @@
                 <div class="main__block-center flex">
                     <button class="btn reset-btn" onclick="redirectToDeletePfAll()">
                         Удаление всех имеющихся ПФ
+                    </button>
+                </div>
+                <p></p>
+                <div class="main__block-center flex">
+                    <button class="btn reset-btn" onclick="redirectToBlockFalse()">
+                        Разблокирование процесса для регистрации
                     </button>
                 </div>
             </div>
