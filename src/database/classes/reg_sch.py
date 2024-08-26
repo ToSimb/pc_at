@@ -157,7 +157,7 @@ class Reg_sch:
         try:
             cur = self.conn.cursor()
             sql_select = """
-                    SELECT number_id, agent_reg_id, scheme_revision, original_scheme, scheme 
+                    SELECT number_id, agent_reg_id, scheme_revision, original_scheme, scheme, response_scheme 
                     FROM reg_sch 
                     WHERE type_id = TRUE
                 """
@@ -216,7 +216,8 @@ class Reg_sch:
             agent_id (int): Идентификатор агента, для которого необходимо извлечь данные.
 
         Returns:
-            tuple: Кортеж, содержащий значения полей 'scheme_revision', 'user_query_interval_revision' и 'scheme'.
+            tuple: Кортеж, содержащий значения полей 'scheme_revision', 'user_query_interval_revision',
+            'original_scheme', 'scheme' и 'response_scheme'.
 
         Raises:
             MyException427: Если агент с заданным идентификатором не найден
@@ -224,7 +225,7 @@ class Reg_sch:
         """
         try:
             cur = self.conn.cursor()
-            sql_select = ("SELECT scheme_revision, user_query_interval_revision, original_scheme, scheme FROM reg_sch "
+            sql_select = ("SELECT scheme_revision, user_query_interval_revision, original_scheme, scheme, response_scheme FROM reg_sch "
                           "WHERE number_id = %s AND type_id = True; ")
             cur.execute(sql_select, (agent_id,))
             data = cur.fetchone()
@@ -456,7 +457,7 @@ class Reg_sch:
             raise e
 
     def reg_sch_insert_agent(self, number_id: int, agent_reg_id: str, scheme_revision: int,
-                             user_query_interval_revision: int, original_scheme: dict, scheme: dict) -> bool:
+                             user_query_interval_revision: int, original_scheme: dict, scheme: dict, response_scheme: dict) -> bool:
         """
             SQL-запрос: Вставляет данные нового агента в таблицу 'reg_sch'.
 
@@ -467,6 +468,7 @@ class Reg_sch:
             user_query_interval_revision (int): Номер ревизии интервала пользовательского запроса.
             original_scheme (dict): Оригинальная схема агента.
             scheme (dict): Зарегистрированная схема агента.
+            response_scheme (dict): Ответ для агента с его item_id.
 
         Returns:
             bool: Возвращает True, если данные агента успешно вставлены в базу данных.
@@ -477,11 +479,11 @@ class Reg_sch:
         try:
             cur = self.conn.cursor()
             sql_insert = (
-                "INSERT INTO reg_sch (type_id, number_id, agent_reg_id, scheme_revision, user_query_interval_revision, original_scheme, scheme, metric_info_list) "
-                "VALUES (TRUE, %s, %s, %s, %s, %s, %s, %s);")
+                "INSERT INTO reg_sch (type_id, number_id, agent_reg_id, scheme_revision, user_query_interval_revision, original_scheme, scheme, response_scheme, metric_info_list) "
+                "VALUES (TRUE, %s, %s, %s, %s, %s, %s, %s, %s);")
             cur.execute(sql_insert, (
             number_id, agent_reg_id, scheme_revision, user_query_interval_revision, json.dumps(original_scheme),
-            json.dumps(scheme), None))
+            json.dumps(scheme), json.dumps(response_scheme), None))
             self.conn.commit()
             logger.info(f"DB(reg_sch): Agent '{number_id}' зарегистрирован")
             return True
@@ -552,7 +554,7 @@ class Reg_sch:
             raise e
 
     def reg_sch_update_agent_re_reg(self, number_id: int, scheme_revision: int, user_query_interval_revision: int,
-                                    original_scheme: dict, scheme: dict) -> bool:
+                                    original_scheme: dict, scheme: dict, response_scheme: dict) -> bool:
         """
             SQL-запрос для обновления записи агента после перерегистрации.
 
@@ -562,6 +564,7 @@ class Reg_sch:
             user_query_interval_revision (int): Номер ревизии интервала пользовательского запроса.
             original_scheme (dict): Исходная схема агента.
             scheme (dict): Зарегистрированная схема агента.
+            response_scheme (dict): Ответ для агента с его item_id.
 
         Returns:
             bool: True, если обновление прошло успешно, иначе возбуждается исключение.
@@ -571,10 +574,10 @@ class Reg_sch:
         """
         try:
             cur = self.conn.cursor()
-            sql_update = (f"UPDATE reg_sch SET scheme_revision = %s, user_query_interval_revision = %s, original_scheme = %s, scheme = %s "
+            sql_update = (f"UPDATE reg_sch SET scheme_revision = %s, user_query_interval_revision = %s, original_scheme = %s, scheme = %s, response_scheme = %s "
                           f"WHERE number_id = {number_id} AND type_id = True")
             cur.execute(sql_update, (
-            scheme_revision, user_query_interval_revision, json.dumps(original_scheme), json.dumps(scheme),))
+            scheme_revision, user_query_interval_revision, json.dumps(original_scheme), json.dumps(scheme), json.dumps(response_scheme),))
             self.conn.commit()
             logger.info(f"DB(reg_sch): Agent '{number_id}' перерегистрирована")
             return True

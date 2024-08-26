@@ -21,6 +21,7 @@ class Reg_sch:
                     user_query_interval_revision INT,
                     original_scheme JSONB,
                     scheme JSONB,
+                    response_scheme JSONB,
                     max_index INT,
                     metric_info_list JSONB,
                     block BOOLEAN DEFAULT FALSE

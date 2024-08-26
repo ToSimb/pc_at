@@ -29,6 +29,10 @@
             window.location.href = `/gui/agent_reg_id_file/${agent_reg_id}`;
         }
 
+        function redirectToResponseAgent(agent_reg_id) {
+            window.location.href = `/gui/agent_response/${agent_reg_id}`;
+        }
+
         function redirectToFileAgentId(agent_id) {
             window.location.href = `/gui/agent_id_file/${agent_id}`;
         }
@@ -57,17 +61,14 @@
                     <button class="btn reset-btn" onclick="redirectToAgentSchemeAll({{agent_id}})">
                         All Scheme
                     </button>
+                    <button class="btn reset-btn" onclick="redirectToResponseAgent({{agent_id}})">
+                        Response Scheme
+                    </button>
                 </div>
             </div>
             {% endif %}
             <div class="border border-mini">
                 <h2>Files</h2>
-                <div class="main__block-center flex">
-                    <button class="btn reset-btn" onclick="redirectToFileAgentRegScheme({{agent_id}})">
-                        Посмотреть последний ответ Agent Reg Scheme
-                    </button>
-                </div>
-                <p></p>
                 <div class="main__block-center flex">
                     <button class="btn reset-btn" onclick="redirectToFileAgentRegId('{{agent_reg_id}}')">
                         Посмотреть последнюю Agent Scheme, которая пришла по agent_reg_id
@@ -77,6 +78,12 @@
                 <div class="main__block-center flex">
                     <button class="btn reset-btn" onclick="redirectToFileAgentId({{agent_id}})">
                         Посмотреть последнюю Agent Scheme, которая пришла по agent_id
+                    </button>
+                </div>
+                <p></p>
+                <div class="main__block-center flex">
+                    <button class="btn reset-btn" onclick="redirectToFileAgentRegScheme({{agent_id}})">
+                        Посмотреть ответ Response Scheme, который был сохранен в файле
                     </button>
                 </div>
             </div>

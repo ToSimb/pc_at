@@ -146,6 +146,12 @@ def check_full_path_exists(item_list, target_path):
     """
     return not any(item['full_path'] == target_path for item in item_list)
 
+def check_correctness_of_templates(agent_path, join_path):
+    a = agent_path.split("[")[0]
+    b = join_path.split("/")[-1].split("[")[0]
+    if a != b:
+        raise MyException427(f"Incoming templates error, template '{agent_path}' not found.")
+
 def formation_agent_reg_scheme(agent_reg_id: str, agent_scheme: dict, join_scheme: dict, vvk_scheme: dict,
                                max_index: int, item_id_list_agent: list):
     """
@@ -175,10 +181,10 @@ def formation_agent_reg_scheme(agent_reg_id: str, agent_scheme: dict, join_schem
                 # проверка и добавление templates
                 vvk_scheme['templates'] = add_templates(vvk_scheme['templates'], agent_scheme['scheme']['templates'])
 
-                full_path_for_join_id_list = []
+                all_initial_agent_paths = []
                 if agent_scheme["scheme"]["join_id_list"] is not None:
                     for item in agent_scheme["scheme"]["join_id_list"]:
-                        full_path_for_join_id_list.append(item['full_path'])
+                        all_initial_agent_paths.append(item['full_path'])
                         full_path_item = join_list["join_item_full_path"] + '/' + item["full_path"]
                         if check_full_path_exists(join_scheme["item_id_list"], full_path_item):
                             raise MyException427(
@@ -187,7 +193,7 @@ def formation_agent_reg_scheme(agent_reg_id: str, agent_scheme: dict, join_schem
                 # Формирование нового item_id_list
                 for a in agent_scheme["scheme"]["item_id_list"]:
                     # проверка на корректность путей в item_id_list
-                    if a["full_path"].split('/')[0] in full_path_for_join_id_list:
+                    if a["full_path"].split('/')[0] in all_initial_agent_paths:
                         b = copy.deepcopy(a)
                         a["full_path"] = join_list["join_item_full_path"] + '/' + a["full_path"]
                         # изменения - вернуть старые item_id !!
@@ -212,7 +218,7 @@ def formation_agent_reg_scheme(agent_reg_id: str, agent_scheme: dict, join_schem
                 # Формирование нового item_info_list
                 for a in agent_scheme["scheme"]["item_info_list"]:
                     # проверка на корректность путей в item_info_list
-                    if a["full_path"].split('/')[0] in full_path_for_join_id_list:
+                    if a["full_path"].split('/')[0] in all_initial_agent_paths:
                         a["full_path"] = join_list["join_item_full_path"] + '/' + a["full_path"]
                         for b in vvk_scheme["item_info_list"]:
                             if a["full_path"] == b["full_path"]:
@@ -224,7 +230,7 @@ def formation_agent_reg_scheme(agent_reg_id: str, agent_scheme: dict, join_schem
                         raise MyException427(f"This element '{a['full_path']}' is not in agent_scheme[scheme][item_info_list].")
             # если тип подключения jtAssign
             if join_list["join_type"] == "jtAssign":
-                full_path_for_join_id_list = []
+                all_initial_agent_paths = []
                 # проверка и добавление metrics
                 vvk_scheme['metrics'] = add_metrics(vvk_scheme['metrics'], agent_scheme['scheme']['metrics'])
                 # проверка и добавление templates
@@ -233,26 +239,20 @@ def formation_agent_reg_scheme(agent_reg_id: str, agent_scheme: dict, join_schem
                 if len(join_list["joins"]) != len(agent_scheme["scheme"]["join_id_list"]):
                     raise MyException427("Error registering agent for connection type 'jtAssign': different number of join_id_list.")
 
-                # формируем full_path_for_join_id_list для проверки корректности путей
+                # формируем all_initial_agent_paths для проверки корректности путей
                 for join_id_list_scheme in join_list["joins"]:
                     item_join_id_list_agent = next(
                         (join_id_list_agent for join_id_list_agent in agent_scheme["scheme"]["join_id_list"]
                          if join_id_list_scheme["agent_item_join_id"] == join_id_list_agent["join_id"]), None)
                     if item_join_id_list_agent:
-                        full_path_for_join_id_list.append(item_join_id_list_agent["full_path"])
+                        all_initial_agent_paths.append(item_join_id_list_agent["full_path"])
                     else:
                         raise MyException427(f"Ошибка Assign - {join_id_list_scheme['agent_item_join_id']}")
-
-                # проверка на корректность путей в item_id_list
-                agent_scheme_copy_item_id_list = copy.deepcopy(agent_scheme["scheme"]["item_id_list"])
-                for a in agent_scheme_copy_item_id_list:
-                    if a["full_path"].split('/')[0] not in full_path_for_join_id_list:
-                        raise MyException427(f"This element '{a['full_path']}' is not in agent_scheme[scheme][join_id_list].")
 
                 # проверка на корректность путей в item_info_list
                 agent_scheme_copy_item_info_list = copy.deepcopy(agent_scheme["scheme"]["item_info_list"])
                 for a in agent_scheme_copy_item_info_list:
-                    if a["full_path"].split('/')[0] not in full_path_for_join_id_list:
+                    if a["full_path"].split('/')[0] not in all_initial_agent_paths:
                         raise MyException427(f"This element '{a['full_path']}' is not in agent_scheme[scheme][item_info_list].")
 
                 # проходимся по join_id_list в json_agent_scheme
@@ -263,6 +263,11 @@ def formation_agent_reg_scheme(agent_reg_id: str, agent_scheme: dict, join_schem
                     if item_join_id_list_agent:
                         for a in agent_scheme["scheme"]["item_id_list"]:
                             if a["full_path"].split('/')[0] == item_join_id_list_agent["full_path"]:
+
+                                # проверка !!!
+                                check_correctness_of_templates(a["full_path"],
+                                                               join_id_list_scheme["join_item_full_path"])
+
                                 b = copy.deepcopy(a)
                                 a["full_path"] = join_id_list_scheme["join_item_full_path"] + a[
                                     "full_path"].replace(
@@ -390,7 +395,7 @@ def registration_agent_reg_id_scheme(agent_reg_id: str, all_agent_scheme: dict, 
     save_item_ids(index_agent, json_agent_return, agent_scheme["scheme"]["item_id_list"])
 
     db.gui_update_agent_reg_id_reg_true(index_agent, agent_reg_id, all_agent_scheme["scheme_revision"])
-    db.reg_sch_insert_agent(index_agent, agent_reg_id, all_agent_scheme["scheme_revision"], user_query_interval_revision, all_agent_scheme["scheme"], agent_scheme["scheme"])
+    db.reg_sch_insert_agent(index_agent, agent_reg_id, all_agent_scheme["scheme_revision"], user_query_interval_revision, all_agent_scheme["scheme"], agent_scheme["scheme"], json_agent_return)
 
     # SCH - случай когда ввк схема зарегистрированна!
     vvk_id = db.sch_ver_select_check_vvk_id()
@@ -484,7 +489,7 @@ def re_registration_agent_id_scheme(agent_id: int, agent_reg_id: str, all_agent_
 
     db.gui_update_agent_id_re_reg_true(agent_id, all_agent_scheme["scheme_revision"])
     db.reg_sch_update_agent_re_reg(agent_id, all_agent_scheme["scheme_revision"], user_query_interval_revision,
-                                   all_agent_scheme["scheme"], agent_scheme["scheme"])
+                                   all_agent_scheme["scheme"], agent_scheme["scheme"], json_agent_return)
 
     # SCH - случай когда ввк схема зарегистрированна!
     vvk_id = db.sch_ver_select_check_vvk_id()

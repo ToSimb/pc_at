@@ -14,7 +14,7 @@ from myException import MyException427, MyException428
 def save_to_json(params, agent_id):
     logger.info(f"Saving params agent '{agent_id}' to json")
     model_dict = params.dict()
-    with open(f"json/agent_{agent_id}.json", 'w', encoding='utf-8') as json_file:
+    with open(f"files/pf/agent_{agent_id}.json", 'w', encoding='utf-8') as json_file:
         json.dump(model_dict, json_file, ensure_ascii=False, indent=4)
 
 def add_params(params: SchemeJson, agent_id: int, metrics_id: list, items_id: list, db: Database) -> bool:

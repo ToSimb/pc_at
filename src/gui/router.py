@@ -73,7 +73,7 @@ async def gui_params_agent(agent_id: int):
         Метод для просмотра последнего принято пакета Agent
     """
     try:
-        file_name = f"json/agent_{agent_id}.json"
+        file_name = f"files/pf/agent_{agent_id}.json"
         result = open_json(file_name)
         return result
     except MyException427 as e:
@@ -121,12 +121,13 @@ async def gui_pages_agent_all(agent_id: int, db=Depends(get_db_repo)):
         Метод для просмотра Agent All Scheme
     """
     try:
-        scheme_revision, user_query_interval_revision, original_scheme, scheme = db.reg_sch_select_agent_scheme(agent_id)
+        scheme_revision, user_query_interval_revision, original_scheme, scheme, response_scheme = db.reg_sch_select_agent_scheme(agent_id)
         result = {
             "scheme_revision": scheme_revision,
             "user_query_interval_revision": user_query_interval_revision,
             "original_scheme": original_scheme,
-            "scheme": scheme
+            "scheme": scheme,
+            "response_scheme": response_scheme
         }
         return result
     except MyException427 as e:
@@ -142,7 +143,7 @@ async def gui_pages_agent_scheme(agent_id: int, db=Depends(get_db_repo)):
         Метод для просмотра Agent Scheme
     """
     try:
-        scheme_revision, _, _, scheme = db.reg_sch_select_agent_scheme(agent_id)
+        scheme_revision, _, _, scheme, _ = db.reg_sch_select_agent_scheme(agent_id)
         result = {
             "scheme_revision": scheme_revision,
             "scheme": scheme
@@ -161,7 +162,7 @@ async def gui_pages_agent_reg_scheme(agent_id: int, db=Depends(get_db_repo)):
         Метод для просмотра Agent Reg Scheme
     """
     try:
-        scheme_revision, _, original_scheme, _ = db.reg_sch_select_agent_scheme(agent_id)
+        scheme_revision, _, original_scheme, _, _ = db.reg_sch_select_agent_scheme(agent_id)
         result = {
             "scheme_revision": scheme_revision,
             "scheme": original_scheme
@@ -182,6 +183,21 @@ async def gui_pages_agent_save_file(agent_id: int, db=Depends(get_db_repo)):
     try:
         result = get_to_json(agent_id, "list")
         return result
+    except MyException427 as e:
+        error_str = f"{e}."
+        logger.error(error_str)
+        raise HTTPException(status_code=427, detail={"error_msg": error_str})
+    except Exception as e:
+        return (str(e))
+
+@router.get("/agent_response/{agent_id}")
+async def gui_pages_agent_response(agent_id: int, db=Depends(get_db_repo)):
+    """
+        Метод для просмотра Agent Response Scheme
+    """
+    try:
+        _, _, _, _, response_scheme = db.reg_sch_select_agent_scheme(agent_id)
+        return response_scheme
     except MyException427 as e:
         error_str = f"{e}."
         logger.error(error_str)

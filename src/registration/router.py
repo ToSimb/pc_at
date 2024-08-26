@@ -59,12 +59,11 @@ def agent_scheme(agent_scheme: AgentScheme, agent_id: int = None, agent_reg_id: 
                 save_to_json(agent_reg_id, "reg", all_agent_scheme)
                 check_agent = db.gui_select_agent_id_for_check_agent_reg_id(agent_reg_id)
                 if check_agent:
-                    scheme_revision_old, _, original_scheme_old, scheme_old = db.reg_sch_select_agent_scheme(check_agent)
+                    scheme_revision_old, _, original_scheme_old, scheme_old, response_scheme = db.reg_sch_select_agent_scheme(check_agent)
                     if (all_agent_scheme["scheme"] == original_scheme_old) and (scheme_revision_old == all_agent_scheme["scheme_revision"]):
-                        result = get_to_json(check_agent)
                         db.gui_update_agent_id_tru(check_agent)
                         logger.info(f"Agent {check_agent} successfully returned its 'item_id'")
-                        return result
+                        return response_scheme
                     else:
                         raise MyException428(f"This agent_reg_id '{agent_reg_id}' is already registered under agent_id = '{check_agent}' and has scheme revision = '{scheme_revision_old}'.")
                 else:
