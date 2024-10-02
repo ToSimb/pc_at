@@ -88,16 +88,3 @@ async def test_params_hole(params: dict, vvk_id: int):
     print("пришли ПФ от ввк:", vvk_id, params["scheme_revision"])
     time.sleep(2)
     return ("OK")
-
-@router.get("/sch_ver")
-async def test_select_sch_ver():
-    """
-        Метод для просмотра sch_ver.
-
-    """
-    try:
-        result = db.s
-        return result
-    except Exception as e:
-        error_str = f"{e}."
-        raise HTTPException(status_code=527, detail={"error_msg": error_str})

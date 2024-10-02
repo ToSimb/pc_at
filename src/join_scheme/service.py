@@ -120,6 +120,8 @@ def formation_agent_update_join(agent_scheme: dict, join_scheme: dict, vvk_schem
     for join_list in join_scheme["join_list"]:
         if agent_scheme["agent_reg_id"] == join_list["agent_reg_id"]:
             # если тип подключения jtInclude
+            print("-------------")
+            print(join_list)
             if join_list["join_type"] == "jtInclude":
                 try:
                     # проверка и добавление metrics
@@ -135,6 +137,8 @@ def formation_agent_update_join(agent_scheme: dict, join_scheme: dict, vvk_schem
                         if check_full_path_exists(join_scheme["item_id_list"], full_path_item):
                             raise ValueError(
                                 f"Error registering agent for connection type 'jtInclude': path was not found in Jion: {full_path_item}")
+
+                # check_path_connection()
 
                 # Формирование нового item_id_list
                 for a in agent_scheme["scheme"]["item_id_list"]:

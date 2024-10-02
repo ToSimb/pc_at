@@ -162,3 +162,5 @@ cython_debug/
 # Свои
 is/
 *.json
+*.log
+test/json/

@@ -31,7 +31,7 @@ async def gui_pages(request: Request, db=Depends(get_db_repo)):
             agents.sort(key=lambda x: x.get("id"))
 
         return templates.TemplateResponse(
-            request=request, name="item.html", context={"vvk": vvk, "agents": agents, "GLOBAL_STATUS_SAVE": db.flag_select()}
+            request=request, name="main.html", context={"vvk": vvk, "agents": agents, "GLOBAL_STATUS_SAVE": db.flag_select()}
         )
     except Exception as e:
         error_str = f"Exception: {e}."
