@@ -34,7 +34,7 @@ class Reg_sch:
             if result:
                 return result
             else:
-                raise MyException427("JoinScheme is not loaded!")
+                raise MyException427("(RU) JoinScheme не загружен! (ENG) JoinScheme is not loaded!")
         except Exception as e:
             self.conn.rollback()
             logger.error("DB(reg_sch): reg_sch_select_vvk_all: %s", e)
@@ -82,7 +82,7 @@ class Reg_sch:
             if result:
                 return result[0]
             else:
-                raise MyException427("JoinScheme is not loaded!")
+                raise MyException427("(RU) JoinScheme не загружен! (ENG) JoinScheme is not loaded!")
         except Exception as e:
             logger.error("DB(reg_sch): reg_sch_select_vvk_full: %s", e)
             raise e
@@ -233,7 +233,7 @@ class Reg_sch:
             if data:
                 return data
             else:
-                raise MyException427(f"This agent {agent_id} is not registered!")
+                raise MyException427(f"(RU) Агент '{agent_id}' не зарегистрирован! (ENG) This agent '{agent_id}' is not registered!")
         except Exception as e:
             self.conn.rollback()
             logger.error("DB(reg_sch): reg_sch_select_agent_scheme: %s", e)
@@ -264,7 +264,7 @@ class Reg_sch:
             if data:
                 return data
             else:
-                raise MyException427(f"This agent '{agent_id}' is not registered!")
+                raise MyException427(f"(RU) Агент '{agent_id}' не зарегистрирован! (ENG) This agent '{agent_id}' is not registered!")
         except Exception as e:
             logger.error("DB(reg_sch): reg_sch_select_agent_details: %s", e)
             raise e
@@ -294,7 +294,7 @@ class Reg_sch:
             if result:
                 return result
             else:
-                raise MyException427(f"This agent '{agent_id}' is not registered!")
+                raise MyException427(f"(RU) Агент '{agent_id}' не зарегистрирован! (ENG) This agent '{agent_id}' is not registered!")
         except Exception as e:
             self.conn.rollback()
             logger.error("DB(reg_sch): reg_sch_select_agent_details2: %s", e)
@@ -328,7 +328,6 @@ class Reg_sch:
             logger.error("DB(reg_sch): reg_sch_select_agent_user_q: %s", e)
             raise e
 
-    # ТУТ НАДО БЫТЬ ОСТОРОЖНЫМ 14.07
     def reg_sch_select_templates_excluding_agent(self, agent_id: int) -> list:
         """
             SQL-запрос для выбора уникальных template_id, исключая шаблоны указанного агента.

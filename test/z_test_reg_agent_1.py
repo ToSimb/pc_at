@@ -2,15 +2,15 @@ import sys
 import json
 import requests
 
+from config import MY_PORT
 
-def requestjson(final_result):
-    # url = f'{PC_AF_PROTOCOL}://{PC_AF_IP}:{PC_AF_PORT}/params?vvk_id={vvk_id}'
-    url = f'http://localhost:8000/join-scheme'
+def requestjson(final_result, agent_reg_id: str):
+    url = f'http://localhost:{MY_PORT}/agent-scheme?agent_reg_id={agent_reg_id}'
     headers = {'Content-Type': 'application/json'}
     try:
         response = requests.post(url, json=final_result, headers=headers)
         if response.status_code == 200:
-            print("Регистрация успешная.")
+            print(f"Регистрация агента {agent_reg_id} успешная.")
             return True
         else:
             print(f"Произошла ошибка: {response.status_code}")
@@ -27,7 +27,7 @@ def open_json(name_file: str):
     return json.loads(data)
 
 try:
-    join_scheme = open_json("json/JoinScheme_new_one_agents.json")
-    requestjson(join_scheme)
+    scheme_agent_1 = open_json("json/AgentScheme(reg_id=1.1.1.1).json")
+    requestjson(scheme_agent_1, "1.1.1.1")
 except:
     sys.exit(1)

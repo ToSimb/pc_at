@@ -65,7 +65,9 @@ async def gui_pages_vvk(db=Depends(get_db_repo)):
         logger.error(error_str)
         raise HTTPException(status_code=427, detail={"error_msg": error_str})
     except Exception as e:
-        return (str(e))
+        error_str = f"Exception: {e}."
+        logger.error(error_str)
+        raise HTTPException(status_code=527, detail={"error_msg": error_str})
 
 @router.get("/agent_params/{agent_id}")
 async def gui_params_agent(agent_id: int):
@@ -73,15 +75,12 @@ async def gui_params_agent(agent_id: int):
         Метод для просмотра последнего принято пакета Agent
     """
     try:
-        file_name = f"files/pf/agent_{agent_id}.json"
-        result = open_json(file_name)
+        result = open_json(agent_id)
         return result
-    except MyException427 as e:
-        error_str = f"{e}."
-        logger.error(error_str)
-        raise HTTPException(status_code=427, detail={"error_msg": error_str})
     except Exception as e:
-        return (str(e))
+        error_str = f"Exception: {e}."
+        logger.error(error_str)
+        raise HTTPException(status_code=528, detail={"error_msg": error_str})
 
 @router.get("/status_save")
 async def gui_status_save(db=Depends(get_db_repo)):
@@ -93,7 +92,9 @@ async def gui_status_save(db=Depends(get_db_repo)):
         db.flag_update()
         return RedirectResponse("/gui")
     except Exception as e:
-        return (str(e))
+        error_str = f"Exception: {e}."
+        logger.error(error_str)
+        raise HTTPException(status_code=528, detail={"error_msg": error_str})
 
 # _________________ Детали Агента
 
@@ -107,13 +108,15 @@ async def gui_pages_agent_details(request: Request, agent_reg_id: str, db=Depend
             check_agent = db.gui_select_agent_id_for_check_agent_reg_id(agent_reg_id)
             return templates.TemplateResponse(request=request, name="agent_details.html", context={"agent_reg_id": agent_reg_id, "agent_id": check_agent} )
         else:
-            return ("Такого агента нет")
+            raise MyException427(f"(RU) Агент '{agent_reg_id}' не зарегистрирован! (ENG) This agent '{agent_reg_id}' is not registered!")
     except MyException427 as e:
         error_str = f"{e}."
         logger.error(error_str)
         raise HTTPException(status_code=427, detail={"error_msg": error_str})
     except Exception as e:
-        return (str(e))
+        error_str = f"Exception: {e}."
+        logger.error(error_str)
+        raise HTTPException(status_code=528, detail={"error_msg": error_str})
 
 @router.get("/agent_scheme_all/{agent_id}")
 async def gui_pages_agent_all(agent_id: int, db=Depends(get_db_repo)):
@@ -135,7 +138,9 @@ async def gui_pages_agent_all(agent_id: int, db=Depends(get_db_repo)):
         logger.error(error_str)
         raise HTTPException(status_code=427, detail={"error_msg": error_str})
     except Exception as e:
-        return (str(e))
+        error_str = f"Exception: {e}."
+        logger.error(error_str)
+        raise HTTPException(status_code=528, detail={"error_msg": error_str})
 
 @router.get("/agent_scheme/{agent_id}")
 async def gui_pages_agent_scheme(agent_id: int, db=Depends(get_db_repo)):
@@ -154,7 +159,9 @@ async def gui_pages_agent_scheme(agent_id: int, db=Depends(get_db_repo)):
         logger.error(error_str)
         raise HTTPException(status_code=427, detail={"error_msg": error_str})
     except Exception as e:
-        return (str(e))
+        error_str = f"Exception: {e}."
+        logger.error(error_str)
+        raise HTTPException(status_code=528, detail={"error_msg": error_str})
 
 @router.get("/agent_reg_scheme/{agent_id}")
 async def gui_pages_agent_reg_scheme(agent_id: int, db=Depends(get_db_repo)):
@@ -173,22 +180,26 @@ async def gui_pages_agent_reg_scheme(agent_id: int, db=Depends(get_db_repo)):
         logger.error(error_str)
         raise HTTPException(status_code=427, detail={"error_msg": error_str})
     except Exception as e:
-        return (str(e))
+        error_str = f"Exception: {e}."
+        logger.error(error_str)
+        raise HTTPException(status_code=528, detail={"error_msg": error_str})
 
 @router.get("/agent_save_file/{agent_id}")
-async def gui_pages_agent_save_file(agent_id: int, db=Depends(get_db_repo)):
+async def gui_pages_agent_save_file(agent_id: int):
     """
         Метод для просмотра Agent Reg Scheme (то есть - ответ на регистрацию/перерегистрацию)
     """
     try:
         result = get_to_json(agent_id, "list")
         return result
-    except MyException427 as e:
+    except MyException528 as e:
         error_str = f"{e}."
         logger.error(error_str)
-        raise HTTPException(status_code=427, detail={"error_msg": error_str})
+        raise HTTPException(status_code=528, detail={"error_msg": error_str})
     except Exception as e:
-        return (str(e))
+        error_str = f"Exception: {e}."
+        logger.error(error_str)
+        raise HTTPException(status_code=528, detail={"error_msg": error_str})
 
 @router.get("/agent_response/{agent_id}")
 async def gui_pages_agent_response(agent_id: int, db=Depends(get_db_repo)):
@@ -203,38 +214,43 @@ async def gui_pages_agent_response(agent_id: int, db=Depends(get_db_repo)):
         logger.error(error_str)
         raise HTTPException(status_code=427, detail={"error_msg": error_str})
     except Exception as e:
-        return (str(e))
+        error_str = f"Exception: {e}."
+        logger.error(error_str)
+        raise HTTPException(status_code=528, detail={"error_msg": error_str})
 
 @router.get("/agent_id_file/{agent_id}")
-async def gui_pages_agent_id_file(agent_id: int, db=Depends(get_db_repo)):
+async def gui_pages_agent_id_file(agent_id: int):
     """
         Метод для просмотра последнего отправленного Agent Scheme при перерегистрации
     """
     try:
         result = get_to_json(agent_id, "reg")
         return result
-    except MyException427 as e:
+    except MyException528 as e:
         error_str = f"{e}."
         logger.error(error_str)
-        raise HTTPException(status_code=427, detail={"error_msg": error_str})
+        raise HTTPException(status_code=528, detail={"error_msg": error_str})
     except Exception as e:
-        return (str(e))
+        error_str = f"Exception: {e}."
+        logger.error(error_str)
+        raise HTTPException(status_code=528, detail={"error_msg": error_str})
 
 @router.get("/agent_reg_id_file/{agent_reg_id}")
-async def gui_pages_agent_reg_id_file(agent_reg_id: str, db=Depends(get_db_repo)):
+async def gui_pages_agent_reg_id_file(agent_reg_id: str):
     """
         Метод для просмотра последнего отправленного Agent Scheme при регистрации
     """
     try:
         result = get_to_json(agent_reg_id, "reg")
         return result
-    except MyException427 as e:
+    except MyException528 as e:
         error_str = f"{e}."
         logger.error(error_str)
-        raise HTTPException(status_code=427, detail={"error_msg": error_str})
+        raise HTTPException(status_code=528, detail={"error_msg": error_str})
     except Exception as e:
-        return (str(e))
-
+        error_str = f"Exception: {e}."
+        logger.error(error_str)
+        raise HTTPException(status_code=528, detail={"error_msg": error_str})
 
 
 # _________________ Отображение схем ВВК
@@ -245,12 +261,11 @@ async def gui_pages_validation(request: Request, db=Depends(get_db_repo)):
         GUI details
     """
     try:
-        return templates.TemplateResponse( request=request, name="details.html" )
+        return templates.TemplateResponse(request=request, name="details.html" )
     except Exception as e:
         error_str = f"Exception: {e}."
         logger.error(error_str)
-        db.reg_sch_block_false()
-        raise HTTPException(status_code=527, detail={"error_msg": error_str})
+        raise HTTPException(status_code=528, detail={"error_msg": error_str})
 
 @router.get("/join_scheme")
 async def gui_pages_join(db=Depends(get_db_repo)):
@@ -269,7 +284,9 @@ async def gui_pages_join(db=Depends(get_db_repo)):
         logger.error(error_str)
         raise HTTPException(status_code=427, detail={"error_msg": error_str})
     except Exception as e:
-        return (str(e))
+        error_str = f"Exception: {e}."
+        logger.error(error_str)
+        raise HTTPException(status_code=528, detail={"error_msg": error_str})
 
 @router.get("/all_scheme")
 async def gui_pages_all_scheme(db=Depends(get_db_repo)):
@@ -291,7 +308,9 @@ async def gui_pages_all_scheme(db=Depends(get_db_repo)):
         logger.error(error_str)
         raise HTTPException(status_code=427, detail={"error_msg": error_str})
     except Exception as e:
-        return (str(e))
+        error_str = f"Exception: {e}."
+        logger.error(error_str)
+        raise HTTPException(status_code=528, detail={"error_msg": error_str})
 
 @router.get("/vvk_scheme_true")
 async def gui_pages_vvk_sch_ver_true(db=Depends(get_db_repo)):
@@ -314,7 +333,9 @@ async def gui_pages_vvk_sch_ver_true(db=Depends(get_db_repo)):
         logger.error(error_str)
         raise HTTPException(status_code=427, detail={"error_msg": error_str})
     except Exception as e:
-        return (str(e))
+        error_str = f"Exception: {e}."
+        logger.error(error_str)
+        raise HTTPException(status_code=528, detail={"error_msg": error_str})
 
 @router.get("/vvk_scheme_false")
 async def gui_pages_vvk_sch_ver_false(db=Depends(get_db_repo)):
@@ -337,7 +358,9 @@ async def gui_pages_vvk_sch_ver_false(db=Depends(get_db_repo)):
         logger.error(error_str)
         raise HTTPException(status_code=427, detail={"error_msg": error_str})
     except Exception as e:
-        return (str(e))
+        error_str = f"Exception: {e}."
+        logger.error(error_str)
+        raise HTTPException(status_code=528, detail={"error_msg": error_str})
 
 
 # __________________ Дополнительный функционал для VvkScheme
@@ -352,8 +375,9 @@ async def gui_delete_pf_all(db=Depends(get_db_repo)):
         logger.info("ИЗ БД УДАЛЕНЫ ВСЕ ПФ")
         return RedirectResponse("/gui")
     except Exception as e:
-        return (str(e))
-
+        error_str = f"Exception: {e}."
+        logger.error(error_str)
+        raise HTTPException(status_code=528, detail={"error_msg": error_str})
 
 @router.get("/block-false")
 async def gui_block_false(db=Depends(get_db_repo)):
@@ -365,4 +389,6 @@ async def gui_block_false(db=Depends(get_db_repo)):
         logger.info("ПРОЦЕСС РАЗБЛОКИРОВАН")
         return RedirectResponse("/gui")
     except Exception as e:
-        return (str(e))
+        error_str = f"Exception: {e}."
+        logger.error(error_str)
+        raise HTTPException(status_code=528, detail={"error_msg": error_str})

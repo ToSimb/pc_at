@@ -1,6 +1,6 @@
 import httpx
 
-from config import PF_LIMIT, DEBUG, PC_AF_PROTOCOL, PC_AF_IP, PC_AF_PORT
+from config import MY_PORT, PF_LIMIT, DEBUG, PC_AF_PROTOCOL, PC_AF_IP, PC_AF_PORT
 
 from database.database import Database
 
@@ -10,7 +10,7 @@ async def send_value_to_url(vvk_id, number_id, packet: dict, db: Database):
         url = f'{PC_AF_PROTOCOL}://{PC_AF_IP}:{PC_AF_PORT}/params?vvk_id={vvk_id}'
         headers = {'Content-Type': 'application/json'}
         if DEBUG:
-            url = f'http://localhost:8000/test/params?vvk_id={vvk_id}'
+            url = f'http://localhost:{MY_PORT}/test/params?vvk_id={vvk_id}'
         try:
             response = await client.post(url, json=packet, headers=headers)
             # print(response.status_code)

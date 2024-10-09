@@ -54,7 +54,7 @@ def add_params(params: SchemeJson, agent_id: int, metrics_id: list, items_id: li
             if str(value.item_id) in items_id:
                 for data in value.data:
                     if data.t > start_time:
-                        raise MyException428("Incorrect PF polling time")
+                        raise MyException428("(RU) Неправильное время опроса PF. (ENG) Incorrect PF polling time.")
                     len_pf += 1
                     element = {
                         'item_id': value.item_id,
@@ -68,9 +68,9 @@ def add_params(params: SchemeJson, agent_id: int, metrics_id: list, items_id: li
                     filtered_element = {k: v for k, v in element.items() if v is not None}
                     pf.append(filtered_element)
             else:
-                raise MyException427(f"Item_id '{value.item_id}' is not in the scheme!")
+                raise MyException427(f"(RU) Item_id '{value.item_id}' отсутствует в схеме. (ENG) Item_id '{value.item_id}' is not in the scheme.")
         else:
-            raise MyException427(f"Metric_id '{value.metric_id}' is not in the scheme!")
+            raise MyException427(f"(RU) Metric_id '{value.metric_id}' отсутствует в схеме. (ENG) Metric_id '{value.metric_id}' is not in the scheme.")
     db.pf_insert_params_of_1_packet(agent_id, len_pf, pf)
     end_time = time.time()
     execution_time = end_time - start_time

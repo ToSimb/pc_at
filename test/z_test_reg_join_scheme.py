@@ -2,9 +2,10 @@ import sys
 import json
 import requests
 
+from config import MY_PORT
+
 def requestjson(final_result):
-    # url = f'{PC_AF_PROTOCOL}://{PC_AF_IP}:{PC_AF_PORT}/params?vvk_id={vvk_id}'
-    url = f'http://localhost:8000/join-scheme'
+    url = f'http://localhost:{MY_PORT}/join-scheme'
     headers = {'Content-Type': 'application/json'}
     try:
         response = requests.post(url, json=final_result, headers=headers)

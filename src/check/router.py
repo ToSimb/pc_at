@@ -34,7 +34,7 @@ async def get_checks(agent_id: int, user_query_interval_revision: int, db=Depend
             else:
                 return Response(status_code=227)
         else:
-            raise Exception(f"Agent_id '{agent_id}' is not registered.")
+            raise Exception(f"(RU) Агент '{agent_id}' не зарегистрирован. (ENG) Agent_id '{agent_id}' is not registered.")
     except Exception as e:
         error_str = f"{e}."
         logger.error(error_str)

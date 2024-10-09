@@ -3,6 +3,8 @@ import sys
 import os
 import json
 
+from config import MY_PORT
+
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 
 from client.database.postgres import connect, disconnect
@@ -37,7 +39,7 @@ def request_registration_vvk(vvk_id: int, json_vvk_return: dict):
 
     Args:
         vvk_id (int): Идентификатор VVK. Если идентификатор указан - то это перерегистрация,
-                      иначе регистрация ВВК.
+                      иначе регистрация ВВК,
         json_vvk_return (dict): Данные в формате JSON, которые будут отправлены в запросе.
 
     Returns:
@@ -48,9 +50,9 @@ def request_registration_vvk(vvk_id: int, json_vvk_return: dict):
         requests.RequestException: Если произошла ошибка при выполнении запроса.
     """
     if vvk_id:
-        url = f'http://127.0.0.1:8000/test/save?vvk_id={vvk_id}'
+        url = f'http://127.0.0.1:{MY_PORT}/test/save?vvk_id={vvk_id}'
     else:
-        url = f'http://127.0.0.1:8000/test/save'
+        url = f'http://127.0.0.1:{MY_PORT}/test/save'
 
     headers = {'Content-Type': 'application/json'}
     try:
@@ -70,12 +72,13 @@ def request_registration_vvk(vvk_id: int, json_vvk_return: dict):
         db.gui_update_vvk_reg_error(error_str)
         return None
 
-def re_registration_vvk() -> bool:
+
+def registration_vvk() -> bool:
     """
-        Перерегистрирует VVK в системе.
+        Регистрирует VVK в системе.
 
     Returns:
-        bool: Возвращает True, если перерегистрация выполнена успешно, иначе False.
+        bool: Возвращает True, если регистрация выполнена успешно, иначе False.
     """
     # REG_SCH
     if db.reg_sch_block_check():
@@ -84,24 +87,28 @@ def re_registration_vvk() -> bool:
         db.gui_update_vvk_reg_error(error_str)
         return False
     db.reg_sch_block_true()
-
-    vvk_id, scheme_revision, scheme, metric_info_list_raw = db.sch_ver_select_vvk_details_unreg()
+    scheme_revision, scheme, metric_info_list_raw = db.reg_sch_select_vvk_scheme()
     metric_info_list = if_metric_info(metric_info_list_raw)
+    print("Извлечение метрик инфо: ", metric_info_list)
     data = {
         "scheme_revision": scheme_revision,
         "scheme": scheme,
         "metric_info_list": metric_info_list
     }
-    temp = request_registration_vvk(vvk_id, data)
+    temp = request_registration_vvk(None, data)
     if temp:
         # GUI
         db.gui_update_vvk_reg_true(temp["vvk_id"], temp["scheme_revision"], temp["user_query_interval_revision"])
 
+        metric_info_list_dict = {
+            "metric_info_list": metric_info_list
+        }
         # SCH_VER
-        db.sch_ver_update_all_user_query_revision(temp["user_query_interval_revision"])
-        db.sch_ver_update_status_reg(temp["scheme_revision"])
+        db.sch_ver_insert_vvk(True, temp["vvk_id"], temp["scheme_revision"],
+                                  temp["user_query_interval_revision"], scheme, metric_info_list_dict)
 
         # REG_SCH
+        db.reg_sch_update_vvk_id(temp["vvk_id"])
         db.reg_sch_update_all_user_query_revision(temp["user_query_interval_revision"])
 
         db.reg_sch_block_false()
@@ -111,7 +118,7 @@ def re_registration_vvk() -> bool:
         return False
 
 try:
-    re_registration_vvk()
+    registration_vvk()
 
 except Exception as e:
     db.reg_sch_block_false()

@@ -22,10 +22,14 @@ def if_metric_info(metric_info: dict) -> list:
 
     return metric_info_list
 
-def open_json(name_file: str):
-    with open(name_file, 'r', encoding='utf-8') as file:
-        data = file.read()
-    return json.loads(data)
+def open_json(agent_id):
+    try:
+        file_name = f"files/pf/agent_{agent_id}.json"
+        with open(file_name, 'r', encoding='utf-8') as file:
+            data = file.read()
+        return json.loads(data)
+    except FileNotFoundError:
+        raise MyException528(f"(RU) Файл с agent_id '{agent_id}' не найден. (ENG) File with agent_id '{agent_id}' not found")
 
 def get_to_json(agent_id, suffix) -> dict:
     try:
@@ -34,4 +38,4 @@ def get_to_json(agent_id, suffix) -> dict:
             data = file.read()
         return json.loads(data)
     except FileNotFoundError:
-        raise MyException528("File with item_id not found")
+        raise MyException528(f"(RU) Файл с agent_id '{agent_id}' не найден. (ENG) File with agent_id '{agent_id}' not found")

@@ -31,12 +31,11 @@ async def request_by_number_id(session, number_id: int):
     try:
         response = await session.get(url, params=params)
         response.raise_for_status()
-        logger.info(f" @ Received response for param {number_id}: {response.status_code}")
+        logger.info(f" @ Получен ответ для параметра '{number_id}': {response.status_code}")
     except httpx.HTTPError as e:
-        logger.error(f" @ Request error occurred for param {number_id}: {str(e)}")
+        logger.error(f" @ Произошла ошибка запроса для параметра '{number_id}': {str(e)}")
     except Exception as e:
-        logger.error(f" @ Exception param {number_id}: {str(e)}")
-
+        logger.error(f" @ Исключение для параметра '{number_id}': {str(e)}")
 
 async def main_requests(number_ids):
     async with httpx.AsyncClient(timeout=httpx.Timeout(15.0, connect=15.0))as session:
@@ -70,7 +69,7 @@ def request_registration_vvk(vvk_id: int, json_vvk_return: dict):
 
     Args:
         vvk_id (int): Идентификатор VVK. Если идентификатор указан - то это перерегистрация,
-                      иначе регистрация ВВК.
+                      иначе регистрация ВВК,
         json_vvk_return (dict): Данные в формате JSON, которые будут отправлены в запросе.
 
     Returns:
@@ -80,24 +79,22 @@ def request_registration_vvk(vvk_id: int, json_vvk_return: dict):
     Raises:
         requests.RequestException: Если произошла ошибка при выполнении запроса.
     """
+    # проверка на наличие vvk_id, то есть была ли система зарегистрирована до этого или нет
     if vvk_id:
+        url = f'{PC_AF_PROTOCOL}://{PC_AF_IP}:{PC_AF_PORT}/vvk-scheme?vvk_id={vvk_id}'
         if DEBUG:
-            url = f'http://127.0.0.1:8000/test/save?vvk_id={vvk_id}'
-        else:
-            url = f'{PC_AF_PROTOCOL}://{PC_AF_IP}:{PC_AF_PORT}/vvk-scheme?vvk_id={vvk_id}'
-
+            url = f'http://localhost:{MY_PORT}/test/save?vvk_id={vvk_id}'
     else:
+        url = f'{PC_AF_PROTOCOL}://{PC_AF_IP}:{PC_AF_PORT}/vvk-scheme'
         if DEBUG:
-            url = f'http://127.0.0.1:8000/test/save'
-        else:
-            url = f'{PC_AF_PROTOCOL}://{PC_AF_IP}:{PC_AF_PORT}/vvk-scheme'
+            url = f'http://localhost:{MY_PORT}/test/save'
 
     headers = {'Content-Type': 'application/json'}
     try:
         logger.info(f"Отправка: {url}")
         response = requests.post(url, json=json_vvk_return, headers=headers)
         if response.status_code == 200:
-            logger.info("Успушная регистрация VvkScheme на стороне АФ")
+            logger.info("Успешная регистрация VvkScheme на стороне АФ")
             return response.json()
         else:
             error_str = "Произошла ошибка при регистрации: " + str(response.status_code) + " : " + str(response.text)
@@ -105,7 +102,7 @@ def request_registration_vvk(vvk_id: int, json_vvk_return: dict):
             db.gui_update_vvk_reg_error(error_str)
             return None
     except requests.RequestException as e:
-        error_str = f"RequestException: {e}."
+        error_str = f"RequestException(Ошибка на уровне запроса): {e}."
         logger.error(error_str)
         db.gui_update_vvk_reg_error(error_str)
         return None
@@ -240,15 +237,13 @@ try:
             logger.info(f"Осталось данных в БД: {all_count_pf}, время запроса в БД - {time.time() - time_1}")
 
         else:
-            # пока оставим данный момент, НО если не пригодится, то время надо будет удалить!
-            # Если валидация всей Схемы ВВК будет проводится на стороне АТ, то она пригодится!
             if db.sch_ver_select_date_create_unreg():
                 if db.gui_select_agents_check_status_reg():
                     if re_registration_vvk():
-                        logger.info("Успешная перегистрация ВВК")
+                        logger.info("Успешная перерегистрация ВВК")
                         t3 = 1
                     else:
-                        logger.error("Не успешная перегистрация ВВК.")
+                        logger.error("Не успешная перерегистрация ВВК.")
                 else:
                     error_str = "Не все агенты успешно зарегистрированы!"
                     logger.info(error_str)
@@ -258,7 +253,7 @@ try:
 
         end_time = time.time()
         time_transfer = end_time - start_time
-        print(f"______ВРЕМЯ 1 ЦИКЛА__________   {time_transfer}")
+        logger.info(f"______ВРЕМЯ ЦИКЛА__________   {time_transfer}")
         time_transfer = t3 if time_transfer > t3 else time_transfer
         time.sleep(t3 - time_transfer)
 

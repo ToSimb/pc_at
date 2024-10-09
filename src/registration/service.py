@@ -14,15 +14,6 @@ def save_to_json(agent_id, suffix, data):
     with open(filename, 'w', encoding='utf-8') as file:
         json.dump(data, file, ensure_ascii=False)
 
-def get_to_json(agent_id: int) -> dict:
-    try:
-        filename = f"files/list/agent_{agent_id}.json"
-        with open(filename, 'r', encoding='utf-8') as file:
-            data = file.read()
-        return json.loads(data)
-    except FileNotFoundError:
-        raise MyException528("File with item_id not found")
-
 def save_item_ids(index_agent, json_agent_return, json_agent_scheme):
     save_to_json(index_agent, "list", json_agent_return)
 
@@ -45,7 +36,7 @@ def save_item_ids(index_agent, json_agent_return, json_agent_scheme):
         else:
             logger.debug("Списки содержат разные элементы")
     except Exception as e:
-        str_error = "Error when issuing item_id :" + str(e)
+        str_error = "(RU) Ошибка при выдаче item_id. (ENG) Error when issuing item_id :" + str(e)
         raise MyException528(str_error)
 
 def add_metrics(json_vvk_return_metrics, json_agent_scheme_metrics):
@@ -71,7 +62,7 @@ def add_metrics(json_vvk_return_metrics, json_agent_scheme_metrics):
         if existing_metric:
             if existing_metric != item:
                 raise MyException427(
-                    f"Metric_id: {item['metric_id']} already exists, but has different parameters.")
+                    f"(RU) Метрика '{item['metric_id']}' имеет расхождение в параметрах! (ENG) The metric '{item['metric_id']}' has a discrepancy in parameters")
         else:
             metrics_list.append(item)
     return metrics_list
@@ -98,7 +89,7 @@ def add_templates(json_vvk_return_templates, json_agent_scheme_templates):
         if existing_template:
             if existing_template != item:
                 raise MyException427(
-                    f"Template_id: {item['template_id']} already exists, but has different parameters.")
+                    f"(RU) Шаблон '{item['template_id']}' имеет расхождение в параметрах! (ENG) The template '{item['template_id']}' has a discrepancy in parameters.")
         else:
             templates_list.append(item)
     return templates_list
@@ -150,7 +141,7 @@ def check_correctness_of_templates(agent_path, join_path):
     a = agent_path.split("[")[0]
     b = join_path.split("/")[-1].split("[")[0]
     if a != b:
-        raise MyException427(f"Incoming templates error, template '{agent_path}' not found.")
+        raise MyException427(f"(RU) Ошибка входящих шаблонов, шаблон '{agent_path}' не найден. (ENG) Incoming templates error, template '{agent_path}' not found.")
 
 def formation_agent_reg_scheme(agent_reg_id: str, agent_scheme: dict, join_scheme: dict, vvk_scheme: dict,
                                max_index: int, item_id_list_agent: list):
@@ -188,8 +179,8 @@ def formation_agent_reg_scheme(agent_reg_id: str, agent_scheme: dict, join_schem
                         full_path_item = join_list["join_item_full_path"] + '/' + item["full_path"]
                         if check_full_path_exists(join_scheme["item_id_list"], full_path_item):
                             raise MyException427(
-                                f"Error registering agent for connection type 'jtInclude': path was not found in Jion: {full_path_item}")
-
+                                f"(RU) Ошибка регистрации 'jtInclude': нет пути '{full_path_item}' в Join. "
+                                f"(ENG) Error registering 'jtInclude': No path '{full_path_item}' in Join.")
                 # Формирование нового item_id_list
                 for a in agent_scheme["scheme"]["item_id_list"]:
                     # проверка на корректность путей в item_id_list
@@ -214,7 +205,10 @@ def formation_agent_reg_scheme(agent_reg_id: str, agent_scheme: dict, join_schem
                             vvk_scheme["item_id_list"].append(a)
                         json_agent_list.append(b)
                     else:
-                        raise MyException427(f"This element '{a['full_path']}' is not in agent_scheme[scheme][join_id_list].")
+                        raise MyException427(
+                            f"(RU) Элемент '{a['full_path']}' отсутствует в agent_scheme[scheme][join_id_list]. "
+                            f"(ENG) Element '{a['full_path']}' is not in agent_scheme[scheme][join_id_list].")
+
                 # Формирование нового item_info_list
                 for a in agent_scheme["scheme"]["item_info_list"]:
                     # проверка на корректность путей в item_info_list
@@ -227,7 +221,8 @@ def formation_agent_reg_scheme(agent_reg_id: str, agent_scheme: dict, join_schem
                         else:
                             vvk_scheme["item_info_list"].append(a)
                     else:
-                        raise MyException427(f"This element '{a['full_path']}' is not in agent_scheme[scheme][item_info_list].")
+                        raise MyException427(f"(RU) Элемент '{a['full_path']}' неправильный в agent_scheme[scheme][item_info_list]. "
+                                             f"(ENG) Element '{a['full_path']}' is invalid in agent_scheme[scheme][item_info_list].")
             # если тип подключения jtAssign
             if join_list["join_type"] == "jtAssign":
                 all_initial_agent_paths = []
@@ -237,7 +232,8 @@ def formation_agent_reg_scheme(agent_reg_id: str, agent_scheme: dict, join_schem
                 vvk_scheme['templates'] = add_templates(vvk_scheme['templates'], agent_scheme['scheme']['templates'])
 
                 if len(join_list["joins"]) != len(agent_scheme["scheme"]["join_id_list"]):
-                    raise MyException427("Error registering agent for connection type 'jtAssign': different number of join_id_list.")
+                    raise MyException427("(RU) Ошибка регистрации 'jtAssign': Не совпадает количество точек подключения в join_id_list. "
+                                         "(ENG) Error registering 'jtAssign': The number of connection points does not match.")
 
                 # формируем all_initial_agent_paths для проверки корректности путей
                 for join_id_list_scheme in join_list["joins"]:
@@ -247,13 +243,17 @@ def formation_agent_reg_scheme(agent_reg_id: str, agent_scheme: dict, join_schem
                     if item_join_id_list_agent:
                         all_initial_agent_paths.append(item_join_id_list_agent["full_path"])
                     else:
-                        raise MyException427(f"Ошибка Assign - {join_id_list_scheme['agent_item_join_id']}")
+                        raise MyException427(
+                            f"(RU) Нет join_id '{join_id_list_scheme['agent_item_join_id']}' в join_id_list Агента. "
+                            f"(ENG) No join_id '{join_id_list_scheme['agent_item_join_id']}' in join_id_list in Agent")
 
                 # проверка на корректность путей в item_info_list
                 agent_scheme_copy_item_info_list = copy.deepcopy(agent_scheme["scheme"]["item_info_list"])
                 for a in agent_scheme_copy_item_info_list:
                     if a["full_path"].split('/')[0] not in all_initial_agent_paths:
-                        raise MyException427(f"This element '{a['full_path']}' is not in agent_scheme[scheme][item_info_list].")
+                        raise MyException427(
+                            f"(RU) Элемент '{a['full_path']}' неправильный в agent_scheme[scheme][item_info_list]. "
+                            f"(ENG) Element '{a['full_path']}' is invalid in agent_scheme[scheme][item_info_list].")
 
                 # проходимся по join_id_list в json_agent_scheme
                 for join_id_list_scheme in join_list["joins"]:
@@ -271,7 +271,7 @@ def formation_agent_reg_scheme(agent_reg_id: str, agent_scheme: dict, join_schem
                                 b = copy.deepcopy(a)
                                 a["full_path"] = join_id_list_scheme["join_item_full_path"] + a[
                                     "full_path"].replace(
-                                    a["full_path"].split('/')[0], "",1)
+                                    a["full_path"].split('/')[0], "", 1)
                                 for item in item_id_list_agent:
                                     if item['full_path'] == a["full_path"]:
                                         a["item_id"] = item["item_id"]
@@ -303,7 +303,8 @@ def formation_agent_reg_scheme(agent_reg_id: str, agent_scheme: dict, join_schem
                                     vvk_scheme["item_info_list"].append(a)
 
                     else:
-                        raise MyException427(f"No join_id:{join_id_list_scheme['agent_item_join_id']} in join_id_list in Agent")
+                        raise MyException427(f"(RU) Нет join_id '{join_id_list_scheme['agent_item_join_id']}' в join_id_list Агента. "
+                                             f"(ENG) No join_id '{join_id_list_scheme['agent_item_join_id']}' in join_id_list in Agent")
     return agent_scheme, json_agent_list, vvk_scheme, index
 
 def delete_metric_info(metric_info, item_id_agent, metrics_id_agent):

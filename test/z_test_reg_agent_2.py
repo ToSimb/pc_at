@@ -2,10 +2,10 @@ import sys
 import json
 import requests
 
+from config import MY_PORT
 
 def requestjson(final_result, agent_reg_id: str):
-    # url = f'{PC_AF_PROTOCOL}://{PC_AF_IP}:{PC_AF_PORT}/params?vvk_id={vvk_id}'
-    url = f'http://localhost:8000/agent-scheme?agent_reg_id={agent_reg_id}'
+    url = f'http://localhost:{MY_PORT}/agent-scheme?agent_reg_id={agent_reg_id}'
     headers = {'Content-Type': 'application/json'}
     try:
         response = requests.post(url, json=final_result, headers=headers)
@@ -27,8 +27,6 @@ def open_json(name_file: str):
     return json.loads(data)
 
 try:
-    scheme_agent_1 = open_json("json/AgentScheme(reg_id=1.1.1.1).json")
-    requestjson(scheme_agent_1, "1.1.1.1")
     scheme_agent_1 = open_json("json/AgentScheme(reg_id=1.1.1.3).json")
     requestjson(scheme_agent_1, "1.1.1.3")
 except:

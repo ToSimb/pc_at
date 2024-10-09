@@ -7,7 +7,7 @@ from database.db import Database
 from database.postgres import connect, disconnect
 from logger.logger_check import logger_check
 
-from config import PC_AF_PROTOCOL, PC_AF_IP, PC_AF_PORT, T3, DEBUG
+from config import MY_PORT, PC_AF_PROTOCOL, PC_AF_IP, PC_AF_PORT, T3, DEBUG
 
 TEMPLATES_ID = "agent_connection"
 METRIC_ID = "connection.agent"
@@ -37,7 +37,7 @@ def request_conn(vvk_id: int, user_query_interval_revision: int) -> bool:
         Функция отправляет запрос для подтверждения контроля связи.
 
     Args:
-        vvk_id: Идентификатор ВВК.
+        vvk_id: Идентификатор ВВК,
         user_query_interval_revision: Версия интервала запроса пользователя.
 
     Returns:
@@ -50,15 +50,15 @@ def request_conn(vvk_id: int, user_query_interval_revision: int) -> bool:
     """
     url = f'{PC_AF_PROTOCOL}://{PC_AF_IP}:{PC_AF_PORT}/check'
     if DEBUG:
-        url = f'http://localhost:8000/test/check'
+        url = f'http://localhost:{MY_PORT}/test/check'
     params = {'vvk_id': vvk_id, 'user_query_interval_revision': user_query_interval_revision}
     try:
-        response = requests.get(url, params=params, timeout=1)
+        response = requests.get(url, params=params, timeout=15)
         if response.status_code == 200:
             logger_check.info("Канал связи в порядке.")
             return False
         elif response.status_code == 227:
-            logger_check.info("Канал связи в порядке, но ошибка 227")
+            logger_check.info("Канал связи в порядке, но ошибка 227 - необходимо обновить metric_info")
             return True
         else:
             logger_check.info("Нет соединения с АФ")
@@ -69,7 +69,7 @@ def request_conn(vvk_id: int, user_query_interval_revision: int) -> bool:
 
 def request_metric(vvk_id: int) -> dict:
     """
-        Функция отправляет запрос для получения метрикинфо.
+        Функция отправляет запрос для получения метрикинфо (metric_info).
 
     Args:
         vvk_id: Идентификатор ВВК.
@@ -82,33 +82,30 @@ def request_metric(vvk_id: int) -> dict:
         requests.RequestException: Если произошла ошибка при выполнении запроса.
     """
     url = f'{PC_AF_PROTOCOL}://{PC_AF_IP}:{PC_AF_PORT}/metric-info-list'
+    if DEBUG:
+        url = f'http://localhost:{MY_PORT}/test/metric-info-list'
     params = {'vvk_id': vvk_id}
     try:
-        response = requests.get(url, params=params)
+        response = requests.get(url, params=params, timeout=15)
         if response.status_code == 200:
             result = response.json()
-            logger_check.info("Метрики от АФ получена.")
+            logger_check.info("Метрики от АФ получены.")
             return result
         else:
-            logger_check.info("Ошибка получения метрик")
-            raise Exception(f"Unexpected status code: {response.status_code}")
+            logger_check.info("Ошибка получения метрик от АФ")
+            raise Exception(f"(RU) Ошибка запроса. (ENG) Unexpected status code: {response.status_code}")
 
     except requests.RequestException as e:
-        logger_check.error(f"Произошла ошибка при получении метрик: {e}")
+        logger_check.error(f"Произошла ошибка при получении метрик от АФ: {e}")
         raise
 
-def get_metric_info(vvk_id: int) -> bool:
+def get_metric_info(vvk_id: int, vvk_scheme_revision: int) -> bool:
     """
         При ошибке 227 запрашивает актуальные метрики и их обновляет.
 
-     Функция выполняет следующие шаги:
-     1. Запрашивает метрики для заданного VVK через функцию `request_metric`.
-     2. Если запрос успешен (получены данные):
-        - Обновляет таблицу `reg_sch`, вызывая функции `reg_sch_update_all_user_query_revision` и `reg_sch_update_vvk_metric_info`.
-        - Обновляет таблицу `sch_ver`, вызывая функции `sch_ver_update_all_user_query_revision` и `sch_ver_update_all_metric_info`.
-
      Args:
-         vvk_id (int): Идентификатор VVK.
+         vvk_id (int): Идентификатор ВВК,
+         vvk_scheme_revision (int): Версия схемы ВВК.
 
      Returns:
          bool: Возвращает True, если данные были успешно получены и таблицы были обновлены.
@@ -120,13 +117,17 @@ def get_metric_info(vvk_id: int) -> bool:
     temp = request_metric(vvk_id)
     # загрузить метрик инфо в таблицы
     if temp:
+        # Проверка на совпадения версии схем - но отключена
+        if vvk_scheme_revision != temp['scheme_revision']:
+            logger_check.error(f"Не совпадают версии схем при обновлении Metric_info")
+
+        metric_info_list_dict = {
+            "metric_info_list": temp["metric_info_list"]
+        }
         # GUI
         db.gui_update_all_user_query_revision(temp["user_query_interval_revision"])
         # REG_SCH
         db.reg_sch_update_all_user_query_revision(temp["user_query_interval_revision"])
-        metric_info_list_dict = {
-            "metric_info_list": temp["metric_info_list"]
-        }
         db.reg_sch_update_vvk_metric_info(metric_info_list_dict)
         # SCH_VER
         db.sch_ver_update_all_user_query_revision(temp["user_query_interval_revision"])
@@ -137,17 +138,16 @@ try:
         logger_check.info("____________________________")
         start_time = time.time()
         logger_check.info(int(start_time))
-        vvk_id, _, user_query_interval_revision, t3 = db.sch_ver_select_vvk_details()
+        vvk_id, vvk_scheme_revision, user_query_interval_revision, t3 = db.sch_ver_select_vvk_details()
 
         if vvk_id:
             if227 = request_conn(vvk_id, user_query_interval_revision)
-            print(if227)
             if if227 is None:
                 db.gui_update_vvk_check_number_id_false(vvk_id)
             else:
                 db.gui_update_vvk_check_number_id_tru(vvk_id)
                 if if227:
-                    get_metric_info(vvk_id)
+                    get_metric_info(vvk_id, vvk_scheme_revision)
 
             time_counter += 1
 
@@ -198,8 +198,12 @@ try:
                                         result.update(data_item)
                                     if result is not None:
                                         value.append(result)
-                    logger_check.debug(f"Len: {len(value)}")
+                    logger_check.debug(f"Количество собранных метрик в цикле: {len(value)}")
                     if len(value) > 0:
+                        items_id = []
+                        for item in value:
+                            items_id.append(item["item_id"])
+                        logger_check.debug(f"Список метрик: {items_id}")
                         db.pf_insert_params_of_1_packet(0, len(value), value)
                 else:
                     logger_check.error(f"Нет метрики: {METRIC_ID}")
@@ -207,7 +211,7 @@ try:
             end_time = time.time()
             total_time = end_time - start_time
             adjusted_total_time = min(total_time, 1)
-            logger_check.debug(f"Time {adjusted_total_time}")
+            logger_check.debug(f"Затраченное время: {adjusted_total_time}")
             time.sleep(1 - adjusted_total_time)
         else:
             logger_check.info("Нет зарегистрированной VVK")
