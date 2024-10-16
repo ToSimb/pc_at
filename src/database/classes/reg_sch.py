@@ -225,7 +225,7 @@ class Reg_sch:
         """
         try:
             cur = self.conn.cursor()
-            sql_select = ("SELECT scheme_revision, user_query_interval_revision, original_scheme, scheme, response_scheme FROM reg_sch "
+            sql_select = ("SELECT scheme_revision, user_query_interval_revision, original_scheme, scheme, response_scheme, metric_info_list FROM reg_sch "
                           "WHERE number_id = %s AND type_id = True; ")
             cur.execute(sql_select, (agent_id,))
             data = cur.fetchone()
@@ -553,7 +553,7 @@ class Reg_sch:
             raise e
 
     def reg_sch_update_agent_re_reg(self, number_id: int, scheme_revision: int, user_query_interval_revision: int,
-                                    original_scheme: dict, scheme: dict, response_scheme: dict) -> bool:
+                                    original_scheme: dict, scheme: dict, response_scheme: dict, metric_info_list: dict) -> bool:
         """
             SQL-запрос для обновления записи агента после перерегистрации.
 
@@ -564,6 +564,7 @@ class Reg_sch:
             original_scheme (dict): Исходная схема агента.
             scheme (dict): Зарегистрированная схема агента.
             response_scheme (dict): Ответ для агента с его item_id.
+            metric_info_list (dict): МИЛ, который отправил агент.
 
         Returns:
             bool: True, если обновление прошло успешно, иначе возбуждается исключение.
@@ -573,10 +574,10 @@ class Reg_sch:
         """
         try:
             cur = self.conn.cursor()
-            sql_update = (f"UPDATE reg_sch SET scheme_revision = %s, user_query_interval_revision = %s, original_scheme = %s, scheme = %s, response_scheme = %s "
+            sql_update = (f"UPDATE reg_sch SET scheme_revision = %s, user_query_interval_revision = %s, original_scheme = %s, scheme = %s, response_scheme = %s, metric_info_list = %s "
                           f"WHERE number_id = {number_id} AND type_id = True")
             cur.execute(sql_update, (
-            scheme_revision, user_query_interval_revision, json.dumps(original_scheme), json.dumps(scheme), json.dumps(response_scheme),))
+            scheme_revision, user_query_interval_revision, json.dumps(original_scheme), json.dumps(scheme), json.dumps(response_scheme), json.dumps(metric_info_list),))
             self.conn.commit()
             logger.info(f"DB(reg_sch): Agent '{number_id}' перерегистрирована")
             return True
@@ -584,6 +585,33 @@ class Reg_sch:
             self.conn.rollback()
             logger.error("DB(reg_sch): reg_sch_update_agent_re_reg '%s': %s", number_id, e)
             raise e
+
+    def reg_sch_delete_mil(self, metric_info_list: dict) -> bool:
+        """
+        SQL-запрос для обновления metric_info_list записи схемы ВВК.
+
+        Args:
+            metric_info_list (dict): Список информации о метриках.
+
+        Returns:
+            bool: Возвращает True, если обновление прошло успешно.
+
+        Raises:
+            Exception: Если произошла ошибка при выполнении запроса к базе данных.
+        """
+        try:
+            cur = self.conn.cursor()
+            sql_update = (
+                "UPDATE reg_sch SET metric_info_list = %s "
+                "WHERE type_id = False;")
+            cur.execute(sql_update, (json.dumps(metric_info_list),))
+            self.conn.commit()
+            return True
+        except Exception as e:
+            self.conn.rollback()
+            logger.error("DB(sch_ver): reg_sch_delete_mil: %s", e)
+            raise e
+
 
     # __ Delete __
     def reg_sch_delete_agent(self, agent_id: int) -> bool:

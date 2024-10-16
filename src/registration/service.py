@@ -486,11 +486,15 @@ def re_registration_agent_id_scheme(agent_id: int, agent_reg_id: str, all_agent_
         "item_id_list": json_agent_list
     }
 
+    agent_mil = {
+        "metric_info_list": all_agent_scheme["metric_info_list"]
+    }
+
     save_item_ids(agent_id, json_agent_return, agent_scheme["scheme"]["item_id_list"])
 
     db.gui_update_agent_id_re_reg_true(agent_id, all_agent_scheme["scheme_revision"])
     db.reg_sch_update_agent_re_reg(agent_id, all_agent_scheme["scheme_revision"], user_query_interval_revision,
-                                   all_agent_scheme["scheme"], agent_scheme["scheme"], json_agent_return)
+                                   all_agent_scheme["scheme"], agent_scheme["scheme"], json_agent_return, agent_mil)
 
     # SCH - случай когда ввк схема зарегистрированна!
     vvk_id = db.sch_ver_select_check_vvk_id()

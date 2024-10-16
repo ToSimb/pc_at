@@ -1,6 +1,8 @@
-from fastapi import APIRouter, Depends, HTTPException
+import json, httpx
+from fastapi import APIRouter, Depends, HTTPException, File, Form, UploadFile
 from deps import get_db_repo
 
+from config import MY_PORT
 
 from registration.service import (
     registration_agent_reg_id_scheme,
@@ -58,7 +60,7 @@ def agent_scheme(agent_scheme: AgentScheme, agent_id: int = None, agent_reg_id: 
                 save_to_json(agent_reg_id, "reg", all_agent_scheme)
                 check_agent = db.gui_select_agent_id_for_check_agent_reg_id(agent_reg_id)
                 if check_agent:
-                    scheme_revision_old, _, original_scheme_old, scheme_old, response_scheme = db.reg_sch_select_agent_scheme(check_agent)
+                    scheme_revision_old, _, original_scheme_old, scheme_old, response_scheme, _ = db.reg_sch_select_agent_scheme(check_agent)
                     if (all_agent_scheme["scheme"] == original_scheme_old) and (scheme_revision_old == all_agent_scheme["scheme_revision"]):
                         db.gui_update_agent_id_tru(check_agent)
                         logger.info(f"(RU) Агент '{check_agent}' вернул свой 'item_id'. (ENG) Agent '{check_agent}' successfully returned its 'item_id'.")
@@ -157,3 +159,47 @@ def agent_scheme(agent_scheme: AgentScheme, agent_id: int = None, agent_reg_id: 
         db.reg_sch_block_false()
         raise HTTPException(status_code=528, detail={"error_msg": error_str})
 
+@router.post("/upload")
+async def upload_agent_scheme(file: UploadFile = File(...), agent_reg_id: str = Form(...)):
+    """
+    Метод для загрузки AgentScheme через файл
+    """
+    if file.content_type not in ["application/json", "text/json"]:
+        raise HTTPException(status_code=427, detail="(RU)Файл не JSON.(ENG) JSON file is not correct")
+
+    try:
+        contents = await file.read()
+        agent_all = json.loads(contents)
+        if not isinstance(agent_all, dict) or "scheme_revision" not in agent_all or "scheme" not in agent_all:
+            raise MyException427("(RU) Неправильное содержимое файла. (ENG) Invalid file content")
+
+        required_fields = ["metrics", "templates", "item_id_list", "join_id_list", "item_info_list"]
+        for field in required_fields:
+            if field not in agent_all["scheme"]:
+                raise MyException427("(RU) Неправильное содержимое файла. (ENG) Invalid file content")
+
+        async with httpx.AsyncClient() as client:
+            response = await client.post(
+                f"http://localhost:{MY_PORT}/agent-scheme?agent_reg_id={agent_reg_id}",
+                json=agent_all
+            )
+
+        return response.json()
+
+    except json.JSONDecodeError:
+        raise HTTPException(status_code=427, detail="(RU)Файл не JSON. (ENG) JSON file is not correct")
+    except MyException427 as e:
+        error_str = str(e)
+        logger.error(error_str)
+        raise HTTPException(status_code=427, detail={"error_msg": error_str})
+    except KeyError as e:
+        error_str = f"KeyError:(RU) Нет ключа в словаре {e}. (ENG) Could not find the key in the dictionary."
+        logger.error(error_str)
+        raise HTTPException(status_code=427, detail={"error_msg": error_str})
+    except BlockingIOError:
+        error_str = f"(RU) Vvk Scheme занят другим процессом! (ENG) Vvk Scheme is busy with another process. Please try again later"
+        logger.error(error_str)
+        raise HTTPException(status_code=527, detail={"error_msg": error_str})
+    except Exception as e:
+        error_str = f"Exception: {e}."
+        raise HTTPException(status_code=528, detail={"error_msg": error_str})

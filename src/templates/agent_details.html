@@ -67,6 +67,18 @@
                 </div>
             </div>
             {% endif %}
+            {% if agent_id is none %}
+            <div class="border border-mini">
+                <h2>Быстрая регистрация</h2>
+                <div class="main__block-center flex">
+                    <form class="main__block-center flex" action="{{ url_for('upload_agent_scheme') }}" method="post" enctype="multipart/form-data">
+                        <input type="file" name="file">
+                        <input type="hidden" name="agent_reg_id" id="agent_reg_id" value={{agent_reg_id}}>
+                        <button class="btn reset-btn" type="submit">Upload</button>
+                    </form>
+                </div>
+            </div>
+            {% endif %}
             <div class="border border-mini">
                 <h2>Files</h2>
                 <div class="main__block-center flex">

@@ -124,13 +124,14 @@ async def gui_pages_agent_all(agent_id: int, db=Depends(get_db_repo)):
         Метод для просмотра Agent All Scheme
     """
     try:
-        scheme_revision, user_query_interval_revision, original_scheme, scheme, response_scheme = db.reg_sch_select_agent_scheme(agent_id)
+        scheme_revision, user_query_interval_revision, original_scheme, scheme, response_scheme, metric_info_list = db.reg_sch_select_agent_scheme(agent_id)
         result = {
             "scheme_revision": scheme_revision,
             "user_query_interval_revision": user_query_interval_revision,
             "original_scheme": original_scheme,
             "scheme": scheme,
-            "response_scheme": response_scheme
+            "response_scheme": response_scheme,
+            "metric_info_list": if_metric_info(metric_info_list)
         }
         return result
     except MyException427 as e:
@@ -148,7 +149,7 @@ async def gui_pages_agent_scheme(agent_id: int, db=Depends(get_db_repo)):
         Метод для просмотра Agent Scheme
     """
     try:
-        scheme_revision, _, _, scheme, _ = db.reg_sch_select_agent_scheme(agent_id)
+        scheme_revision, _, _, scheme, _, _ = db.reg_sch_select_agent_scheme(agent_id)
         result = {
             "scheme_revision": scheme_revision,
             "scheme": scheme
@@ -169,7 +170,7 @@ async def gui_pages_agent_reg_scheme(agent_id: int, db=Depends(get_db_repo)):
         Метод для просмотра Agent Reg Scheme
     """
     try:
-        scheme_revision, _, original_scheme, _, _ = db.reg_sch_select_agent_scheme(agent_id)
+        scheme_revision, _, original_scheme, _, _, _ = db.reg_sch_select_agent_scheme(agent_id)
         result = {
             "scheme_revision": scheme_revision,
             "scheme": original_scheme
@@ -207,7 +208,7 @@ async def gui_pages_agent_response(agent_id: int, db=Depends(get_db_repo)):
         Метод для просмотра Agent Response Scheme
     """
     try:
-        _, _, _, _, response_scheme = db.reg_sch_select_agent_scheme(agent_id)
+        _, _, _, _, response_scheme, _ = db.reg_sch_select_agent_scheme(agent_id)
         return response_scheme
     except MyException427 as e:
         error_str = f"{e}."
@@ -388,6 +389,27 @@ async def gui_block_false(db=Depends(get_db_repo)):
         db.reg_sch_block_false()
         logger.info("ПРОЦЕСС РАЗБЛОКИРОВАН")
         return RedirectResponse("/gui")
+    except Exception as e:
+        error_str = f"Exception: {e}."
+        logger.error(error_str)
+        raise HTTPException(status_code=528, detail={"error_msg": error_str})
+
+
+@router.get("/delete-mil")
+async def gui_delete_mil(db=Depends(get_db_repo)):
+    """
+        Метод для удаления из VvkScheme МетрикИнфоЛист, если он не зарегистрирован
+    """
+    try:
+        if db.sch_ver_select_latest_status():
+            return ("Не найдено незарегистрированной схемы")
+        else:
+            mil = {
+                "metric_info_list": []
+            }
+            db.sch_ver_delete_mil(mil)
+            db.reg_sch_delete_mil(mil)
+            return RedirectResponse("/gui")
     except Exception as e:
         error_str = f"Exception: {e}."
         logger.error(error_str)

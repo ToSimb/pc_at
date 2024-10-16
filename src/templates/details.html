@@ -37,8 +37,17 @@
             window.location.href = `block-false`;
         }
 
+        function redirectToDeleteMIL() {
+            window.location.href = `delete-mil`;
+        }
+
         function redirectToBack() {
             window.location.href = "{{ url_for('gui_pages') }}";
+        }
+
+        function redirectToEditor() {
+
+            window.location.href = "{{ url_for('editor_main') }}";
         }
     </script>
 </head>
@@ -48,7 +57,15 @@
         <div class="main__vvk border">
             <h1>Дополнительные действия с VvkScheme</h1>
             <div class="border border-mini">
-                <h2>Schemes</h2>
+                <h2>Редактор</h2>
+                <div class="main__block-center flex">
+                    <button class="btn reset-btn" onclick="redirectToEditor()">
+                        Открыть редактор
+                    </button>
+                </div>
+            </div>
+            <div class="border border-mini">
+                <h2>Просмотр Schemes</h2>
                 <div class="main__block-center flex">
                     <button class="btn reset-btn" onclick="redirectToJoinScheme()">
                         Join Scheme
@@ -74,6 +91,12 @@
                         Разблокирование процесса для регистрации
                     </button>
                 </div>
+                <p></p>
+                <div class="main__block-center flex">
+                    <button class="btn reset-btn" onclick="redirectToDeleteMIL()">
+                        Удаление metric_info_list у незарегистрированной схемы
+                    </button>
+                </div>
             </div>
             <div class="border border-mini">
                 <h2>Просмотр схем ВВК на стороне АФ</h2>
@@ -89,6 +112,7 @@
                     </button>
                 </div>
             </div>
+
             <button class="btn reset-btn" onclick="redirectToBack()">
                 Вернуться обратно
             </button>

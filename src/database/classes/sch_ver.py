@@ -238,3 +238,29 @@ class Sch_ver:
             self.conn.rollback()
             logger.error("DB(sch_ver): sch_ver_update_vvk_if_false: %s", e)
             raise e
+
+    def sch_ver_delete_mil(self, metric_info_list: dict) -> bool:
+        """
+        SQL-запрос для обновления metric_info_list записи незарегистрированной схемы ВВК.
+
+        Args:
+            metric_info_list (dict): Список информации о метриках.
+
+        Returns:
+            bool: Возвращает True, если обновление прошло успешно.
+
+        Raises:
+            Exception: Если произошла ошибка при выполнении запроса к базе данных.
+        """
+        try:
+            cur = self.conn.cursor()
+            sql_update = (
+                "UPDATE sch_ver SET metric_info_list = %s "
+                "WHERE status_reg = False;")
+            cur.execute(sql_update, (json.dumps(metric_info_list),))
+            self.conn.commit()
+            return True
+        except Exception as e:
+            self.conn.rollback()
+            logger.error("DB(sch_ver): sch_ver_delete_mil: %s", e)
+            raise e
