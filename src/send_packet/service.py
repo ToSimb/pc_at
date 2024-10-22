@@ -1,24 +1,25 @@
+import time
+
 import httpx
 
 from config import MY_PORT, PF_LIMIT, DEBUG, PC_AF_PROTOCOL, PC_AF_IP, PC_AF_PORT
 
 from database.database import Database
 
+from logger.logger_send import logger_send
 
 async def send_value_to_url(vvk_id, number_id, packet: dict, db: Database):
-    async with httpx.AsyncClient(timeout=httpx.Timeout(12.0, connect=12.0)) as client:
+    async with httpx.AsyncClient(timeout=httpx.Timeout(60.0, connect=12.0)) as client:
         url = f'{PC_AF_PROTOCOL}://{PC_AF_IP}:{PC_AF_PORT}/params?vvk_id={vvk_id}'
         headers = {'Content-Type': 'application/json'}
         if DEBUG:
             url = f'http://localhost:{MY_PORT}/test/params?vvk_id={vvk_id}'
         try:
             response = await client.post(url, json=packet, headers=headers)
-            # print(response.status_code)
+            logger_send.info(f"response - {response}")
             if response.status_code == 200:
-                # print("Данные успешно отправлены.")
                 return True
             elif response.status_code == 227:
-                # print("Данные отправлены, но ошибка 227")
                 return True
             else:
                 error_str = str(response.status_code) + " : " + str(response.text)
@@ -42,6 +43,7 @@ async def send_value_to_url(vvk_id, number_id, packet: dict, db: Database):
             raise Exception(error_str)
 
 def get_params_from_db_by_number_id(number_id: int, db: Database) -> tuple:
+    start_time = time.time()
     result_id = []
     params = []
     index_row = 0
@@ -52,6 +54,7 @@ def get_params_from_db_by_number_id(number_id: int, db: Database) -> tuple:
     len_pf = ans[1]
     params += ans[2]
     while True:
+        get_time = time.time()
         index_row += 1
         ans = db.pf_select_pf_of_1_packet(number_id, index_row)
         if ans is None:
@@ -59,6 +62,8 @@ def get_params_from_db_by_number_id(number_id: int, db: Database) -> tuple:
         len_pf += ans[1]
         if len_pf > int(PF_LIMIT):
             len_pf -= ans[1]
+            break
+        if get_time - start_time > 10:
             break
         result_id.append(ans[0])
         params += ans[2]

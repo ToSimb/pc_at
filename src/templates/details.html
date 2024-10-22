@@ -44,11 +44,6 @@
         function redirectToBack() {
             window.location.href = "{{ url_for('gui_pages') }}";
         }
-
-        function redirectToEditor() {
-
-            window.location.href = "{{ url_for('editor_main') }}";
-        }
     </script>
 </head>
 <body>
@@ -56,14 +51,6 @@
     <div class="container">
         <div class="main__vvk border">
             <h1>Дополнительные действия с VvkScheme</h1>
-            <div class="border border-mini">
-                <h2>Редактор</h2>
-                <div class="main__block-center flex">
-                    <button class="btn reset-btn" onclick="redirectToEditor()">
-                        Открыть редактор
-                    </button>
-                </div>
-            </div>
             <div class="border border-mini">
                 <h2>Просмотр Schemes</h2>
                 <div class="main__block-center flex">

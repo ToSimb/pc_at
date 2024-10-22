@@ -7,7 +7,8 @@ from config import MY_PORT
 from registration.service import (
     registration_agent_reg_id_scheme,
     re_registration_agent_id_scheme,
-    save_to_json
+    save_to_json,
+    delete_agent
     )
 from registration.schemas import AgentScheme
 
@@ -196,6 +197,25 @@ async def upload_agent_scheme(file: UploadFile = File(...), agent_reg_id: str = 
         error_str = f"KeyError:(RU) Нет ключа в словаре {e}. (ENG) Could not find the key in the dictionary."
         logger.error(error_str)
         raise HTTPException(status_code=427, detail={"error_msg": error_str})
+    except BlockingIOError:
+        error_str = f"(RU) Vvk Scheme занят другим процессом! (ENG) Vvk Scheme is busy with another process. Please try again later"
+        logger.error(error_str)
+        raise HTTPException(status_code=527, detail={"error_msg": error_str})
+    except Exception as e:
+        error_str = f"Exception: {e}."
+        raise HTTPException(status_code=528, detail={"error_msg": error_str})
+
+@router.get("/delete/{agent_id}")
+async def delete_agent_id(agent_id: int, db=Depends(get_db_repo)):
+    """
+        Метод для удаления Агента из АТ
+    """
+    try:
+        if db.sch_ver_select_latest_status():
+            return ("ВВК зарегистрирован")
+        else:
+            a = delete_agent(agent_id, db)
+            return a
     except BlockingIOError:
         error_str = f"(RU) Vvk Scheme занят другим процессом! (ENG) Vvk Scheme is busy with another process. Please try again later"
         logger.error(error_str)

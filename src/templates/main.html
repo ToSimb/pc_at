@@ -32,6 +32,10 @@
             window.location.href = `gui/details`;
         }
 
+        function redirectToEditor() {
+
+            window.location.href = "{{ url_for('editor_main') }}";
+        }
     </script>
 </head>
 <body>
@@ -65,7 +69,7 @@
                     {% endif %}
                         <p></p>
                     {% if vvk["time_value_out"] is not none %}
-                        <p>Время последней успешной передачи ПФ (состояние агентов): {{vvk["time_value_out"]}}</p>
+                        <p>Время передачи ПФ (состояние агентов): {{vvk["time_value_out"]}}</p>
                     {% endif %}
                     {% if vvk["error_value_out"] is not none %}
                         <p>Ошибка передачи ПФ: {{vvk["error_value_out"]}}</p>
@@ -95,6 +99,12 @@
                             {% else %}
                                 Включить сохранение последнего ПФ
                             {% endif %}
+                        </button>
+                    </div>
+                    <p></p>
+                    <div class="main__block-center flex">
+                        <button class="btn reset-btn" onclick="redirectToEditor()">
+                            Открыть редактор
                         </button>
                     </div>
                     <p></p>

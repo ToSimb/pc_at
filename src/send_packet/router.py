@@ -33,6 +33,7 @@ async def send_packet(number_id: int, db=Depends(get_db_repo)):
         response_code = await send_value_to_url(vvk_id, number_id, result, db)
         response_time = time.time()
         if response_code:
+            logger_send.info(response_code)
             deleted_rows = db.pf_delete_records(result_id)
             delete_time = time.time()
             db.gui_update_value_out(vvk_id, number_id, None)
@@ -43,10 +44,11 @@ async def send_packet(number_id: int, db=Depends(get_db_repo)):
                     + "Время формирование ПФ:     " + str(pars_time - get_time) + "\n"
                     + "Время отправки ПФ:         " + str(response_time - pars_time) + "\n"
                     + "Время удаления ПФ:         " + str(delete_time - response_time) + "\n"
-                    + "Id удаленные из БД:        " + str(result_id) + " - " + str(deleted_rows))
+                    + "Кол-во удаленных пакетов и первые 2 элемента :     " + str(deleted_rows) + " - " + str(result_id[:2]))
             return Response(status_code=200)
         else:
-            raise Exception(f"Что-то пришло другое")
+            logger_send.error(f"ОШИБКА отправки не отправлены для '{number_id}'")
+            raise Exception(f"Что-то пришло другое для '{number_id}'")
     except Exception as e:
         error_str = f"{e}."
         logger_send.error(error_str)

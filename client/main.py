@@ -38,7 +38,7 @@ async def request_by_number_id(session, number_id: int):
         logger.error(f" @ Исключение для параметра '{number_id}': {str(e)}")
 
 async def main_requests(number_ids):
-    async with httpx.AsyncClient(timeout=httpx.Timeout(15.0, connect=15.0))as session:
+    async with httpx.AsyncClient(timeout=httpx.Timeout(80.0, connect=15.0))as session:
         tasks = [request_by_number_id(session, number_id) for number_id in number_ids]
         await asyncio.gather(*tasks)
 

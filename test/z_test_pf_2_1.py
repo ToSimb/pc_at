@@ -3,6 +3,7 @@ import time
 import random
 import requests
 
+from config import MY_PORT
 
 def requestjson(url, final_result):
     headers = {'Content-Type': 'application/json'}
@@ -27,7 +28,7 @@ def requestjson(url, final_result):
 try:
     final_result = {
         "scheme_revision": 0,
-        "user_query_interval_revision": 0,
+        "user_query_interval_revision": 1,
         "value": []
     }
     for _ in range(random.randint(1,2)):
@@ -52,7 +53,7 @@ try:
     start_time = time.time()
     # random_agent = random.randint(1,2)
     random_agent = 2
-    url = f'http://localhost:8000/params?agent_id={random_agent}'
+    url = f'http://localhost:{MY_PORT}/params?agent_id={random_agent}'
     requestjson(url, final_result)
     end_time = time.time()
     execution_time = end_time - start_time

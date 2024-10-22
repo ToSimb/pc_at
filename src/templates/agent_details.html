@@ -25,6 +25,11 @@
             window.location.href = `/gui/agent_save_file/${agent_id}`;
         }
 
+        function redirectToDelteAgentID(agent_id) {
+            window.location.href = `/agent-scheme/delete/${agent_id}`;
+        }
+
+
         function redirectToFileAgentRegId(agent_reg_id) {
             window.location.href = `/gui/agent_reg_id_file/${agent_reg_id}`;
         }
@@ -96,6 +101,14 @@
                 <div class="main__block-center flex">
                     <button class="btn reset-btn" onclick="redirectToFileAgentRegScheme({{agent_id}})">
                         Посмотреть ответ Response Scheme, который был сохранен в файле
+                    </button>
+                </div>
+            </div>
+             <div class="border border-mini">
+                <h2>Удаление агента, если VvkScheme не зарегистрирована</h2>
+                <div class="main__block-center flex">
+                    <button class="btn reset-btn" onclick="redirectToDelteAgentID('{{agent_id}}')">
+                        удалить
                     </button>
                 </div>
             </div>

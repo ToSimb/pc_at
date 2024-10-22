@@ -8,6 +8,9 @@ sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 from client.database.db import Database
 from client.database.postgres import connect, disconnect
 
+from config import MY_PORT
+
+
 conn = connect()
 db = Database(conn)
 
@@ -30,7 +33,7 @@ def request_conn(vvk_id: int, user_query_interval_revision: int) -> bool:
         requests.RequestException: Если произошла ошибка при выполнении запроса.
     """
     # url = f'{PC_AF_PROTOCOL}://{PC_AF_IP}:{PC_AF_PORT}/check'
-    url = f'http://localhost:8000/test/check'
+    url = f'http://localhost:{MY_PORT}/test/check'
     params = {'vvk_id': vvk_id, 'user_query_interval_revision': user_query_interval_revision}
     try:
         response = requests.get(url, params=params)
@@ -61,8 +64,7 @@ def request_metric(vvk_id: int) -> dict:
         Exception: Если ответ сервера содержит статус-код, отличный от 200.
         requests.RequestException: Если произошла ошибка при выполнении запроса.
     """
-    # url = f'{PC_AF_PROTOCOL}://{PC_AF_IP}:{PC_AF_PORT}/metric-info-list'
-    url = f'http://localhost:8000/test/metric-info-list'
+    url = f'http://localhost:{MY_PORT}/test/metric-info-list'
     params = {'vvk_id': vvk_id}
     try:
         response = requests.get(url, params=params)

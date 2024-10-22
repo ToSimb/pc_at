@@ -283,11 +283,10 @@ class Gui:
             sql_update_gui = "UPDATE gui SET error_conn = %s WHERE number_id = %s and type_id = TRUE;"
             cur.execute(sql_update_gui, (True, number_id))
             self.conn.commit()
-            logger.info(f"DB(gui): agent_id '{number_id}' - нет связи!")
             return True
         except Exception as e:
             self.conn.rollback()
-            logger.error("DB(gui): gui_update_agent_check_number_id_false - %s : %s", number_id, e)
+            logger_check.error("DB(gui): gui_update_agent_check_number_id_false - %s : %s", number_id, e)
             raise e
 
     def gui_update_vvk_check_number_id_false(self, number_id: int) -> bool:
@@ -308,11 +307,11 @@ class Gui:
             sql_update_gui = "UPDATE gui SET error_conn = %s WHERE number_id = %s and type_id = FALSE;"
             cur.execute(sql_update_gui, (True, number_id))
             self.conn.commit()
-            logger.info(f"DB(gui): VVK '{number_id}' - нет связи!")
+            logger_check.info(f"DB(gui): VVK '{number_id}' - нет связи!")
             return True
         except Exception as e:
             self.conn.rollback()
-            logger.error("DB(gui): gui_update_vvk_check_number_id_false - %s : %s", number_id, e)
+            logger_check.error("DB(gui): gui_update_vvk_check_number_id_false - %s : %s", number_id, e)
             raise e
 
     def gui_update_all_user_query_revision(self, user_query_interval_revision: int) -> bool:

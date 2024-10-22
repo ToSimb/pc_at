@@ -156,18 +156,21 @@ try:
                 # проверка, что метрика для контроля связи есть
                 if query_interval_all is not None:
                     value = []
-                    dump = db.gui_select_agents_details()
-                    for item in dump:
+                    agents = db.gui_select_agents_details()
+                    for agent in agents:
                         # Проверка, что агент зарегистрирован
-                        if item[0] is not None:
-                            logger_check.debug(f"Проверка агента: {item[0]}")
-                            late_time = max(time_change(item[1]), time_change(item[2]))
+                        if agent[0] is not None:
+                            late_time = max(time_change(agent[1]), time_change(agent[2]))
                             status = True
-                            # если не было ответа от агента больше 5 секунд - ERROR
-                            if int(start_time) - late_time > 5:
+                            # если не было ответа от агента больше 10 секунд - ERROR
+                            if int(start_time) - late_time > 10:
                                 status = False
-                                db.gui_update_agent_check_number_id_false(item[0])
-                            item_ids = db.reg_sch_select_item_ids(item[0], TEMPLATES_ID)
+                                db.gui_update_agent_check_number_id_false(agent[0])
+                            item_ids = db.reg_sch_select_item_ids(agent[0], TEMPLATES_ID)
+                            if status:
+                                logger_check.info(f"Агент '{agent[0]}' - OK")
+                            else:
+                                logger_check.info(f"Агент '{agent[0]}' - нет связи!")
                             # проверка, что есть пути с контролем связи
                             if item_ids is not None:
                                 for item_id in item_ids:
@@ -189,7 +192,7 @@ try:
                                                 'v': "OK"
                                             }
                                         else:
-                                            comment_error = f"Нет связи с Агентом: {item[0]}"
+                                            comment_error = f"Нет связи с Агентом: {agent[0]}"
                                             data_item = {
                                                 't': int(start_time),
                                                 'v': "ERROR",
@@ -198,12 +201,12 @@ try:
                                         result.update(data_item)
                                     if result is not None:
                                         value.append(result)
-                    logger_check.debug(f"Количество собранных метрик в цикле: {len(value)}")
+                    logger_check.info(f"Количество собранных метрик в цикле: {len(value)}")
                     if len(value) > 0:
                         items_id = []
-                        for item in value:
-                            items_id.append(item["item_id"])
-                        logger_check.debug(f"Список метрик: {items_id}")
+                        for agent in value:
+                            items_id.append(agent["item_id"])
+                        logger_check.info(f"Список метрик: {items_id}")
                         db.pf_insert_params_of_1_packet(0, len(value), value)
                 else:
                     logger_check.error(f"Нет метрики: {METRIC_ID}")

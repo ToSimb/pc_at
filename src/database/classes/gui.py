@@ -89,6 +89,37 @@ class Gui:
             logger.error("DB(gui): gui_select_agent_id_for_check_agent_reg_id: %s", e)
             raise e
 
+    def gui_select_agent_reg_id_for_check_agent_reg_id(self, agent_id: int) -> str:
+        """
+            SQL-запрос для получения 'agent_id' агента.
+
+        Args:
+            agent_id (int): Идентификатор агента, по которому производится поиск.
+
+        Returns:
+            str: 'agent_reg_id' найденной записи.
+
+        Raises:
+            Exception: Если запись с указанным 'agent_id' не найдена или содержит пустое значение.
+            Exception: Если произошла ошибка при выполнении запроса к базе данных.
+        """
+        try:
+            with self.conn.cursor() as cur:
+                sql_select_check = """
+                    SELECT agent_reg_id FROM gui WHERE type_id = TRUE AND number_id = %s;
+                """
+                cur.execute(sql_select_check, (agent_id,))
+                result = cur.fetchone()
+                self.conn.commit()
+                if result:
+                    return result[0]
+                else:
+                    return None
+        except Exception as e:
+            self.conn.rollback()
+            logger.error("DB(gui): gui_select_agent_reg_id_for_check_agent_reg_id: %s", e)
+            raise e
+
     def gui_select_check_agent_status_reg(self, number_id: int) -> bool:
         """
             SQL-запрос на проверку регистрации агента.
@@ -171,7 +202,60 @@ class Gui:
             logger.error("DB(gui): gui_insert_agents: %s", e)
             raise e
 
+    def gui_insert_agent(self, agents_reg_id: str):
+        """
+            SQL-запросы для вставки идентификаторов агентов.
+
+        Args:
+            agents_reg_id (str): Идентификатор агента для вставки в таблицу 'gui'.
+
+        Returns:
+            bool: Возвращает True, если операция прошла успешно, иначе выбрасывается исключение.
+
+        Raises:
+            Exception: Если произошла ошибка при выполнении запроса к базе данных.
+        """
+        try:
+            cur = self.conn.cursor()
+            sql_insert = "INSERT INTO gui (agent_reg_id) VALUES (%s);"
+            cur.execute(sql_insert, (agents_reg_id,))
+            self.conn.commit()
+            return True
+        except Exception as e:
+            self.conn.rollback()
+            logger.error("DB(gui): gui_insert_agent: %s", e)
+            raise e
+
     # __ Update _
+    def gui_update_vvk_name(self, vvk_name: str):
+        """
+            SQL-запросы для обновления имени ВВК по идентификатору типа.
+
+        Args:
+            vvk_name (str): Новое имя ВВК для обновления в таблице 'gui'.
+
+        Returns:
+            bool: Возвращает True, если операция прошла успешно, иначе выбрасывается исключение.
+
+        Raises:
+            Exception: Если произошла ошибка при выполнении запроса к базе данных.
+        """
+        try:
+            cur = self.conn.cursor()
+            sql_update = "UPDATE gui SET vvk_name = %s WHERE type_id = %s;"
+            cur.execute(sql_update, (vvk_name, False))
+            self.conn.commit()
+
+            if cur.rowcount == 0:
+                logger.warning("DB(gui): No records updated for type_id = False")
+
+            logger.info("DB(gui): vvk_name обновлено")
+            return True
+        except Exception as e:
+            self.conn.rollback()
+            logger.error("DB(gui): gui_update_vvk_name: %s", e)
+            raise e
+
     def gui_update_agent_reg_id_error(self, agent_reg_id: str, error_reg: str) -> bool:
         """
             SQL-запрос: Обновляет информацию об ошибке регистрации агента.
@@ -483,6 +567,28 @@ class Gui:
             cur.execute(sql_delete)
             self.conn.commit()
             logger.info("DB(gui): таблица очищена для строк с type_id = TRUE")
+            return True
+        except Exception as e:
+            self.conn.rollback()
+            logger.error("DB(gui): gui_delete_agents: %s", e)
+            raise e
+
+    def gui_delete_agent_id(self, agent_id: int) -> bool:
+        """
+            SQL-запрос удаления из таблицы 'gui' агент с заданным agent_id.
+
+        Returns:
+            bool: Возвращает True, если операция прошла успешно, иначе выбрасывается исключение.
+
+        Raises:
+            Exception: Если произошла ошибка при выполнении запроса к базе данных.
+        """
+        try:
+            cur = self.conn.cursor()
+            sql_delete = "DELETE FROM gui WHERE number_id = %s AND type_id = TRUE;"
+            cur.execute(sql_delete, (agent_id,))
+            self.conn.commit()
+            logger.info("DB(gui): удалены строки с agent_id = %s", agent_id)
             return True
         except Exception as e:
             self.conn.rollback()

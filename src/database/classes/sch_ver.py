@@ -170,6 +170,33 @@ class Sch_ver:
             logger.error("DB(sch_ver): sch_ver_select_all_vvk_if_false: %s", e)
             raise e
 
+    def sch_ver_select_check_false(self) -> bool:
+        """
+            SQL-запрос для проверки наличия хотя бы одной записи с status_reg = False.
+
+        Returns:
+            bool: Если есть хотя бы одна запись с status_reg = False, возвращает True, иначе False.
+
+        Raises:
+            Exception: Если произошла ошибка при выполнении запроса к базе данных.
+        """
+        try:
+            cur = self.conn.cursor()
+            sql_select = (
+                "SELECT COUNT(*) FROM sch_ver WHERE status_reg = FALSE;"
+            )
+            cur.execute(sql_select)
+            result = cur.fetchone()
+            self.conn.commit()
+            if result and result[0] > 0:
+                return True
+            else:
+                return False
+        except Exception as e:
+            self.conn.rollback()
+            logger.error("DB(sch_ver): get_latest_status: %s", e)
+            raise e
+
     # __ Insert __
     def sch_ver_insert_vvk(self, status_reg: bool, vvk_id: int, scheme_revision: int, user_query_interval_revision: int,
                            scheme: dict, metric_info_list: dict) -> bool:
