@@ -109,6 +109,7 @@ class Reg_sch:
                 """
             cur.execute(sql_select, )
             result = cur.fetchall()
+            self.conn.commit()
             if result:
                 return [row[0] for row in result]
             else:
@@ -350,6 +351,7 @@ class Reg_sch:
                 """
             cur.execute(sql_select, (agent_id,))
             result = cur.fetchall()
+            self.conn.commit()
             if result:
                 return [row[0] for row in result]
             else:
@@ -381,6 +383,7 @@ class Reg_sch:
                 """
             cur.execute(sql_select, (agent_id,))
             result = cur.fetchall()
+            self.conn.commit()
             if result:
                 return [row[0] for row in result]
             else:
@@ -413,6 +416,7 @@ class Reg_sch:
                 """
             cur.execute(sql_select, (agent_id,))
             result = cur.fetchall()
+            self.conn.commit()
             if result:
                 return [row[0] for row in result]
             else:
@@ -552,6 +556,35 @@ class Reg_sch:
             logger.error("DB(reg_sch): reg_sch_update_vvk_scheme: %s", e)
             raise e
 
+    def reg_sch_update_vvk_scheme_from_editor(self, scheme_revision: int, scheme: dict,
+                                      metric_info_list_raw: dict) -> bool:
+        """
+            SQL-запрос на обновление 'reg_sch' после изменения в редакторе.
+
+        Args:
+            scheme_revision (int): Новая ревизия схемы.
+            scheme (dict): Новая схема VVK.
+            metric_info_list_raw (dict): Метрики.
+
+        Returns:
+            bool: Возвращает True, если обновление прошло успешно.
+
+        Raises:
+            Exception: Если произошла ошибка при выполнении запроса к базе данных.
+        """
+        try:
+            cur = self.conn.cursor()
+            sql_update_scheme = ("UPDATE reg_sch SET scheme_revision = %s, scheme = %s, metric_info_list = %s "
+                                 "WHERE type_id = FALSE;")
+            cur.execute(sql_update_scheme, (scheme_revision, json.dumps(scheme), json.dumps(metric_info_list_raw),))
+            logger.info("DB(reg_sch): VvkScheme-scheme изменена")
+            self.conn.commit()
+            return True
+        except Exception as e:
+            self.conn.rollback()
+            logger.error("DB(reg_sch): reg_sch_update_vvk_scheme: %s", e)
+            raise e
+
     def reg_sch_update_agent_re_reg(self, number_id: int, scheme_revision: int, user_query_interval_revision: int,
                                     original_scheme: dict, scheme: dict, response_scheme: dict, metric_info_list: dict) -> bool:
         """
@@ -586,6 +619,8 @@ class Reg_sch:
             logger.error("DB(reg_sch): reg_sch_update_agent_re_reg '%s': %s", number_id, e)
             raise e
 
+
+    # __ Delete __
     def reg_sch_delete_mil(self, metric_info_list: dict) -> bool:
         """
         SQL-запрос для обновления metric_info_list записи схемы ВВК.
@@ -612,8 +647,6 @@ class Reg_sch:
             logger.error("DB(sch_ver): reg_sch_delete_mil: %s", e)
             raise e
 
-
-    # __ Delete __
     def reg_sch_delete_agent(self, agent_id: int) -> bool:
         """
             SQL-запрос на удаление агента из таблицы 'reg_sch'.

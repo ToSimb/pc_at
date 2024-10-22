@@ -6,6 +6,7 @@ from postgres import connect, disconnect
 from params.router import router as router_params
 from registration.router import router as router_registration
 from gui.router import router as router_gui
+from gui_editor.router import router as router_gui_editor
 from join_scheme.router import router as router_join_scheme
 from metric_info.router import router as router_metric_info
 from check.router import router as router_check
@@ -41,5 +42,6 @@ app.include_router(router_check)
 app.include_router(router_metric_info)
 app.include_router(router_params)
 app.include_router(router_send_packet)
+app.include_router(router_gui_editor)
 app.include_router(router_gui)
 app.include_router(router_test)

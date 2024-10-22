@@ -36,7 +36,7 @@ def if_metric_info(metric_info: dict) -> list:
 
 def add_metrics(json_vvk_return_metrics, json_agent_scheme_metrics):
     """
-        Добавляет метрики из схемы агента в список метрик схемы VVK, если они отсутствуют.
+    Добавляет метрики из схемы агента в список метрик схемы VVK, если они отсутствуют.
 
     Args:
         json_vvk_return_metrics (list): Список метрик схемы VVK.
@@ -48,16 +48,21 @@ def add_metrics(json_vvk_return_metrics, json_agent_scheme_metrics):
     Raises:
         ValueError: Если метрика с таким идентификатором уже существует, но имеет различные параметры.
     """
-    # metrics_list = json_vvk_return_metrics[:]
     metrics_list = copy.deepcopy(json_vvk_return_metrics)
     for item in json_agent_scheme_metrics:
         existing_metric = next(
             (metric for metric in metrics_list if metric["metric_id"] == item["metric_id"]),
             None)
         if existing_metric:
-            if existing_metric != item:
-                raise ValueError(f"(RU)Метрика '{item['metric_id']}' имеет расхождение в параметрах! "
-                                 f"(ENG) The metric '{item['metric_id']}' has a discrepancy in parameters")
+            if existing_metric["type"] != item["type"]:
+                raise MyException427("(RU) Метрика '{item['metric_id']}' имеет расхождение в 'type'! (ENG) The metric '{item['metric_id']}' has a discrepancy in 'type'")
+            if existing_metric["dimension"] != item["dimension"]:
+                raise MyException427("RU) Метрика '{item['metric_id']}' имеет расхождение в 'dimension'! (ENG) The metric '{item['metric_id']}' has a discrepancy in 'dimension'")
+            if existing_metric["query_interval"] != item["query_interval"]:
+                raise MyException427("RU) Метрика '{item['metric_id']}' имеет расхождение в 'query_interval'! (ENG) The metric '{item['metric_id']}' has a discrepancy in 'query_interval'")
+            # if existing_metric != item:
+                # raise MyException427(
+                    # f"(RU) Метрика '{item['metric_id']}' имеет расхождение в параметрах! (ENG) The metric '{item['metric_id']}' has a discrepancy in parameters")
         else:
             metrics_list.append(item)
     return metrics_list
@@ -82,9 +87,16 @@ def add_templates(json_vvk_return_templates, json_agent_scheme_templates):
         existing_template = next((template for template in templates_list if
                                   template["template_id"] == item["template_id"]), None)
         if existing_template:
-            if existing_template != item:
-                raise ValueError(f"(RU) Шаблон '{item['template_id']}' имеет расхождение в параметрах! "
-                                 f"(ENG) The template '{item['template_id']}' has a discrepancy in parameters.")
+            if existing_template.get("includes"):
+                print(existing_template)
+                if existing_template.get("includes") != item.get("includes"):
+                    raise MyException427("(RU) Шаблон '{item['template_id']}' имеет расхождение в 'includes'! (ENG) The template '{item['template_id']}' has a discrepancy in 'includes'.")
+            if existing_template.get("metrics"):
+                if existing_template.get("metrics").sort() != item.get("metrics").sort():
+                    raise MyException427("(RU) Шаблон '{item['template_id']}' имеет расхождение в 'metrics'! (ENG) The template '{item['template_id']}' has a discrepancy in 'metrics'.")
+            # if existing_template != item:
+                # raise MyException427(
+                #     f"(RU) Шаблон '{item['template_id']}' имеет расхождение в параметрах! (ENG) The template '{item['template_id']}' has a discrepancy in parameters.")
         else:
             templates_list.append(item)
     return templates_list
@@ -362,6 +374,10 @@ def re_registration_join_scheme(join_scheme_new, user_query_interval_revision, m
     checking_correctness_patch_from_join_list(join_scheme_new)
 
     # GUI
+    vvk_puth = join_scheme_new["scheme"]["item_id_list"][0]["full_path"].split("/")[0]
+    vvk_name = [item for item in join_scheme_new["scheme"]["templates"] if item.get('template_id') == vvk_puth][0]["name"]
+    db.gui_update_vvk_name(vvk_name)
+
     db.gui_delete_agents()
     agent_reg_id_new = [item["agent_reg_id"] for item in join_scheme_new["scheme"]["join_list"]]
     db.gui_insert_agents(agent_reg_id_new)

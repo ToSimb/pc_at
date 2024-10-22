@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Редактор json-схемы ВВК</title>
+    <link rel="stylesheet" href="static/style1.css">
+    <script>
+        let vvkScheme = {{ vvk_scheme | tojson | safe }};
+
+        function redirectToBack() {
+            jsonTree.innerHTML = '';
+            updateButtonsState();
+            localStorage.removeItem('jsonData');
+            localStorage.removeItem('openedNodes');
+            window.location.href = "{{ url_for('gui_pages') }}";
+        }
+    </script>
+    <script defer src="static/app.js"></script>
+</head>
+
+<body>
+    <div class="header">
+        <div class="title">
+            <h1>Редактор json-схемы ВВК</h1>
+        </div>
+        <div class="buttons">
+            <button id="fileBtn">Загрузить схему</button>
+            <button id="removeBtn">Удалить всё</button>
+            <button id="closeBtn">Свернуть дерево</button>
+            <button id="sendBtn">Отправить</button>
+            <button id="saveBtn">Вернуться обратно</button>
+        </div>
+    </div>
+    <div id="container" class="container">
+        <ul id="jsonTree" class="json-tree"></ul>
+    </div>
+</body>
+</html>

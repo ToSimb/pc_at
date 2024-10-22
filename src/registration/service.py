@@ -53,16 +53,21 @@ def add_metrics(json_vvk_return_metrics, json_agent_scheme_metrics):
     Raises:
         ValueError: Если метрика с таким идентификатором уже существует, но имеет различные параметры.
     """
-    # metrics_list = json_vvk_return_metrics[:]
     metrics_list = copy.deepcopy(json_vvk_return_metrics)
     for item in json_agent_scheme_metrics:
         existing_metric = next(
             (metric for metric in metrics_list if metric["metric_id"] == item["metric_id"]),
             None)
         if existing_metric:
-            if existing_metric != item:
-                raise MyException427(
-                    f"(RU) Метрика '{item['metric_id']}' имеет расхождение в параметрах! (ENG) The metric '{item['metric_id']}' has a discrepancy in parameters")
+            if existing_metric["type"] != item["type"]:
+                raise MyException427("(RU) Метрика '{item['metric_id']}' имеет расхождение в 'type'! (ENG) The metric '{item['metric_id']}' has a discrepancy in 'type'")
+            if existing_metric["dimension"] != item["dimension"]:
+                raise MyException427("RU) Метрика '{item['metric_id']}' имеет расхождение в 'dimension'! (ENG) The metric '{item['metric_id']}' has a discrepancy in 'dimension'")
+            if existing_metric["query_interval"] != item["query_interval"]:
+                raise MyException427("RU) Метрика '{item['metric_id']}' имеет расхождение в 'query_interval'! (ENG) The metric '{item['metric_id']}' has a discrepancy in 'query_interval'")
+            # if existing_metric != item:
+                # raise MyException427(
+                    # f"(RU) Метрика '{item['metric_id']}' имеет расхождение в параметрах! (ENG) The metric '{item['metric_id']}' has a discrepancy in parameters")
         else:
             metrics_list.append(item)
     return metrics_list
@@ -87,9 +92,16 @@ def add_templates(json_vvk_return_templates, json_agent_scheme_templates):
         existing_template = next((template for template in templates_list if
                                   template["template_id"] == item["template_id"]), None)
         if existing_template:
-            if existing_template != item:
-                raise MyException427(
-                    f"(RU) Шаблон '{item['template_id']}' имеет расхождение в параметрах! (ENG) The template '{item['template_id']}' has a discrepancy in parameters.")
+            if existing_template.get("includes"):
+                print(existing_template)
+                if existing_template.get("includes") != item.get("includes"):
+                    raise MyException427("(RU) Шаблон '{item['template_id']}' имеет расхождение в 'includes'! (ENG) The template '{item['template_id']}' has a discrepancy in 'includes'.")
+            if existing_template.get("metrics"):
+                if existing_template.get("metrics").sort() != item.get("metrics").sort():
+                    raise MyException427("(RU) Шаблон '{item['template_id']}' имеет расхождение в 'metrics'! (ENG) The template '{item['template_id']}' has a discrepancy in 'metrics'.")
+            # if existing_template != item:
+                # raise MyException427(
+                #     f"(RU) Шаблон '{item['template_id']}' имеет расхождение в параметрах! (ENG) The template '{item['template_id']}' has a discrepancy in parameters.")
         else:
             templates_list.append(item)
     return templates_list
@@ -510,3 +522,56 @@ def re_registration_agent_id_scheme(agent_id: int, agent_reg_id: str, all_agent_
     db.reg_sch_block_false()
     return json_agent_return
 
+def delete_agent(agent_id: int, db: Database):
+    if db.reg_sch_block_check():
+        raise BlockingIOError
+    db.reg_sch_block_true()
+
+    scheme_revision_vvk, user_query_interval_revision, join_scheme, vvk_scheme, max_index, metric_info_list_raw = db.reg_sch_select_vvk_all()
+
+    # получение данных с помощью которых будет производиться очистка
+    metrics_list_excluding_agent = db.reg_sch_select_metrics_excluding_agent(agent_id)
+    agent_reg_id = db.gui_select_agent_reg_id_for_check_agent_reg_id(agent_id)
+
+    templates_list_excluding_agent = db.reg_sch_select_templates_excluding_agent(agent_id)
+    templates_list_JoinScheme = db.reg_sch_select_vvk_templates()
+    templates_list_excluding_agent.extend(templates_list_JoinScheme)
+
+    item_id_list_agent = db.reg_sch_select_agent_item_id_list(agent_id)
+    full_paths_agent = []
+    item_id_agent = []
+    for item in item_id_list_agent:
+        full_paths_agent.append(item["full_path"])
+        item_id_agent.append(item["item_id"])
+    _, _, metrics_id_agent, _ = db.reg_sch_select_metrics_and_items_for_agent(agent_id)
+
+    # очистка схемы ВВК от агента !
+    templates_new = delete_templates(vvk_scheme["templates"], templates_list_excluding_agent)
+    metrics_new = delete_metrics(vvk_scheme["metrics"], metrics_list_excluding_agent)
+    item_id_list_new = delete_item_id_list(vvk_scheme["item_id_list"], full_paths_agent)
+    item_info_list_new = delete_item_info_list(vvk_scheme['item_info_list'], join_scheme['item_info_list'], full_paths_agent)
+    metric_info_list_dict = delete_metric_info(metric_info_list_raw, item_id_agent, metrics_id_agent)
+
+    vvk_scheme_after_cleaning = {
+        "metrics": metrics_new,
+        "templates": templates_new,
+        "item_id_list": item_id_list_new,
+        "item_info_list": item_info_list_new,
+    }
+
+    #GUI
+    db.gui_delete_agent_id(agent_id)
+    db.gui_insert_agent(agent_reg_id)
+
+    db.reg_sch_block_false()
+
+    #REG_SCH
+    db.reg_sch_delete_agent(agent_id)
+    db.reg_sch_update_vvk_scheme_from_editor(scheme_revision_vvk, vvk_scheme_after_cleaning, metric_info_list_dict)
+
+    #SCH_VER
+    if db.sch_ver_select_check_false():
+        db.sch_ver_update_vvk_if_false(scheme_revision_vvk, user_query_interval_revision, vvk_scheme_after_cleaning, metric_info_list_dict)
+
+
+    return vvk_scheme_after_cleaning

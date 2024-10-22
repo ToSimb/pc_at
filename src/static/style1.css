@@ -1,0 +1,301 @@
+:root {
+    --primary-color: #00457E;
+    --primary-color-hover: #0056b3;
+    --secondary-color: #dc3545;
+    --secondary-color-hover: #c82333;
+    --success-color: #28a745;
+    --success-color-hover: #218838;
+    --background-color: #f8f9fa;
+    --container-background: #ffffff;
+    --text-color: #333;
+    --border-radius: 10px;
+    --box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+    --transition: 0.3s ease;
+    --property-border-color: #00457e9e;
+}
+
+body {
+    font-family: 'Roboto', sans-serif;
+    margin: 0;
+    background-color: var(--background-color);
+    overflow: hidden;
+}
+
+.header {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    background-color: var(--container-background);
+    box-shadow: var(--box-shadow);
+    padding: 20px 30px;
+    padding-top: 0px;
+    box-sizing: border-box;
+    z-index: 100;
+}
+
+.header .title {
+    text-align: center;
+    margin: 0 0 10px 0;
+}
+
+.header .buttons {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+}
+
+
+.header button {
+    padding: 10px;
+    font-size: 14px;
+    border-radius: var(--border-radius);
+    border: none;
+    cursor: pointer;
+    transition: var(--transition);
+    flex: 1;
+    max-width: 150px;
+    box-shadow: var(--box-shadow);
+}
+
+.header button#fileBtn {
+    background-color: white;
+    color: black;
+}
+
+.header button#fileBtn:hover {
+    background-color: var(--success-color);
+    color: white;
+}
+
+.header button#removeBtn {
+    background-color: white;
+    color: black;
+}
+
+.header button#removeBtn:hover {
+    background-color: var(--secondary-color-hover);
+    color: white;
+}
+
+.header button#removeBtn:disabled {
+    background-color: #ccc;
+    color: #666;
+    cursor: not-allowed;
+    box-shadow: none;
+}
+
+.header button#sendBtn {
+    background-color: white;
+    color: black;
+}
+
+.header button#sendBtn:hover {
+    background-color: var(--primary-color);
+    color: white;
+}
+
+.header button#sendBtn:disabled {
+    background-color: #ccc;
+    color: #666;
+    cursor: not-allowed;
+    box-shadow: none;
+}
+
+.header button#closeBtn {
+    background-color: white;
+    color: black;
+}
+
+.header button#closeBtn:hover {
+    background-color: #bab100;
+    color: white;
+}
+
+.header button#closeBtn:disabled {
+    background-color: #ccc;
+    color: #666;
+    cursor: not-allowed;
+    box-shadow: none;
+}
+
+.header button#saveBtn {
+    background-color: white;
+    color: black;
+}
+
+.header button#saveBtn:hover {
+    background-color: #bababa;
+    color: white;
+}
+
+.container {
+    width: 100%;
+    max-width: 1300px;
+    margin: 100px auto 0;
+    margin-top: 155px;
+    background-color: var(--container-background);
+    box-shadow: var(--box-shadow);
+    border-radius: var(--border-radius);
+    box-sizing: border-box;
+    padding: 30px;
+    padding-left: 0px;
+    overflow-y: auto;
+    max-height: calc(100vh - 170px);
+}
+
+
+.json-tree {
+    list-style: none;
+    padding-left: 45px;
+    margin: 0;
+    color: var(--text-color);
+}
+
+.json-tree li {
+    margin: 6px 0;
+    margin-bottom: 0px;
+    position: relative;
+    border: none;
+    border-radius: var(--border-radius);
+    padding: 10px;
+    background-color: var(--container-background);
+    box-shadow: var(--box-shadow);
+}
+
+.json-tree li.property {
+    border: 1px solid white;
+    border-color: var(--property-border-color);
+    display: inline-table;
+    width: 47%;
+    margin-right: 6px;
+}
+
+.json-tree li .key {
+    font-weight: 500;
+    color: var(--text-color);
+    position: relative;
+}
+
+.json-tree li .value {
+    margin-left: 10px;
+}
+
+.json-tree li .toggle {
+    cursor: pointer;
+    color: var(--primary-color);
+    font-size: 20px;
+    user-select: none;
+    margin-right: 5px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    border: none;
+    border-radius: 12px;
+    background-color: var(--container-background);
+    transition: var(--transition);
+}
+
+.json-tree li .toggle:hover {
+    background-color: var(--primary-color);
+    color: #fff;
+}
+
+.json-tree li .delete-btn {
+    cursor: pointer;
+    color: var(--secondary-color);
+    font-size: 22px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    border: none;
+    border-radius: 12px;
+    background-color: var(--container-background);
+    transition: var(--transition);
+    box-shadow: var(--box-shadow);
+}
+
+.json-tree li .delete-btn:hover {
+    background-color: var(--secondary-color);
+    color: #fff;
+}
+
+
+.json-tree li .add-btn {
+    cursor: pointer;
+    color: var(--success-color);
+    font-size: 12px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    border: none;
+    border-radius: 12px;
+    background-color: var(--container-background);
+    transition: var(--transition);
+    box-shadow: var(--box-shadow);
+}
+
+.json-tree li .add-btn:hover {
+    background-color: var(--success-color);
+    color: #fff;
+}
+
+.json-tree li .button-group {
+    position: absolute;
+    right: 10px;
+    top: 10px;
+    display: flex;
+    gap: 5px;
+}
+
+
+.hidden {
+    display: none;
+}
+
+.input-field {
+    width: 100%;
+    margin-top: 10px;
+    padding: 10px;
+    font-size: 14px;
+    border-radius: var(--border-radius);
+    border: 1px solid #ccc;
+    box-sizing: border-box;
+    transition: var(--transition);
+}
+
+.input-field:focus {
+    border-color: white;
+    outline: none;
+    box-shadow: 0 0 5px var(--primary-color);
+}
+
+@media (max-width: 768px) {
+    .header {
+        padding: 15px 20px;
+    }
+
+    .header button {
+        padding: 8px;
+        font-size: 12px;
+        max-width: 80px;
+    }
+
+    .container {
+        padding: 20px;
+    }
+
+    .json-tree li {
+        margin: 8px 0;
+    }
+
+    h1 {
+        font-size: 20px;
+    }
+}

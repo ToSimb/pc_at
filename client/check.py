@@ -195,7 +195,7 @@ try:
                                             comment_error = f"Нет связи с Агентом: {agent[0]}"
                                             data_item = {
                                                 't': int(start_time),
-                                                'v': "ERROR",
+                                                'v': "FATAL",
                                                 'comment': comment_error
                                             }
                                         result.update(data_item)
