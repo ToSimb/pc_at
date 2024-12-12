@@ -24,6 +24,47 @@ def requestjson(url, final_result):
         print(f"Произошла ошибка при отправке запроса: {e}")
         return False
 
+def if_int():
+    data = []
+    metric_data = {"t": current_timestamp - 2, "v": str(random.randint(800, 1100))}
+    data.append(metric_data)
+    # metric_data = {"t": current_timestamp - 2, "v": str()}
+    # data.append(metric_data)
+    metric_data = {"t": current_timestamp - 1, "v": str(random.randint(800, 1100)), "etmax": False, "etmin": True,
+                   "comment": "Test"}
+    data.append(metric_data)
+    metric_data = {"t": current_timestamp, "v": str(random.randint(800, 1100)), "etmin": True, "comment": "Арбуз"}
+    data.append(metric_data)
+    return data
+
+def if_double():
+    data = []
+    metric_data = {"t": current_timestamp - 2, "v": str(random.uniform(800, 1100))}
+    data.append(metric_data)
+    metric_data = {"t": current_timestamp - 1, "v": str(random.uniform(800, 1100)), "etmax": False, "etmin": True,
+                   "comment": "Test"}
+    data.append(metric_data)
+    metric_data = {"t": current_timestamp, "v": str(random.uniform(800, 1100)), "etmin": True, "comment": "Арбуз"}
+    data.append(metric_data)
+    return data
+
+def if_state():
+    data = []
+    metric_data = {"t": current_timestamp - 2, "v": "OK"}
+    data.append(metric_data)
+    metric_data = {"t": current_timestamp - 1, "v": "FATAL", "etmax": False, "etmin": True,
+                   "comment": "Test"}
+    data.append(metric_data)
+    metric_data = {"t": current_timestamp, "v": "ERROR", "etmin": True, "comment": "Арбуз"}
+    data.append(metric_data)
+    return data
+
+def if_str():
+    data = []
+    metric_data = {"t": current_timestamp - 1, "v": "FAasdasTAL", "etmax": False, "etmin": True,
+                   "comment": "Test"}
+    data.append(metric_data)
+    return data
 
 try:
     final_result = {
@@ -31,9 +72,11 @@ try:
         "user_query_interval_revision": 1,
         "value": []
     }
-    for _ in range(random.randint(1,2)):
+    # for _ in range(random.randint(1,200)):
+    for _ in range(100):
         current_timestamp = int(time.time())
         for item_id in range(13, 18):
+
             for metric_id in ['chassis.uptime',
                               'cpu.user.time',
                               'cpu.core.load',
@@ -43,12 +86,22 @@ try:
                               'сompboard.power',
                               'сompboard.state']:
                 data = []
-                metric_data = {"t": current_timestamp-2, "v": str(random.randint(800, 1100))}
-                data.append(metric_data)
-                metric_data = {"t": current_timestamp-1, "v": str(random.randint(800, 1100)), "etmax": False, "etmin": True, "comment": "Test"}
-                data.append(metric_data)
-                metric_data = {"t": current_timestamp, "v": str(random.randint(800, 1100)), "etmin": True, "comment": "Арбуз"}
-                data.append(metric_data)
+                if metric_id == 'chassis.uptime':
+                    data = if_double()
+                if metric_id == 'cpu.user.time':
+                    data = if_double()
+                if metric_id == 'cpu.core.load':
+                    data = if_double()
+                if metric_id == 'chassis.memory.total':
+                    data = if_int()
+                if metric_id == 'chassis.memory.used':
+                    data = if_int()
+                if metric_id == 'сompboard.voltage':
+                    data = if_double()
+                if metric_id == 'сompboard.power':
+                    data = if_double()
+                if metric_id == 'сompboard.state':
+                    data = if_state()
                 final_result["value"].append({"item_id": item_id, "metric_id": metric_id, "data": data})
     start_time = time.time()
     # random_agent = random.randint(1,2)

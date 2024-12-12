@@ -24,6 +24,10 @@
             window.location.href = `gui/agent_params/${agent_id}`;
         }
 
+        function redirectToAgentParamsSend(agent_id) {
+            window.location.href = `gui/agent_params_send/${agent_id}`;
+        }
+
         function redirectToStatusSave() {
             window.location.href = `gui/status_save`;
         }
@@ -80,7 +84,7 @@
                             <p>Время последнего успешного контроля связи: {{vvk["time_conn"]}}</p>
                         {% else %}
                             <p>Контроль канала связи: OK</p>
-                            <p>Время последнего успешного контроля связи: {{vvk["time_conn"]}}</p>
+                            <p>Время контроля связи: {{vvk["time_conn"]}}</p>
                         {% endif %}
                     {% endif %}
                     <div class="main__block-center flex">
@@ -118,7 +122,15 @@
                     <h2>Агенты</h2>
                     {% for item in agents %}
                     <div class="border border-mini">
-                        <p>Agent_id: {{item["number_id"]}}</p>
+                        <div class="flex">
+                        <p class="m-r">Agent_id: {{item["number_id"]}}</p>
+                        {% if item["error_conn"] is true %}
+                            <div style="width: 16px; height: 16px; background-color: red; border-radius: 50%; display: inline-block;"></div>
+                        {% endif %}
+                        {% if item["error_conn"] is false %}
+                            <div style="width: 16px; height: 16px; background-color: green; border-radius: 50%; display: inline-block;"></div>
+                        {% endif %}
+                        </div>
                         <p>Agent_reg_id: {{item["agent_reg_id"]}}</p>
                         <p>Scheme revision: {{item["scheme_revision"]}}</p>
 
@@ -150,11 +162,11 @@
                                 <p>Ошибка приема ПФ: {{item["error_value"]}}</p>
                                 <p>Время ошибки приема ПФ: {{item["time_value"]}}</p>
                             {% else %}
-                                <p>Время последней успешного приема ПФ: {{item["time_value"]}}</p>
+                                <p>Время последнего приема ПФ: {{item["time_value"]}}</p>
                             {% endif %}
                         {% endif %}
                         {% if item["time_value_out"] is not none %}
-                            <p>Время последней успешной передачи ПФ в сторону АФ: {{item["time_value_out"]}}</p>
+                            <p>Время передачи ПФ в сторону АФ: {{item["time_value_out"]}}</p>
                         {% endif %}
                         {% if item["error_value_out"] is not none %}
                             <p>Ошибка передачи ПФ: {{item["error_value_out"]}}</p>
@@ -165,7 +177,7 @@
                                 <p>Время последнего успешного контроля связи: {{item["time_conn"]}}</p>
                             {% else %}
                                 <p>Контроль канала связи: OK</p>
-                                <p>Время последнего успешного контроля связи: {{item["time_conn"]}}</p>
+                                <p>Время контроля связи: {{item["time_conn"]}}</p>
                             {% endif %}
                         {% endif %}
                         <div class="main__block-center flex">
@@ -173,7 +185,7 @@
                                 {% if item["time_value"] is not none %}
                                     <div class="main__block-center flex">
                                         <button class="btn reset-btn" onclick="redirectToAgentParams({{item['number_id']}})">
-                                        Посмотреть последний пакет
+                                        Посмотреть последний полученный пакет
                                         </button>
                                     </div>
                                 {% endif %}
@@ -183,6 +195,15 @@
                                 Подробнее
                                 </button>
                             </div>
+                            {% if GLOBAL_STATUS_SAVE is true  %}
+                                {% if item["time_value"] is not none %}
+                                    <div class="main__block-center flex">
+                                        <button class="btn reset-btn" onclick="redirectToAgentParamsSend({{item['number_id']}})">
+                                        Посмотреть последний отправленный пакет
+                                        </button>
+                                    </div>
+                                {% endif %}
+                            {% endif %}
                         </div>
                     </div>
                     {% endfor %}

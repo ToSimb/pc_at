@@ -235,7 +235,8 @@ try:
             time_1 = time.time()
             all_count_pf = db.pf_select_count_all()
             logger.info(f"Осталось данных в БД: {all_count_pf}, время запроса в БД - {time.time() - time_1}")
-
+            if all_count_pf > (len(number_ids) * 3):
+                t3 = 1
         else:
             if db.sch_ver_select_date_create_unreg():
                 if db.gui_select_agents_check_status_reg():

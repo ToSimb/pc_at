@@ -23,7 +23,7 @@ async def get_checks(agent_id: int, user_query_interval_revision: int, db=Depend
 
     Raises:
         HTTPException: Если ревизии не совпадают (статус-код 227).
-        HTTPException: Если агент не зарегистрирован или произошла другая ошибка (статус-код 427).
+        HTTPException: Если агент не зарегистрирован или произошла другая ошибка (статус-код 527).
     """
     try:
         user_q = db.reg_sch_select_agent_user_q(agent_id)
@@ -38,4 +38,4 @@ async def get_checks(agent_id: int, user_query_interval_revision: int, db=Depend
     except Exception as e:
         error_str = f"{e}."
         logger.error(error_str)
-        raise HTTPException(status_code=427, detail={"error_msg": error_str})
+        raise HTTPException(status_code=527, detail={"error_msg": error_str})

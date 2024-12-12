@@ -75,7 +75,20 @@ async def gui_params_agent(agent_id: int):
         Метод для просмотра последнего принято пакета Agent
     """
     try:
-        result = open_json(agent_id)
+        result = open_json(agent_id, "pf")
+        return result
+    except Exception as e:
+        error_str = f"Exception: {e}."
+        logger.error(error_str)
+        raise HTTPException(status_code=528, detail={"error_msg": error_str})
+
+@router.get("/agent_params_send/{agent_id}")
+async def gui_params_send_agent(agent_id: int):
+    """
+        Метод для просмотра последнего отправленного пакета Agent
+    """
+    try:
+        result = open_json(agent_id, "pf_send")
         return result
     except Exception as e:
         error_str = f"Exception: {e}."

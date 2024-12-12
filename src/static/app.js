@@ -109,7 +109,7 @@ function handleRemoveFile() {//Удаление схемы
 
 function handleSendFile() {//Отправляю схему на АТ
     if (confirm('Отправить схему?')) {
-        const url = 'http://localhost:25002/editor/save';   // адрес отправления схемы
+        const url = 'http://localhost:' + my_port.toString() +'/editor/save';   // адрес отправления схемы
         const sr = parseInt(jsonData['scheme_revision']) + 1
         jsonData['scheme_revision'] = sr;
         localStorage.setItem('jsonData', JSON.stringify(jsonData));

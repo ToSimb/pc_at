@@ -60,11 +60,11 @@ def add_metrics(json_vvk_return_metrics, json_agent_scheme_metrics):
             None)
         if existing_metric:
             if existing_metric["type"] != item["type"]:
-                raise MyException427("(RU) Метрика '{item['metric_id']}' имеет расхождение в 'type'! (ENG) The metric '{item['metric_id']}' has a discrepancy in 'type'")
+                raise MyException427(f"(RU) Метрика '{item['metric_id']}' имеет расхождение в 'type'! (ENG) The metric '{item['metric_id']}' has a discrepancy in 'type'")
             if existing_metric["dimension"] != item["dimension"]:
-                raise MyException427("RU) Метрика '{item['metric_id']}' имеет расхождение в 'dimension'! (ENG) The metric '{item['metric_id']}' has a discrepancy in 'dimension'")
+                raise MyException427(f"RU) Метрика '{item['metric_id']}' имеет расхождение в 'dimension'! (ENG) The metric '{item['metric_id']}' has a discrepancy in 'dimension'")
             if existing_metric["query_interval"] != item["query_interval"]:
-                raise MyException427("RU) Метрика '{item['metric_id']}' имеет расхождение в 'query_interval'! (ENG) The metric '{item['metric_id']}' has a discrepancy in 'query_interval'")
+                raise MyException427(f"RU) Метрика '{item['metric_id']}' имеет расхождение в 'query_interval'! (ENG) The metric '{item['metric_id']}' has a discrepancy in 'query_interval'")
             # if existing_metric != item:
                 # raise MyException427(
                     # f"(RU) Метрика '{item['metric_id']}' имеет расхождение в параметрах! (ENG) The metric '{item['metric_id']}' has a discrepancy in parameters")
@@ -95,10 +95,10 @@ def add_templates(json_vvk_return_templates, json_agent_scheme_templates):
             if existing_template.get("includes"):
                 print(existing_template)
                 if existing_template.get("includes") != item.get("includes"):
-                    raise MyException427("(RU) Шаблон '{item['template_id']}' имеет расхождение в 'includes'! (ENG) The template '{item['template_id']}' has a discrepancy in 'includes'.")
+                    raise MyException427(f"(RU) Шаблон '{item['template_id']}' имеет расхождение в 'includes'! (ENG) The template '{item['template_id']}' has a discrepancy in 'includes'.")
             if existing_template.get("metrics"):
                 if existing_template.get("metrics").sort() != item.get("metrics").sort():
-                    raise MyException427("(RU) Шаблон '{item['template_id']}' имеет расхождение в 'metrics'! (ENG) The template '{item['template_id']}' has a discrepancy in 'metrics'.")
+                    raise MyException427(f"(RU) Шаблон '{item['template_id']}' имеет расхождение в 'metrics'! (ENG) The template '{item['template_id']}' has a discrepancy in 'metrics'.")
             # if existing_template != item:
                 # raise MyException427(
                 #     f"(RU) Шаблон '{item['template_id']}' имеет расхождение в параметрах! (ENG) The template '{item['template_id']}' has a discrepancy in parameters.")

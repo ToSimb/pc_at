@@ -75,9 +75,35 @@ class Sch_ver:
             logger.error("DB(sch_ver): sch_ver_select_vvk_scheme: %s", e)
             raise e
 
+    def sch_ver_select_vvk_details_all(self) -> tuple:
+        """
+            SQL-запрос: Получения деталей по зарегистрированной схему ВВК.
+
+        Returns:
+            tuple: Кортеж, содержащий vvk_id, scheme_revision, user_query_interval_revision и t3.
+                   Если запись не найдена, возвращает кортеж из четырех элементов [None, None, None, None].
+
+        Raises:
+            Exception: Если произошла ошибка при выполнении запроса.
+        """
+        try:
+            cur = self.conn.cursor()
+            sql_select = ("SELECT vvk_id, scheme_revision, user_query_interval_revision, t3, metric_info_list FROM sch_ver "
+                          "WHERE status_reg = TRUE ORDER BY date_create DESC LIMIT 1")
+            cur.execute(sql_select, )
+            result = cur.fetchone()
+            if result:
+                return result
+            else:
+                return [None, None, None, None, None]
+        except Exception as e:
+            self.conn.rollback()
+            logger.error("DB(sch_ver): sch_ver_select_vvk_scheme: %s", e)
+            raise e
+
     def sch_ver_select_date_create_unreg(self) -> int:
         """
-            SQL-запрос: Получить время не зарегистрированной схемы ВВК.
+            SQL-запрос: Проверка не зарегистрированной схемы ВВК.
 
         Returns:
             int: Значение date_create для первой найденной записи.

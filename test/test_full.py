@@ -18,22 +18,36 @@ try:
     print("Регистрация агента 1")
     subprocess.run(['python', 'z_test_reg_agent_1.py'])
     time.sleep(T3)
-    #
+
     print("___________________")
     print("Регистрация агента 2")
     subprocess.run(['python', 'z_test_reg_agent_2.py'])
     time.sleep(T3)
-
+    #
     print("___________________")
     print("Регистрация ВВК схемы")
     subprocess.run(['python', 'z_test_reg_vvk.py'])
     time.sleep(T3)
-
-    # print("___________________")
-    # print("Загрузка новой JoinScheme 1")
-    # subprocess.run(['python', 'z_test_reg_join_scheme_change_of_paths.py'])
-    # time.sleep(T3)
-
+    #
+    print("___________________")
+    print("Прием ПФ для 1 агента")
+    subprocess.run(['python', 'z_test_pf_1_1.py'])
+    time.sleep(T3)
+    #
+    print("___________________")
+    print("Прием ПФ для 2 агента")
+    subprocess.run(['python', 'z_test_pf_2_1.py'])
+    time.sleep(T3)
+    #
+    print("___________________")
+    print("check 200")
+    subprocess.run(['python', 'z_test_check_norm.py'])
+    time.sleep(T3)
+    #
+    print("___________________")
+    print("check 227")
+    subprocess.run(['python', 'z_test_check_227.py'])
+    time.sleep(T3)
 
 except Exception as e:
     print(e)

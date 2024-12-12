@@ -209,6 +209,42 @@ class Reg_sch:
             logger.error("DB(reg_sch): reg_sch_select_metrics_and_items: %s", e)
             raise e
 
+    def reg_sch_select_full_metrics_and_items_for_agent(self, agent_id: int) -> tuple:
+        """
+            SQL-запрос для получения metric_id и item_id для заданного агента.
+
+        Args:
+            agent_id (int): Идентификатор агента.
+
+        Returns:
+            tuple: Кортеж, содержащий информацию о агенте.
+                   Формат кортежа: (scheme_revision, user_query_interval_revision, metrics_id, items_id).
+                   Если нет данных, возвращает (None, None, [], []).
+
+        Raises:
+            Exception: Если произошла ошибка при выполнении запроса к базе данных.
+        """
+        try:
+            cur = self.conn.cursor()
+            sql_query = (f"SELECT scheme_revision, user_query_interval_revision, "
+                         f"jsonb_array_elements(scheme->'metrics') AS metrics, "
+                         f"jsonb_array_elements(scheme->'item_id_list')->>'item_id' AS item_id "
+                         f"FROM reg_sch "
+                         f"WHERE number_id = {agent_id} AND type_id = TRUE; ")
+            cur.execute(sql_query)
+            result = cur.fetchall()
+            self.conn.commit()
+            if result:
+                scheme_revision = result[0][0]
+                user_query_interval_revisions = result[0][1]
+                metrics_id = [row[2] for row in result if row[2] is not None]
+                items_id = [row[3] for row in result if row[3] is not None]
+                return scheme_revision, user_query_interval_revisions, metrics_id, items_id
+            return None, None, [], []
+        except Exception as e:
+            logger.error("DB(reg_sch): reg_sch_select_metrics_and_items: %s", e)
+            raise e
+
     def reg_sch_select_agent_scheme(self, agent_id: int) -> tuple:
         """
             SQL-запрос на получение всей информации об агенте.

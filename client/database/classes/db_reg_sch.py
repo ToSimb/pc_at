@@ -338,9 +338,3 @@ class Reg_sch:
 
 
 
-
-
-
-
-
-

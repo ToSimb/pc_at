@@ -8,6 +8,7 @@
     <link rel="stylesheet" href="static/style1.css">
     <script>
         let vvkScheme = {{ vvk_scheme | tojson | safe }};
+        let my_port = {{ MY_PORT }};
 
         function redirectToBack() {
             jsonTree.innerHTML = '';

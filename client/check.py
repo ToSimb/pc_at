@@ -2,6 +2,7 @@ import requests
 import time
 import signal
 import sys
+import json
 
 from database.db import Database
 from database.postgres import connect, disconnect
@@ -24,6 +25,26 @@ conn = connect()
 db = Database(conn)
 
 time_counter = 1
+mil_with_agent_metrics = []
+
+def if_metric_info(metric_info: dict) -> list:
+    if metric_info is None:
+        return []
+
+    metric_info_list = metric_info.get('metric_info_list')
+
+    if not metric_info_list or metric_info_list == [None]:
+        return []
+
+    return metric_info_list
+
+def filter_by_metric_id(data, target_metric_id):
+    return [item for item in data if item['metric_id'] == target_metric_id]
+
+def save_to_json(data):
+    filename = f"mil.json"
+    with open(filename, 'w', encoding='utf-8') as file:
+        json.dump(data, file, ensure_ascii=False)
 
 def time_change(ans):
     if ans is None:
@@ -51,7 +72,7 @@ def request_conn(vvk_id: int, user_query_interval_revision: int) -> bool:
     url = f'{PC_AF_PROTOCOL}://{PC_AF_IP}:{PC_AF_PORT}/check'
     if DEBUG:
         url = f'http://localhost:{MY_PORT}/test/check'
-    params = {'vvk_id': vvk_id, 'user_query_interval_revision': user_query_interval_revision}
+    params = {'vvk_id': vvk_id, 'user_query_interval_revision': user_query_interval_revision+1}
     try:
         response = requests.get(url, params=params, timeout=15)
         if response.status_code == 200:
@@ -132,13 +153,27 @@ def get_metric_info(vvk_id: int, vvk_scheme_revision: int) -> bool:
         # SCH_VER
         db.sch_ver_update_all_user_query_revision(temp["user_query_interval_revision"])
         db.sch_ver_update_all_metric_info(metric_info_list_dict)
+        # mil_with_agent_metrics
+        global mil_with_agent_metrics
+        mil_with_agent_metrics = filter_by_metric_id(temp["metric_info_list"], METRIC_ID)
+        save_to_json(mil_with_agent_metrics)
+
+def get_user_query_interval(mil, item_id):
+    for item in mil:
+        if item['item_id'] == item_id:
+            return item['user_query_interval']
+    return None
+
 
 try:
     while True:
         logger_check.info("____________________________")
         start_time = time.time()
         logger_check.info(int(start_time))
-        vvk_id, vvk_scheme_revision, user_query_interval_revision, t3 = db.sch_ver_select_vvk_details()
+        vvk_id, vvk_scheme_revision, user_query_interval_revision, t3, metric_info_list_raw = db.sch_ver_select_vvk_details_all()
+        mil = if_metric_info(metric_info_list_raw)
+        mil_with_agent_metrics = filter_by_metric_id(mil, METRIC_ID)
+        save_to_json(mil_with_agent_metrics)
 
         if vvk_id:
             if227 = request_conn(vvk_id, user_query_interval_revision)
@@ -178,29 +213,30 @@ try:
                                     result = None
                                     # Проверка Метрик Инфо !
                                     query_interval = query_interval_all
-                                    ans = db.reg_sch_select_user_query_intervals_by_item_id(item_id, METRIC_ID)
+                                    ans = get_user_query_interval(mil_with_agent_metrics, item_id)
                                     if ans is not None:
                                         query_interval = ans
-                                    if time_counter % query_interval == 0:
-                                        result = {
-                                            'item_id': item_id,
-                                            'metric_id': METRIC_ID,
-                                        }
-                                        if status:
-                                            data_item = {
-                                                't': int(start_time),
-                                                'v': "OK"
+                                    if query_interval != 0:
+                                        if time_counter % query_interval == 0:
+                                            result = {
+                                                'item_id': item_id,
+                                                'metric_id': METRIC_ID,
                                             }
-                                        else:
-                                            comment_error = f"Нет связи с Агентом: {agent[0]}"
-                                            data_item = {
-                                                't': int(start_time),
-                                                'v': "FATAL",
-                                                'comment': comment_error
-                                            }
-                                        result.update(data_item)
-                                    if result is not None:
-                                        value.append(result)
+                                            if status:
+                                                data_item = {
+                                                    't': int(start_time),
+                                                    'v': "OK"
+                                                }
+                                            else:
+                                                comment_error = f"Нет связи с Агентом: {agent[0]}"
+                                                data_item = {
+                                                    't': int(start_time),
+                                                    'v': "FATAL",
+                                                    'comment': comment_error
+                                                }
+                                            result.update(data_item)
+                                        if result is not None:
+                                            value.append(result)
                     logger_check.info(f"Количество собранных метрик в цикле: {len(value)}")
                     if len(value) > 0:
                         items_id = []

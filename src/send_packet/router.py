@@ -9,7 +9,8 @@ from logger.logger_send import logger_send
 from .service import (get_params_from_db_by_number_id,
                       parse_value,
                       forming_packet,
-                      send_value_to_url,)
+                      send_value_to_url,
+                      save_to_json,)
 
 router = APIRouter(
     prefix="/send-packet",
@@ -33,6 +34,9 @@ async def send_packet(number_id: int, db=Depends(get_db_repo)):
         response_code = await send_value_to_url(vvk_id, number_id, result, db)
         response_time = time.time()
         if response_code:
+            if db.flag_select():
+                save_to_json(result, number_id)
+            save_time = time.time()
             logger_send.info(response_code)
             deleted_rows = db.pf_delete_records(result_id)
             delete_time = time.time()
@@ -43,7 +47,8 @@ async def send_packet(number_id: int, db=Depends(get_db_repo)):
                     + "Время получение ПФ из БД:  " + str(get_time - start_time) + "\n"
                     + "Время формирование ПФ:     " + str(pars_time - get_time) + "\n"
                     + "Время отправки ПФ:         " + str(response_time - pars_time) + "\n"
-                    + "Время удаления ПФ:         " + str(delete_time - response_time) + "\n"
+                    + "Время сохранения ПФ:       " + str(save_time - response_time) + "\n"
+                    + "Время удаления ПФ:         " + str(delete_time - save_time) + "\n"
                     + "Кол-во удаленных пакетов и первые 2 элемента :     " + str(deleted_rows) + " - " + str(result_id[:2]))
             return Response(status_code=200)
         else:

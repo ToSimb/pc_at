@@ -1,5 +1,5 @@
 import time
-
+import json
 import httpx
 
 from config import MY_PORT, PF_LIMIT, DEBUG, PC_AF_PROTOCOL, PC_AF_IP, PC_AF_PORT
@@ -8,6 +8,11 @@ from database.database import Database
 
 from logger.logger_send import logger_send
 
+
+def save_to_json(params, agent_id):
+    # logger_send.info(f"Saving params agent '{agent_id}' to json")
+    with open(f"files/pf_send/agent_{agent_id}.json", 'w', encoding='utf-8') as json_file:
+        json.dump(params, json_file, ensure_ascii=False, indent=4)
 async def send_value_to_url(vvk_id, number_id, packet: dict, db: Database):
     async with httpx.AsyncClient(timeout=httpx.Timeout(60.0, connect=12.0)) as client:
         url = f'{PC_AF_PROTOCOL}://{PC_AF_IP}:{PC_AF_PORT}/params?vvk_id={vvk_id}'

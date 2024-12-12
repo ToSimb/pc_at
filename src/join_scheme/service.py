@@ -8,12 +8,6 @@ from database.database import Database
 
 from logger.logger import logger
 
-def save_to_json(data):
-    filename = f"files/join_scheme/join_scheme.json"
-    logger.info(f"JOIN SCHEME сохранен в файл {filename}")
-    with open(filename, 'w', encoding='utf-8') as file:
-        json.dump(data, file, ensure_ascii=False)
-
 def if_metric_info(metric_info: dict) -> list:
     """
     Возвращает 'metric_info_list' из словаря metric_info, если оно существует.

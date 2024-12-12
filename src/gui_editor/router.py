@@ -10,6 +10,8 @@ from gui_editor.service import if_metric_info, load_new_vvk_cheme
 
 from myException import MyException427, MyException528
 
+from config import MY_PORT
+
 templates = Jinja2Templates(directory="templates")
 
 router = APIRouter(
@@ -31,7 +33,7 @@ async def editor_main(request: Request, db=Depends(get_db_repo)):
             "scheme": scheme,
             "metric_info_list": if_metric_info(metric_info_list)
         }
-        return templates.TemplateResponse(request=request, name="index.html", context={"vvk_scheme": vvk_scheme})
+        return templates.TemplateResponse(request=request, name="index.html", context={"vvk_scheme": vvk_scheme, "MY_PORT": MY_PORT})
     except MyException427 as e:
         error_str = f"{e}."
         logger.error(error_str)
